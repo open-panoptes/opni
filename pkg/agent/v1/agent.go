@@ -27,7 +27,6 @@ import (
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/storage/crds"
-	"github.com/rancher/opni/pkg/storage/etcd"
 	"github.com/rancher/opni/pkg/trust"
 	"github.com/rancher/opni/pkg/util"
 	"github.com/rancher/opni/plugins/metrics/apis/remotewrite"
@@ -137,7 +136,7 @@ func New(ctx context.Context, conf *v1beta1.AgentConfig, opts ...AgentOption) (*
 	var keyringStoreBroker storage.KeyringStoreBroker
 	switch agent.config.Storage.Type {
 	case v1beta1.StorageTypeEtcd:
-		keyringStoreBroker, err = etcd.NewEtcdStore(ctx, agent.config.Storage.Etcd)
+		// keyringStoreBroker, err = etcd.NewEtcdStore(ctx, agent.config.Storage.Etcd)
 		if err != nil {
 			return nil, fmt.Errorf("error creating etcd store: %w", err)
 		}

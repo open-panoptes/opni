@@ -622,10 +622,6 @@ message KubernetesAgentUpgradeSpec {
     (cli.flag).default                     = "Kubernetes",
     (buf.validate.field).enum.defined_only = true
   ];
-
-  optional string namespace = 2;
-
-  optional string repoOverride = 3;
 }
 
 message RateLimitingSpec {

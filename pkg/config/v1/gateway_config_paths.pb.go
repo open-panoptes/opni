@@ -245,12 +245,6 @@ func (p agentUpgradesSpecPathBuilder) Driver() protopath.Path {
 func (p kubernetesAgentUpgradeSpecPathBuilder) ImageResolver() protopath.Path {
 	return protopath.Path(append(p, protopath.FieldAccess(((*KubernetesAgentUpgradeSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))
 }
-func (p kubernetesAgentUpgradeSpecPathBuilder) Namespace() protopath.Path {
-	return protopath.Path(append(p, protopath.FieldAccess(((*KubernetesAgentUpgradeSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(2))))
-}
-func (p kubernetesAgentUpgradeSpecPathBuilder) RepoOverride() protopath.Path {
-	return protopath.Path(append(p, protopath.FieldAccess(((*KubernetesAgentUpgradeSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(3))))
-}
 func (p pluginUpgradesSpecPathBuilder) Driver() protopath.Path {
 	return protopath.Path(append(p, protopath.FieldAccess(((*PluginUpgradesSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))
 }

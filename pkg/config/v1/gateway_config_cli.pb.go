@@ -795,8 +795,6 @@ func (in *KubernetesAgentUpgradeSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("KubernetesAgentUpgradeSpec", pflag.ExitOnError)
 	fs.SortFlags = true
 	fs.Var(flagutil.EnumPtrValue(flagutil.Ptr(KubernetesAgentUpgradeSpec_Kubernetes), &in.ImageResolver), strings.Join(append(prefix, "image-resolver"), "."), "Agent image resolver to use.")
-	fs.Var(flagutil.StringPtrValue(nil, &in.Namespace), strings.Join(append(prefix, "namespace"), "."), "")
-	fs.Var(flagutil.StringPtrValue(nil, &in.RepoOverride), strings.Join(append(prefix, "repo-override"), "."), "")
 	return fs
 }
 

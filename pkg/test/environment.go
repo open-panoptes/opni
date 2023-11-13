@@ -52,7 +52,9 @@ import (
 	"github.com/rancher/opni/pkg/caching"
 	"github.com/rancher/opni/pkg/clients"
 	"github.com/rancher/opni/pkg/config"
+	"github.com/rancher/opni/pkg/config/adapt"
 	"github.com/rancher/opni/pkg/config/meta"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/config/v1beta1"
 	"github.com/rancher/opni/pkg/gateway"
 	"github.com/rancher/opni/pkg/ident"
@@ -1697,11 +1699,11 @@ func (e *Environment) NewGatewayConfig() *v1beta1.GatewayConfig {
 			Storage: lo.Switch[v1beta1.StorageType, v1beta1.StorageSpec](e.storageBackend).
 				Case(v1beta1.StorageTypeEtcd, v1beta1.StorageSpec{
 					Type: v1beta1.StorageTypeEtcd,
-					Etcd: e.etcdConfig(),
+					Etcd: adapt.V1BetaConfigOf(e.etcdConfig()).(*v1beta1.EtcdStorageSpec),
 				}).
 				Case(v1beta1.StorageTypeJetStream, v1beta1.StorageSpec{
 					Type:      v1beta1.StorageTypeJetStream,
-					JetStream: e.jetstreamConfig(),
+					JetStream: adapt.V1BetaConfigOf(e.jetstreamConfig()).(*v1beta1.JetStreamStorageSpec),
 				}).
 				DefaultF(func() v1beta1.StorageSpec {
 					panic("unknown storage backend")
@@ -2146,11 +2148,11 @@ func (e *Environment) StartAgent(id string, token *corev1.BootstrapToken, pins [
 			Storage: lo.Switch[v1beta1.StorageType, v1beta1.StorageSpec](e.storageBackend).
 				Case(v1beta1.StorageTypeEtcd, v1beta1.StorageSpec{
 					Type: v1beta1.StorageTypeEtcd,
-					Etcd: e.etcdConfig(),
+					Etcd: adapt.V1BetaConfigOf(e.etcdConfig()).(*v1beta1.EtcdStorageSpec),
 				}).
 				Case(v1beta1.StorageTypeJetStream, v1beta1.StorageSpec{
 					Type:      v1beta1.StorageTypeJetStream,
-					JetStream: e.jetstreamConfig(),
+					JetStream: adapt.V1BetaConfigOf(e.jetstreamConfig()).(*v1beta1.JetStreamStorageSpec),
 				}).
 				DefaultF(func() v1beta1.StorageSpec {
 					panic("unknown storage backend")
@@ -2405,36 +2407,36 @@ func (e *Environment) EtcdClient() (*clientv3.Client, error) {
 	})
 }
 
-func (e *Environment) EtcdConfig() *v1beta1.EtcdStorageSpec {
+func (e *Environment) EtcdConfig() *configv1.EtcdSpec {
 	if !e.enableEtcd {
 		panic("etcd disabled")
 	}
 	return e.etcdConfig()
 }
 
-func (e *Environment) etcdConfig() *v1beta1.EtcdStorageSpec {
-	return &v1beta1.EtcdStorageSpec{
+func (e *Environment) etcdConfig() *configv1.EtcdSpec {
+	return &configv1.EtcdSpec{
 		Endpoints: []string{fmt.Sprintf("http://localhost:%d", e.ports.Etcd)},
 	}
 }
 
-func (e *Environment) JetStreamConfig() *v1beta1.JetStreamStorageSpec {
+func (e *Environment) JetStreamConfig() *configv1.JetStreamSpec {
 	if !e.enableJetstream {
 		panic("JetStream disabled")
 	}
 	return e.jetstreamConfig()
 }
 
-func (e *Environment) jetstreamConfig() *v1beta1.JetStreamStorageSpec {
+func (e *Environment) jetstreamConfig() *configv1.JetStreamSpec {
 	if e.remoteJetStreamSeedPath != "" {
-		return &v1beta1.JetStreamStorageSpec{
-			Endpoint:     fmt.Sprintf("http://localhost:%d", e.ports.Jetstream),
-			NkeySeedPath: e.remoteJetStreamSeedPath,
+		return &configv1.JetStreamSpec{
+			Endpoint:     lo.ToPtr(fmt.Sprintf("http://localhost:%d", e.ports.Jetstream)),
+			NkeySeedPath: &e.remoteJetStreamSeedPath,
 		}
 	}
-	return &v1beta1.JetStreamStorageSpec{
-		Endpoint:     fmt.Sprintf("http://localhost:%d", e.ports.Jetstream),
-		NkeySeedPath: path.Join(e.tempDir, "jetstream", "seed", "nats-auth.conf"),
+	return &configv1.JetStreamSpec{
+		Endpoint:     lo.ToPtr(fmt.Sprintf("http://localhost:%d", e.ports.Jetstream)),
+		NkeySeedPath: lo.ToPtr(path.Join(e.tempDir, "jetstream", "seed", "nats-auth.conf")),
 	}
 }
 

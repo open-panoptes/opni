@@ -1248,47 +1248,35 @@ func (m *MockLock) EXPECT() *MockLockMockRecorder {
 	return m.recorder
 }
 
-// Key mocks base method.
-func (m *MockLock) Key() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Key")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// Key indicates an expected call of Key.
-func (mr *MockLockMockRecorder) Key() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Key", reflect.TypeOf((*MockLock)(nil).Key))
-}
-
 // Lock mocks base method.
-func (m *MockLock) Lock() error {
+func (m *MockLock) Lock(ctx context.Context) (chan struct{}, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Lock")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Lock indicates an expected call of Lock.
-func (mr *MockLockMockRecorder) Lock() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lock", reflect.TypeOf((*MockLock)(nil).Lock))
-}
-
-// TryLock mocks base method.
-func (m *MockLock) TryLock() (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TryLock")
-	ret0, _ := ret[0].(bool)
+	ret := m.ctrl.Call(m, "Lock", ctx)
+	ret0, _ := ret[0].(chan struct{})
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// TryLock indicates an expected call of TryLock.
-func (mr *MockLockMockRecorder) TryLock() *gomock.Call {
+// Lock indicates an expected call of Lock.
+func (mr *MockLockMockRecorder) Lock(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TryLock", reflect.TypeOf((*MockLock)(nil).TryLock))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lock", reflect.TypeOf((*MockLock)(nil).Lock), ctx)
+}
+
+// TryLock mocks base method.
+func (m *MockLock) TryLock(ctx context.Context) (bool, chan struct{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TryLock", ctx)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(chan struct{})
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// TryLock indicates an expected call of TryLock.
+func (mr *MockLockMockRecorder) TryLock(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TryLock", reflect.TypeOf((*MockLock)(nil).TryLock), ctx)
 }
 
 // Unlock mocks base method.
@@ -1328,23 +1316,23 @@ func (m *MockLockManager) EXPECT() *MockLockManagerMockRecorder {
 	return m.recorder
 }
 
-// Locker mocks base method.
-func (m *MockLockManager) Locker(key string, opts ...lock.LockOption) storage.Lock {
+// NewLock mocks base method.
+func (m *MockLockManager) NewLock(key string, opts ...lock.LockOption) storage.Lock {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{key}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "Locker", varargs...)
+	ret := m.ctrl.Call(m, "NewLock", varargs...)
 	ret0, _ := ret[0].(storage.Lock)
 	return ret0
 }
 
-// Locker indicates an expected call of Locker.
-func (mr *MockLockManagerMockRecorder) Locker(key interface{}, opts ...interface{}) *gomock.Call {
+// NewLock indicates an expected call of NewLock.
+func (mr *MockLockManagerMockRecorder) NewLock(key interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{key}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Locker", reflect.TypeOf((*MockLockManager)(nil).Locker), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewLock", reflect.TypeOf((*MockLockManager)(nil).NewLock), varargs...)
 }
 
 // MockHttpTtlCache is a mock of HttpTtlCache interface.
