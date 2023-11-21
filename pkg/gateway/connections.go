@@ -27,6 +27,8 @@ import (
 type TrackedConnectionListener interface {
 	// Called when a new agent connection to any gateway instance is tracked.
 	// The provided context will be canceled when the tracked connection is deleted.
+	// If a tracked connection is updated, this method will be called again with
+	// the same context, agentId, and leaseId, but updated instanceInfo.
 	// Implementations of this method MUST NOT block.
 	HandleTrackedConnection(ctx context.Context, agentId string, leaseId string, instanceInfo *corev1.InstanceInfo)
 }
@@ -137,6 +139,8 @@ func (ct *ConnectionTracker) AddTrackedConnectionListener(listener TrackedConnec
 }
 
 func (ct *ConnectionTracker) LocalInstanceInfo() *corev1.InstanceInfo {
+	ct.localInstanceInfoMu.Lock()
+	defer ct.localInstanceInfoMu.Unlock()
 	return util.ProtoClone(ct.localInstanceInfo)
 }
 
