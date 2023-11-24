@@ -11,6 +11,7 @@ import (
 	capabilityv1 "github.com/rancher/opni/pkg/apis/capability/v1"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
+	proxyv1 "github.com/rancher/opni/pkg/apis/proxy/v1"
 	"github.com/rancher/opni/pkg/capabilities/wellknown"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/management"
@@ -27,6 +28,8 @@ import (
 
 type LoggingBackend struct {
 	capabilityv1.UnsafeBackendServer
+	capabilityv1.UnsafeRBACManagerServer
+	proxyv1.UnsafeRegisterProxyServer
 	node.UnsafeNodeLoggingCapabilityServer
 	LoggingBackendConfig
 	util.Initializer
@@ -47,7 +50,11 @@ type LoggingBackendConfig struct {
 	RBACDriver          driver.RBACDriver                         `validate:"required"`
 }
 
-var _ node.NodeLoggingCapabilityServer = (*LoggingBackend)(nil)
+var (
+	_ node.NodeLoggingCapabilityServer = (*LoggingBackend)(nil)
+	_ proxyv1.RegisterProxyServer      = (*LoggingBackend)(nil)
+	_ capabilityv1.RBACManagerServer   = (*LoggingBackend)(nil)
+)
 
 // TODO: set up watches on underlying k8s objects to dynamically request a sync
 func (b *LoggingBackend) Initialize(conf LoggingBackendConfig) {

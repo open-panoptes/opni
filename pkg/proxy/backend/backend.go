@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/url"
 
@@ -9,41 +10,44 @@ import (
 
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	proxyv1 "github.com/rancher/opni/pkg/apis/proxy/v1"
-	"google.golang.org/protobuf/types/known/emptypb"
+	"github.com/rancher/opni/pkg/logger"
 )
 
 type Backend interface {
-	RewriteProxyRequest(string, *corev1.ReferenceList) (func(*httputil.ProxyRequest), error)
+	RewriteProxyRequest(context.Context, string, *url.URL, *corev1.ReferenceList, string) (func(*httputil.ProxyRequest), error)
 }
 
 type implBackend struct {
-	backendURL   string
 	pluginClient proxyv1.RegisterProxyClient
 	logger       *slog.Logger
 }
 
 func NewBackend(logger *slog.Logger, client proxyv1.RegisterProxyClient) (Backend, error) {
-	info, err := client.Endpoint(context.TODO(), &emptypb.Empty{})
-	if err != nil {
-		return nil, err
-	}
 	return &implBackend{
-		backendURL:   info.GetBackend(),
 		pluginClient: client,
 		logger:       logger,
 	}, nil
 }
 
-func (b *implBackend) RewriteProxyRequest(path string, roleList *corev1.ReferenceList) (func(*httputil.ProxyRequest), error) {
-	proxyURL, err := url.Parse(b.backendURL)
+func (b *implBackend) RewriteProxyRequest(
+	ctx context.Context,
+	requestPath string,
+	target *url.URL,
+	roleList *corev1.ReferenceList,
+	user string,
+) (func(*httputil.ProxyRequest), error) {
+	targetPath, err := url.Parse(requestPath)
 	if err != nil {
-		b.logger.Error("failed to parse backend URL")
+		b.logger.With(logger.Err(err)).Error(fmt.Sprintf("failed to parse path: %s", requestPath))
 		return nil, err
 	}
 
 	var extraHeaders *proxyv1.HeaderResponse
 	if roleList != nil {
-		extraHeaders, err = b.pluginClient.AuthHeaders(context.TODO(), roleList)
+		extraHeaders, err = b.pluginClient.AuthHeaders(context.TODO(), &proxyv1.HeaderRequest{
+			User:     user,
+			Bindings: roleList,
+		})
 		if err != nil {
 			b.logger.Error("failed to fetch additional headers")
 			return nil, err
@@ -51,8 +55,10 @@ func (b *implBackend) RewriteProxyRequest(path string, roleList *corev1.Referenc
 	}
 
 	return func(r *httputil.ProxyRequest) {
-		url.JoinPath(path)
-		r.SetURL(proxyURL)
+		r.SetURL(target)
+		r.Out.URL.Path = targetPath.Path
+		r.Out.URL.RawPath = targetPath.RawPath
+		r.Out.Host = r.In.Host
 
 		headers := r.In.Header
 		for _, header := range extraHeaders.GetHeaders() {

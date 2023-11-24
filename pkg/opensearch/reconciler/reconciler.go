@@ -99,11 +99,11 @@ func NewReconciler(
 
 	if options.dashboardsClient == nil {
 		dashboardscfg := dashboards.Config{
-			URL:      fmt.Sprintf("https://%s:5601", cfg.DashboardsServiceName),
+			Host:     fmt.Sprintf("%s:5601", cfg.DashboardsServiceName),
 			Username: options.dashboardsUsername,
 			Password: options.dashboardsPassword,
 		}
-		dashboardsClient, err := dashboards.NewClient(dashboardscfg)
+		dashboardsClient, err := dashboards.NewClient(dashboardscfg, dashboards.WithInsecure())
 		if err != nil {
 			return nil, err
 		}
