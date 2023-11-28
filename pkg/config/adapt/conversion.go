@@ -2,6 +2,7 @@ package adapt
 
 import (
 	"fmt"
+	"strings"
 
 	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/config/v1beta1"
@@ -56,16 +57,16 @@ func v1ConfigOfUnchecked(in any) any {
 		return &configv1.GatewayConfigSpec{
 			Server: &configv1.ServerSpec{
 				HttpListenAddress: &in.HTTPListenAddress,
-				GrpcListenAddress: &in.GRPCListenAddress,
+				GrpcListenAddress: lo.ToPtr(strings.TrimPrefix(in.GRPCAdvertiseAddress, "tcp://")),
 				AdvertiseAddress:  &in.GRPCAdvertiseAddress,
 			},
 			Management: &configv1.ManagementServerSpec{
 				HttpListenAddress: lo.ToPtr(in.Management.GetHTTPListenAddress()),
-				GrpcListenAddress: lo.ToPtr(in.Management.GetGRPCListenAddress()),
+				GrpcListenAddress: lo.ToPtr(strings.TrimPrefix(in.Management.GetGRPCListenAddress(), "tcp://")),
 				AdvertiseAddress:  &in.Management.GRPCAdvertiseAddress,
 			},
 			Relay: &configv1.RelayServerSpec{
-				GrpcListenAddress: &in.Management.RelayListenAddress,
+				GrpcListenAddress: lo.ToPtr(strings.TrimPrefix(in.Management.RelayListenAddress, "tcp://")),
 				AdvertiseAddress:  &in.Management.RelayAdvertiseAddress,
 			},
 			Health: &configv1.HealthServerSpec{
