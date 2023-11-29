@@ -1,7 +1,6 @@
 # Multi Cluster Observability with AIOps 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![codecov](https://codecov.io/gh/rancher/opni/branch/main/graph/badge.svg?token=9TYXGQ54FM)](https://codecov.io/gh/rancher/opni)
-[![Go Report Card](https://goreportcard.com/badge/github.com/rancher/opni-monitoring)](https://goreportcard.com/report/github.com/rancher/opni-monitoring)
+
 
 [![](https://get.pulumi.com/new/button.svg)](https://app.pulumi.com/new?template=https://github.com/rancher/opni)
 
