@@ -11,6 +11,7 @@ import (
 	"github.com/rancher/opni/pkg/storage/jetstream"
 	"github.com/rancher/opni/pkg/test"
 	_ "github.com/rancher/opni/pkg/test/setup"
+	"github.com/rancher/opni/pkg/test/testlog"
 	"github.com/rancher/opni/pkg/test/testruntime"
 	"github.com/rancher/opni/pkg/util/future"
 )
@@ -34,7 +35,7 @@ var _ = BeforeSuite(func() {
 
 		lmsE := make([]*etcd.EtcdLockManager, 7)
 		for i := 0; i < 7; i++ {
-			cli, err := etcd.NewEtcdClient(context.Background(), env.EtcdConfig())
+			cli, err := etcd.NewEtcdClient(context.Background(), env.EtcdConfig(), testlog.Log)
 			Expect(err).To(Succeed())
 
 			l := etcd.NewEtcdLockManager(cli, "test", logger.NewNop())

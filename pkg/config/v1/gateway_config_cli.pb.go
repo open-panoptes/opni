@@ -100,6 +100,7 @@ func (in *ManagementServerSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs.SortFlags = true
 	fs.Var(flagutil.StringPtrValue(flagutil.Ptr("0.0.0.0:11080"), &in.HttpListenAddress), strings.Join(append(prefix, "http-listen-address"), "."), "Address and port to serve the management http server on.")
 	fs.Var(flagutil.StringPtrValue(flagutil.Ptr("0.0.0.0:11090"), &in.GrpcListenAddress), strings.Join(append(prefix, "grpc-listen-address"), "."), "Address and port to serve the management grpc server on.")
+	fs.Var(flagutil.StringPtrValue(nil, &in.AdvertiseAddress), strings.Join(append(prefix, "advertise-address"), "."), "The advertise address for the management server.")
 	return fs
 }
 
@@ -107,6 +108,7 @@ func (in *RelayServerSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("RelayServerSpec", pflag.ExitOnError)
 	fs.SortFlags = true
 	fs.Var(flagutil.StringPtrValue(flagutil.Ptr("0.0.0.0:11190"), &in.GrpcListenAddress), strings.Join(append(prefix, "grpc-listen-address"), "."), "Address and port to serve the relay grpc server on.")
+	fs.Var(flagutil.StringPtrValue(nil, &in.AdvertiseAddress), strings.Join(append(prefix, "advertise-address"), "."), "The advertise address for the relay server.")
 	return fs
 }
 
@@ -121,6 +123,7 @@ func (in *DashboardServerSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("DashboardServerSpec", pflag.ExitOnError)
 	fs.SortFlags = true
 	fs.Var(flagutil.StringPtrValue(flagutil.Ptr("0.0.0.0:12080"), &in.HttpListenAddress), strings.Join(append(prefix, "http-listen-address"), "."), "Address and port to serve the web dashboard on.")
+	fs.Var(flagutil.StringPtrValue(nil, &in.AdvertiseAddress), strings.Join(append(prefix, "advertise-address"), "."), "The advertise address for the dashboard server.")
 	fs.Var(flagutil.StringPtrValue(nil, &in.Hostname), strings.Join(append(prefix, "hostname"), "."), "The hostname at which the dashboard is expected to be reachable.")
 	fs.StringSliceVar(&in.TrustedProxies, strings.Join(append(prefix, "trusted-proxies"), "."), nil, "List of trusted proxies for the dashboard's http server.")
 	return fs
@@ -258,7 +261,6 @@ func (in *UpgradesSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 func (in *AgentUpgradesSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("AgentUpgradesSpec", pflag.ExitOnError)
 	fs.SortFlags = true
-	fs.Var(flagutil.EnumPtrValue(flagutil.Ptr(AgentUpgradesSpec_Kubernetes), &in.Driver), strings.Join(append(prefix, "driver"), "."), "Agent upgrade driver to use.")
 	if in.Kubernetes == nil {
 		in.Kubernetes = &KubernetesAgentUpgradeSpec{}
 	}
@@ -276,7 +278,6 @@ func (in *KubernetesAgentUpgradeSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 func (in *PluginUpgradesSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("PluginUpgradesSpec", pflag.ExitOnError)
 	fs.SortFlags = true
-	fs.Var(flagutil.EnumPtrValue(flagutil.Ptr(PluginUpgradesSpec_Binary), &in.Driver), strings.Join(append(prefix, "driver"), "."), "Plugin upgrade driver to use.")
 	if in.Binary == nil {
 		in.Binary = &BinaryPluginUpgradeSpec{}
 	}

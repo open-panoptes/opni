@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"path"
 	"strings"
 	sync "sync"
@@ -13,15 +14,19 @@ import (
 	"github.com/google/uuid"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	"github.com/rancher/opni/pkg/auth/cluster"
+	"github.com/rancher/opni/pkg/config/reactive"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/util"
 	"github.com/rancher/opni/pkg/util/streams"
+	"github.com/rancher/opni/pkg/versions"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type TrackedConnectionListener interface {
@@ -60,11 +65,12 @@ type activeTrackedConnection struct {
 // All gateway instances track the same state and update in real time at the
 // speed of the underlying storage backend.
 type ConnectionTracker struct {
-	localInstanceInfo *corev1.InstanceInfo
-	rootContext       context.Context
-	connectionsKv     storage.KeyValueStore
-	connectionsLm     storage.LockManager
-	logger            *slog.Logger
+	rootContext context.Context
+	mgr         *configv1.GatewayConfigManager
+	logger      *slog.Logger
+
+	connectionsKv storage.KeyValueStore
+	connectionsLm storage.LockManager
 
 	listenersMu   sync.Mutex
 	connListeners []TrackedConnectionListener
@@ -73,18 +79,29 @@ type ConnectionTracker struct {
 	activeConnections map[string]*activeTrackedConnection
 
 	whoami string
+
+	localInstanceInfoMu sync.Mutex
+	localInstanceInfo   *corev1.InstanceInfo
 }
 
 func NewConnectionTracker(
 	rootContext context.Context,
-	localInstanceInfo *corev1.InstanceInfo,
+	mgr *configv1.GatewayConfigManager,
 	connectionsKv storage.KeyValueStore,
 	connectionsLm storage.LockManager,
 	lg *slog.Logger,
 ) *ConnectionTracker {
+	hostname, _ := os.Hostname()
 	ct := &ConnectionTracker{
-		localInstanceInfo: localInstanceInfo,
+		localInstanceInfo: &corev1.InstanceInfo{
+			Annotations: map[string]string{
+				"hostname": hostname,
+				"pid":      fmt.Sprint(os.Getpid()),
+				"version":  versions.Version,
+			},
+		},
 		rootContext:       rootContext,
+		mgr:               mgr,
 		connectionsKv:     connectionsKv,
 		connectionsLm:     connectionsLm,
 		logger:            lg,
@@ -150,6 +167,22 @@ func (ct *ConnectionTracker) Run(ctx context.Context) error {
 	// var wg sync.WaitGroup
 	eg, ctx := errgroup.WithContext(ctx)
 
+	reactive.Bind(ctx,
+		func(v []protoreflect.Value) {
+			ct.localInstanceInfoMu.Lock()
+			defer ct.localInstanceInfoMu.Unlock()
+			ct.localInstanceInfo.RelayAddress = v[0].String()
+			ct.localInstanceInfo.ManagementAddress = v[1].String()
+			ct.localInstanceInfo.GatewayAddress = v[2].String()
+			ct.localInstanceInfo.WebAddress = v[3].String()
+			go ct.updateInstanceInfo(util.Must(proto.Marshal(ct.localInstanceInfo)))
+		},
+		ct.mgr.Reactive(configv1.ProtoPath().Relay().AdvertiseAddress()),
+		ct.mgr.Reactive(configv1.ProtoPath().Management().AdvertiseAddress()),
+		ct.mgr.Reactive(configv1.ProtoPath().Server().AdvertiseAddress()),
+		ct.mgr.Reactive(configv1.ProtoPath().Dashboard().AdvertiseAddress()),
+	)
+
 	connectionsWatcher, err := ct.connectionsKv.Watch(ctx, "", storage.WithPrefix(), storage.WithRevision(0))
 	if err != nil {
 		return err
@@ -176,6 +209,24 @@ func (ct *ConnectionTracker) Run(ctx context.Context) error {
 	return eg.Wait()
 }
 
+func (ct *ConnectionTracker) updateInstanceInfo(instanceInfoData []byte) {
+	ct.mu.RLock()
+	defer ct.mu.RUnlock()
+	numConnections := len(ct.activeConnections)
+	ct.logger.With(
+		"activeConnections", numConnections,
+	).Debug("updating instance info")
+
+	for agentId, conn := range ct.activeConnections {
+		if err := ct.connectionsKv.Put(conn.trackingContext, ct.connKey(agentId), instanceInfoData); err != nil {
+			ct.logger.With(
+				logger.Err(err),
+				"agentId", agentId,
+			).Warn("failed to update instance info")
+		}
+	}
+}
+
 type instanceInfoKeyType struct{}
 
 var instanceInfoKey = instanceInfoKeyType{}
@@ -187,12 +238,7 @@ func (ct *ConnectionTracker) connKey(agentId string) string {
 func (ct *ConnectionTracker) StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		agentId := cluster.StreamAuthorizedID(ss.Context())
-		instanceInfo := &corev1.InstanceInfo{
-			RelayAddress:      ct.localInstanceInfo.GetRelayAddress(),
-			ManagementAddress: ct.localInstanceInfo.GetManagementAddress(),
-			GatewayAddress:    ct.localInstanceInfo.GetGatewayAddress(),
-			WebAddress:        ct.localInstanceInfo.GetWebAddress(),
-		}
+		instanceInfo := ct.LocalInstanceInfo()
 		key := agentId
 		lock := ct.connectionsLm.NewLock(
 			key,
@@ -248,6 +294,7 @@ func (ct *ConnectionTracker) handleConnUpdate(
 	event storage.WatchEvent[storage.KeyRevision[[]byte]],
 	agentId string,
 	conn *activeTrackedConnection,
+	holder string,
 	info *corev1.InstanceInfo,
 ) {
 	key := event.Current.Key()
@@ -257,6 +304,19 @@ func (ct *ConnectionTracker) handleConnUpdate(
 		// a different instance is only attempting to acquire the lock,
 		// ignore the event
 		ct.logger.With("agent", agentId, "instance", info.GetRelayAddress()).Debug("tracked connection is still being acquired...")
+		return
+	}
+	if conn.holder == holder {
+		// update revision and instance info, and notify listeners
+		if holder != ct.connKey(agentId) {
+			// don't log this for local instances, it would be too noisy
+			ct.logger.With("agentId", agentId).Debug("tracked connection updated")
+		}
+		conn.revision = event.Current.Revision()
+		conn.instanceInfo = info
+		for _, listener := range ct.connListeners {
+			listener.HandleTrackedConnection(conn.trackingContext, agentId, holder, info)
+		}
 		return
 	}
 	// a different instance has acquired the lock, invalidate
@@ -317,11 +377,6 @@ func (ct *ConnectionTracker) handleConnEvent(event storage.WatchEvent[storage.Ke
 			return &info, nil
 		})
 		if conn, ok := ct.activeConnections[agentId]; ok {
-			if conn.holder == holder {
-				// key was updated, not a new connection
-				lg.Debug("tracked connection updated")
-				return
-			}
 			info, err := instanceInfo()
 			if err != nil {
 				lg.With(logger.Err(err)).Error("failed to unmarshal instance info")
@@ -331,6 +386,7 @@ func (ct *ConnectionTracker) handleConnEvent(event storage.WatchEvent[storage.Ke
 				event,
 				agentId,
 				conn,
+				holder,
 				info,
 			)
 		}

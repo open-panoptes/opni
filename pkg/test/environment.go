@@ -1702,11 +1702,11 @@ func (e *Environment) NewGatewayConfig() *v1beta1.GatewayConfig {
 			Storage: lo.Switch[v1beta1.StorageType, v1beta1.StorageSpec](e.storageBackend).
 				Case(v1beta1.StorageTypeEtcd, v1beta1.StorageSpec{
 					Type: v1beta1.StorageTypeEtcd,
-					Etcd: adapt.V1BetaConfigOf(e.etcdConfig()).(*v1beta1.EtcdStorageSpec),
+					Etcd: adapt.V1BetaConfigOf[*v1beta1.EtcdStorageSpec](e.etcdConfig()),
 				}).
 				Case(v1beta1.StorageTypeJetStream, v1beta1.StorageSpec{
 					Type:      v1beta1.StorageTypeJetStream,
-					JetStream: adapt.V1BetaConfigOf(e.jetstreamConfig()).(*v1beta1.JetStreamStorageSpec),
+					JetStream: adapt.V1BetaConfigOf[*v1beta1.JetStreamStorageSpec](e.jetstreamConfig()),
 				}).
 				DefaultF(func() v1beta1.StorageSpec {
 					panic("unknown storage backend")
@@ -1917,7 +1917,7 @@ func (e *Environment) startGateway() {
 	e.gatewayConfig = e.NewGatewayConfig()
 	e.pluginLoader = plugins.NewPluginLoader()
 
-	cfgv1 := adapt.V1ConfigOf(&e.gatewayConfig.Spec).(*configv1.GatewayConfigSpec)
+	cfgv1 := adapt.V1ConfigOf[*configv1.GatewayConfigSpec](&e.gatewayConfig.Spec)
 
 	storageBackend, err := machinery.ConfigureStorageBackendV1(e.ctx, cfgv1.GetStorage())
 	if err != nil {
@@ -2154,11 +2154,11 @@ func (e *Environment) StartAgent(id string, token *corev1.BootstrapToken, pins [
 			Storage: lo.Switch[v1beta1.StorageType, v1beta1.StorageSpec](e.storageBackend).
 				Case(v1beta1.StorageTypeEtcd, v1beta1.StorageSpec{
 					Type: v1beta1.StorageTypeEtcd,
-					Etcd: adapt.V1BetaConfigOf(e.etcdConfig()).(*v1beta1.EtcdStorageSpec),
+					Etcd: adapt.V1BetaConfigOf[*v1beta1.EtcdStorageSpec](e.etcdConfig()),
 				}).
 				Case(v1beta1.StorageTypeJetStream, v1beta1.StorageSpec{
 					Type:      v1beta1.StorageTypeJetStream,
-					JetStream: adapt.V1BetaConfigOf(e.jetstreamConfig()).(*v1beta1.JetStreamStorageSpec),
+					JetStream: adapt.V1BetaConfigOf[*v1beta1.JetStreamStorageSpec](e.jetstreamConfig()),
 				}).
 				DefaultF(func() v1beta1.StorageSpec {
 					panic("unknown storage backend")

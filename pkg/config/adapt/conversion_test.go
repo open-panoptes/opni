@@ -154,13 +154,11 @@ var _ = Describe("Conversion", func() {
 			},
 			Upgrades: &configv1.UpgradesSpec{
 				Agents: &configv1.AgentUpgradesSpec{
-					Driver: configv1.AgentUpgradesSpec_Kubernetes.Enum(),
 					Kubernetes: &configv1.KubernetesAgentUpgradeSpec{
 						ImageResolver: configv1.KubernetesAgentUpgradeSpec_Kubernetes.Enum(),
 					},
 				},
 				Plugins: &configv1.PluginUpgradesSpec{
-					Driver: configv1.PluginUpgradesSpec_Binary.Enum(),
 					Binary: &configv1.BinaryPluginUpgradeSpec{
 						PatchEngine: configv1.PatchEngine_Bsdiff.Enum(),
 					},

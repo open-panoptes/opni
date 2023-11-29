@@ -16,6 +16,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rancher/opni/pkg/config/adapt"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/config/v1beta1"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/storage"
@@ -63,7 +65,7 @@ func BuildClientCommand() *cobra.Command {
 			return err
 		}
 		client := testgrpc.NewTestLockerClient(cc)
-		cmd.SetContext(testgrpc.ContextWithTestLockerClient(cmd.Context(), client))
+		cmd.SetContext(testgrpc.TestLockerContextInjector.ContextWithClient(cmd.Context(), client))
 		return nil
 	}
 
@@ -333,7 +335,7 @@ func setup(
 	}
 
 	// intentional : use background context so that clients do not trivially close their connections as soon cmd.Context() is signaled as done
-	lm, err := getLockManager(context.Background(), config)
+	lm, err := getLockManager(context.Background(), config, lg)
 	if err != nil {
 		configB, _ := json.Marshal(config)
 		lg.With("config", string(configB)).Error(err.Error())
@@ -342,9 +344,9 @@ func setup(
 	return lm, nil
 }
 
-func getLockManager(ctx context.Context, config *LockBackendConfig) (storage.LockManager, error) {
+func getLockManager(ctx context.Context, config *LockBackendConfig, lg *slog.Logger) (storage.LockManager, error) {
 	if config.Etcd != nil {
-		client, err := etcd.NewEtcdClient(ctx, config.Etcd)
+		client, err := etcd.NewEtcdClient(ctx, adapt.V1ConfigOf[*configv1.EtcdSpec](config.Etcd), lg)
 		if err != nil {
 			return nil, err
 		}
@@ -352,7 +354,7 @@ func getLockManager(ctx context.Context, config *LockBackendConfig) (storage.Loc
 		return lm, nil
 	}
 	if config.Jetstream != nil {
-		js, err := jetstream.AcquireJetstreamConn(context.Background(), config.Jetstream, logger.New().WithGroup("js"))
+		js, err := jetstream.AcquireJetstreamConn(context.Background(), adapt.V1ConfigOf[*configv1.JetStreamSpec](config.Jetstream), logger.New().WithGroup("js"))
 		if err != nil {
 			return nil, err
 		}

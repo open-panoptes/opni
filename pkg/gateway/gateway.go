@@ -2,12 +2,10 @@ package gateway
 
 import (
 	"context"
-	"crypto"
 	"crypto/tls"
 	"errors"
 	"fmt"
 	"slices"
-	"sync/atomic"
 
 	"log/slog"
 
@@ -339,13 +337,7 @@ func NewGateway(
 
 	certs := reactive.Message[*configv1.CertsSpec](mgr.Reactive(protopath.Path(configv1.ProtoPath().Certs())))
 	// set up bootstrap server
-	pkey := &atomic.Pointer[crypto.Signer]{}
-	certs.WatchFunc(ctx, func(value *configv1.CertsSpec) {
-		tlsConfig, _ := value.AsTlsConfig(tls.NoClientCert)
-		signer := tlsConfig.Certificates[0].PrivateKey.(crypto.Signer)
-		pkey.Store(&signer)
-	})
-	bootstrapServerV2 := bootstrap.NewServerV2(bootstrap.NewStorage(storageBackend), pkey)
+	bootstrapServerV2 := bootstrap.NewServerV2(ctx, bootstrap.NewStorage(storageBackend), certs, lg)
 	bootstrapv2.RegisterBootstrapServer(grpcServer, bootstrapServerV2)
 
 	g := &Gateway{

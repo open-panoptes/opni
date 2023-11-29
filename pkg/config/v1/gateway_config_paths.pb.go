@@ -239,14 +239,8 @@ func (p filesystemCacheSpecPathBuilder) Dir() protopath.Path {
 func (p keyringSpecPathBuilder) RuntimeKeyDirs() protopath.Path {
 	return protopath.Path(append(p, protopath.FieldAccess(((*KeyringSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))
 }
-func (p agentUpgradesSpecPathBuilder) Driver() protopath.Path {
-	return protopath.Path(append(p, protopath.FieldAccess(((*AgentUpgradesSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))
-}
 func (p kubernetesAgentUpgradeSpecPathBuilder) ImageResolver() protopath.Path {
 	return protopath.Path(append(p, protopath.FieldAccess(((*KubernetesAgentUpgradeSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))
-}
-func (p pluginUpgradesSpecPathBuilder) Driver() protopath.Path {
-	return protopath.Path(append(p, protopath.FieldAccess(((*PluginUpgradesSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))
 }
 func (p binaryPluginUpgradeSpecPathBuilder) PatchEngine() protopath.Path {
 	return protopath.Path(append(p, protopath.FieldAccess(((*BinaryPluginUpgradeSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))

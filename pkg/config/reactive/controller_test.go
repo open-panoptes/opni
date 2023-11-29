@@ -3,12 +3,14 @@ package reactive_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/samber/lo"
+	"google.golang.org/protobuf/reflect/protopath"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
@@ -24,7 +26,7 @@ import (
 	"github.com/rancher/opni/pkg/util/protorand"
 )
 
-var _ = Describe("Reactive Controller", Label("unit"), func() {
+var _ = FDescribe("Reactive Controller", Label("unit"), Ordered, func() {
 	var ctrl *reactive.Controller[*ext.SampleConfiguration]
 	defaultStore := inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
 	activeStore := inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
@@ -100,8 +102,11 @@ var _ = Describe("Reactive Controller", Label("unit"), func() {
 
 			Expect(errors.Join(recvFailures...)).To(BeNil())
 
-			for _, c := range ws {
-				Expect(c).To(HaveLen(0), "expected all watchers to be read")
+			for i, c := range ws {
+				if len(c) > 0 {
+					Expect(c).To(HaveLen(0),
+						fmt.Sprintf("expected all watchers to be read; channel for key %s has %d unread elements", allPaths[i].String(), len(c)))
+				}
 			}
 		}
 
@@ -225,4 +230,31 @@ var _ = Describe("Reactive Controller", Label("unit"), func() {
 		})
 	})
 
+	When("a value is changed", func() {
+		When("it only has watchers on parent paths", func() {
+			It("should update the parent reactive message", func(ctx SpecContext) {
+				msg := &ext.SampleConfiguration{}
+				rm := ctrl.Reactive(protopath.Path(msg.ProtoPath().MessageField()))
+				w := rm.Watch(ctx)
+
+				spec := &ext.SampleConfiguration{
+					MessageField: &ext.SampleMessage{
+						Field1: &ext.Sample1FieldMsg{
+							Field1: 1234,
+						},
+					},
+				}
+				err := activeStore.Put(ctx, util.ProtoClone(spec))
+				Expect(err).NotTo(HaveOccurred())
+
+				var v protoreflect.Value
+				Eventually(w).Should(Receive(&v))
+				Expect(v).To(testutil.ProtoValueEqual(protoreflect.ValueOfMessage((&ext.SampleMessage{
+					Field1: &ext.Sample1FieldMsg{
+						Field1: 1234,
+					},
+				}).ProtoReflect())))
+			})
+		})
+	})
 })

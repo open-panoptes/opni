@@ -36,7 +36,9 @@ var _ = Describe("Kubernetes sync server", Label("unit"), func() {
 			reactivetest.WithExistingActiveConfig(&configv1.GatewayConfigSpec{
 				Upgrades: &configv1.UpgradesSpec{
 					Agents: &configv1.AgentUpgradesSpec{
-						Driver: configv1.AgentUpgradesSpec_Kubernetes.Enum(),
+						Kubernetes: &configv1.KubernetesAgentUpgradeSpec{
+							ImageResolver: configv1.KubernetesAgentUpgradeSpec_Kubernetes.Enum(),
+						},
 					},
 				},
 			}),

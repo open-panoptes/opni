@@ -182,17 +182,8 @@ func New(ctx context.Context, conf *v1beta1.AgentConfig, opts ...AgentOption) (*
 		setupPluginRoutes(lg, routerMutex, router, cfg, md, []string{"/healthz", "/metrics"})
 	}))
 
-	var driver *configv1.PluginUpgradesSpec_Driver
-	switch conf.Spec.PluginUpgrade.Type {
-	case v1beta1.PluginUpgradeBinary:
-		driver = configv1.PluginUpgradesSpec_Binary.Enum()
-	case v1beta1.PluginUpgradeNoop:
-		driver = configv1.PluginUpgradesSpec_Noop.Enum()
-	}
 	pluginUpgrader, err := machinery.ConfigurePluginUpgrader(
-		&configv1.PluginUpgradesSpec{
-			Driver: driver,
-		},
+		conf.Spec.PluginUpgrade,
 		conf.Spec.PluginDir,
 		lg.WithGroup("plugin-upgrader"),
 	)
@@ -200,17 +191,8 @@ func New(ctx context.Context, conf *v1beta1.AgentConfig, opts ...AgentOption) (*
 		return nil, fmt.Errorf("failed to configure plugin syncer: %w", err)
 	}
 
-	var agentUpgradeDriver *configv1.AgentUpgradesSpec_Driver
-	switch conf.Spec.Upgrade.Type {
-	case v1beta1.AgentUpgradeKubernetes:
-		agentUpgradeDriver = configv1.AgentUpgradesSpec_Kubernetes.Enum()
-	case v1beta1.AgentUpgradeNoop:
-		agentUpgradeDriver = configv1.AgentUpgradesSpec_Noop.Enum()
-	}
 	upgrader, err := machinery.ConfigureAgentUpgrader(
-		&configv1.AgentUpgradesSpec{
-			Driver: agentUpgradeDriver,
-		},
+		&conf.Spec.Upgrade,
 		lg.WithGroup("agent-upgrader"),
 	)
 	if err != nil {

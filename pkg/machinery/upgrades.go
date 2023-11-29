@@ -5,37 +5,38 @@ import (
 	"log/slog"
 
 	configv1 "github.com/rancher/opni/pkg/config/v1"
+	"github.com/rancher/opni/pkg/config/v1beta1"
 	"github.com/rancher/opni/pkg/oci"
 	"github.com/rancher/opni/pkg/update"
 )
 
-func ConfigurePluginUpgrader(cfg *configv1.PluginUpgradesSpec, pluginDir string, lg *slog.Logger) (update.SyncHandler, error) {
-	switch cfg.GetDriver() {
-	case configv1.PluginUpgradesSpec_Binary:
-		builder := update.GetPluginSyncHandlerBuilder(cfg.GetDriver().String())
+func ConfigurePluginUpgrader(cfg v1beta1.PluginUpgradeSpec, pluginDir string, lg *slog.Logger) (update.SyncHandler, error) {
+	switch cfg.Type {
+	case v1beta1.PluginUpgradeBinary:
+		builder := update.GetPluginSyncHandlerBuilder(cfg.Type)
 		if builder == nil {
 			return nil, errors.New("plugin provider not found")
 		}
 		return builder(pluginDir, lg)
 	default:
-		builder := update.GetPluginSyncHandlerBuilder(configv1.PluginUpgradesSpec_Noop.String())
+		builder := update.GetPluginSyncHandlerBuilder("noop")
 		return builder()
 	}
 }
 
-func ConfigureAgentUpgrader(cfg *configv1.AgentUpgradesSpec, lg *slog.Logger) (update.SyncHandler, error) {
-	switch cfg.GetDriver() {
-	case configv1.AgentUpgradesSpec_Kubernetes:
-		builder := update.GetAgentSyncHandlerBuilder(cfg.GetDriver().String())
+func ConfigureAgentUpgrader(cfg *v1beta1.AgentUpgradeSpec, lg *slog.Logger) (update.SyncHandler, error) {
+	switch {
+	case cfg.Type == v1beta1.AgentUpgradeKubernetes:
+		builder := update.GetAgentSyncHandlerBuilder(cfg.Type)
 		if cfg.Kubernetes != nil {
-			return builder(lg, cfg.GetKubernetes().GetNamespace(), cfg.Kubernetes.GetRepoOverride())
+			return builder(lg, cfg.Kubernetes.Namespace, cfg.Kubernetes.RepoOverride)
 		}
 		return builder(lg)
-	case configv1.AgentUpgradesSpec_Noop:
-		builder := update.GetAgentSyncHandlerBuilder(cfg.GetDriver().String())
+	case cfg.Type == v1beta1.AgentUpgradeNoop:
+		builder := update.GetAgentSyncHandlerBuilder(cfg.Type)
 		return builder()
 	default:
-		builder := update.GetAgentSyncHandlerBuilder(configv1.AgentUpgradesSpec_Kubernetes.String())
+		builder := update.GetAgentSyncHandlerBuilder("noop")
 		return builder()
 	}
 }

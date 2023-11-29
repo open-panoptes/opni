@@ -64,7 +64,7 @@ func WithPrefix(prefix string) EtcdStoreOption {
 	}
 }
 
-func NewEtcdClient(ctx context.Context, conf *configv1.EtcdSpec) (*clientv3.Client, error) {
+func NewEtcdClient(ctx context.Context, conf *configv1.EtcdSpec, lg *slog.Logger) (*clientv3.Client, error) {
 	var tlsConfig *tls.Config
 	if conf.Certs != nil {
 		var err error
@@ -94,7 +94,7 @@ func NewEtcdStore(ctx context.Context, conf *configv1.EtcdSpec, opts ...EtcdStor
 	options := EtcdStoreOptions{}
 	options.apply(opts...)
 	lg := logger.New(logger.WithLogLevel(slog.LevelWarn)).WithGroup("etcd")
-	cli, err := NewEtcdClient(ctx, conf)
+	cli, err := NewEtcdClient(ctx, conf, lg)
 	if err != nil {
 		return nil, err
 	}

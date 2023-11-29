@@ -248,6 +248,9 @@ func BuildGatewayCmd() *cobra.Command {
 	var ignoreValidationErrors bool
 	storageConfig := &configv1.StorageSpec{}
 	config := &configv1.GatewayConfigSpec{}
+	configDefaults := &configv1.GatewayConfigSpec{}
+	flagutil.LoadDefaults(configDefaults)
+
 	cmd := &cobra.Command{
 		Use:   "gateway",
 		Short: "Run the Opni Gateway",
@@ -370,11 +373,11 @@ persist their default configurations in the KV store.
 			} else {
 				lg.Info("loading config")
 				var err error
-				storageBackend, err = machinery.ConfigureStorageBackendV1(ctx, config.GetStorage())
+				storageBackend, err = machinery.ConfigureStorageBackendV1(ctx, storageConfig)
 				if err != nil {
 					return err
 				}
-				lg.Info("storage configured", "backend", config.Storage.GetBackend().String())
+				lg.Info("storage configured", "backend", storageConfig.GetBackend().String())
 			}
 			activeStore = kvutil.WithMessageCodec[*configv1.GatewayConfigSpec](
 				kvutil.WithKey(storageBackend.KeyValueStore("gateway"), "config"))
@@ -404,13 +407,13 @@ persist their default configurations in the KV store.
 				}
 
 				if applyDefaultFlags {
-					mask := fieldmask.ByPresence(config.ProtoReflect())
+					updateMask := fieldmask.Leaves(fieldmask.Diff(configDefaults, config), config.ProtoReflect().Descriptor())
 					resp, err := mgr.DryRun(ctx, &configv1.DryRunRequest{
 						Target:   driverutil.Target_ActiveConfiguration,
 						Action:   driverutil.Action_Reset,
 						Revision: rev,
 						Patch:    config,
-						Mask:     mask,
+						Mask:     updateMask,
 					})
 					if err != nil {
 						return err
@@ -432,7 +435,7 @@ persist their default configurations in the KV store.
 					if anyChanges {
 						_, err := mgr.ResetConfiguration(ctx, &configv1.ResetRequest{
 							Revision: rev,
-							Mask:     mask,
+							Mask:     updateMask,
 							Patch:    config,
 						})
 						if err != nil {

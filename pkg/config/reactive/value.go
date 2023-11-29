@@ -10,14 +10,21 @@ import (
 )
 
 type reactiveValue struct {
-	valueMu       sync.Mutex
-	rev           int64
-	value         protoreflect.Value
-	watchChannels gsync.Map[string, chan protoreflect.Value]
-	watchFuncs    gsync.Map[string, *func(int64, protoreflect.Value)]
+	valueMu         sync.Mutex
+	rev             int64
+	value           protoreflect.Value
+	watchChannelsMu sync.RWMutex
+	watchChannels   map[string]chan protoreflect.Value
+	watchFuncs      gsync.Map[string, *func(int64, protoreflect.Value)]
 
 	groupMu sync.Mutex
 	group   <-chan struct{}
+}
+
+func newReactiveValue() *reactiveValue {
+	return &reactiveValue{
+		watchChannels: make(map[string]chan protoreflect.Value),
+	}
 }
 
 func (r *reactiveValue) Update(rev int64, v protoreflect.Value, group <-chan struct{}) {
@@ -30,22 +37,12 @@ func (r *reactiveValue) Update(rev int64, v protoreflect.Value, group <-chan str
 	r.group = group
 	r.groupMu.Unlock()
 
-	r.watchChannels.Range(func(_ string, w chan protoreflect.Value) bool {
-		select {
-		case w <- v:
-		default:
-			// if the watch is not ready to receive, drop the previous value and
-			// replace it with the current value
-			select {
-			case <-w:
-				// current value discarded
-			default:
-				// the channel was read from just now
-			}
-			w <- v
-		}
-		return true
-	})
+	r.watchChannelsMu.RLock()
+	for _, w := range r.watchChannels {
+		w <- v
+	}
+	r.watchChannelsMu.RUnlock()
+
 	r.watchFuncs.Range(func(key string, value *func(int64, protoreflect.Value)) bool {
 		(*value)(rev, v)
 		return true
@@ -59,7 +56,7 @@ func (r *reactiveValue) Value() protoreflect.Value {
 }
 
 func (r *reactiveValue) Watch(ctx context.Context) <-chan protoreflect.Value {
-	ch := make(chan protoreflect.Value, 1)
+	ch := make(chan protoreflect.Value, 4)
 
 	r.valueMu.Lock()
 	if r.rev != 0 {
@@ -68,10 +65,14 @@ func (r *reactiveValue) Watch(ctx context.Context) <-chan protoreflect.Value {
 	r.valueMu.Unlock()
 
 	key := uuid.NewString()
-	r.watchChannels.Store(key, ch)
+	r.watchChannelsMu.Lock()
+	r.watchChannels[key] = ch
+	r.watchChannelsMu.Unlock()
 	context.AfterFunc(ctx, func() {
-		defer close(ch)
-		r.watchChannels.Delete(key)
+		r.watchChannelsMu.Lock()
+		delete(r.watchChannels, key)
+		close(ch)
+		r.watchChannelsMu.Unlock()
 	})
 	return ch
 }

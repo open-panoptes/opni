@@ -102,7 +102,6 @@ message ManagementServerSpec {
   // This is the address at which other gateway instances will be able to reach
   // this management server.
   optional string advertiseAddress = 3 [
-    (cli.flag).skip      = true,
     (buf.validate.field) = {
       cel: [
         {
@@ -132,7 +131,6 @@ message RelayServerSpec {
   // This is the address at which other gateway instances will be able to reach
   // this relay server. Configured automatically by the manager if not set.
   optional string advertiseAddress = 5 [
-    (cli.flag).skip      = true,
     (buf.validate.field) = {
       cel: [
         {
@@ -171,7 +169,6 @@ message DashboardServerSpec {
   ];
   // The advertise address for the dashboard server.
   optional string advertiseAddress = 2 [
-    (cli.flag).skip      = true,
     (buf.validate.field) = {
       cel: [
         {
@@ -492,34 +489,12 @@ message UpgradesSpec {
 }
 
 message AgentUpgradesSpec {
-  enum Driver {
-    Noop       = 0;
-    Kubernetes = 1;
-  }
-
-  // Agent upgrade driver to use.
-  optional Driver driver = 1 [
-    (cli.flag).default                     = "Kubernetes",
-    (buf.validate.field).enum.defined_only = true
-  ];
-
-  // Kubernetes agent upgrade configuration.
+  // Kubernetes agent upgrade driver configuration.
   KubernetesAgentUpgradeSpec kubernetes = 2;
 }
 
 message PluginUpgradesSpec {
-  enum Driver {
-    Noop   = 0;
-    Binary = 1;
-  }
-
-  // Plugin upgrade driver to use.
-  optional Driver driver = 1 [
-    (cli.flag).default                     = "Binary",
-    (buf.validate.field).enum.defined_only = true
-  ];
-
-  // Binary plugin upgrade configuration.
+  // Binary plugin upgrade driver configuration.
   BinaryPluginUpgradeSpec binary = 2;
 }
 

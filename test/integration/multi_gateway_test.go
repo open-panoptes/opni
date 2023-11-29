@@ -113,7 +113,7 @@ var _ = Describe("Multi Gateway js", Ordered, Label("integration"), func() {
 			Logger: testlog.Log.WithGroup("env1"),
 		}
 		Expect(env1.Start(test.WithStorageBackend(v1beta1.StorageTypeJetStream))).To(Succeed())
-		seedPath := env1.JetStreamConfig().NkeySeedPath
+		seedPath := env1.JetStreamConfig().GetNkeySeedPath()
 
 		time.Sleep(1 * time.Second)
 

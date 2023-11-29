@@ -28,6 +28,24 @@ type v1beta1types interface {
 		v1beta1.StorageType // -> configv1.StorageBackend
 }
 
+type v1beta1outputtypes interface {
+	*v1beta1.GatewayConfigSpec |
+		*v1beta1.StorageSpec |
+		*v1beta1.EtcdStorageSpec |
+		*v1beta1.JetStreamStorageSpec |
+		*v1beta1.MTLSSpec |
+		*v1beta1.CertsSpec |
+		*v1beta1.KeyringSpec |
+		*v1beta1.AgentUpgradesSpec |
+		// *v1beta1.BinaryPluginsSpec can't be converted back
+		*v1beta1.RateLimitSpec |
+		// Enums
+		v1beta1.CacheBackend |
+		v1beta1.PatchEngine |
+		v1beta1.ImageResolverType |
+		v1beta1.StorageType
+}
+
 type v1configtypes interface {
 	*configv1.GatewayConfigSpec | // -> *v1beta1.GatewayConfigSpec
 		*configv1.StorageSpec | // -> *v1beta1.StorageSpec
@@ -36,16 +54,24 @@ type v1configtypes interface {
 		*configv1.MTLSSpec | // -> *v1beta1.MTLSSpec
 		*configv1.CertsSpec | // -> *v1beta1.CertsSpec
 		*configv1.KeyringSpec | // -> *v1beta1.KeyringSpec
+		*configv1.AgentUpgradesSpec | // -> *v1beta1.AgentUpgradesSpec
 		*configv1.RateLimitingSpec | // -> *v1beta1.RateLimitSpec
 		// Enums
-		configv1.CacheBackend | // -> *v1beta1.CacheBackend
-		configv1.PatchEngine | // -> *v1beta1.PatchEngine
-		configv1.KubernetesAgentUpgradeSpec_ImageResolver | // -> *v1beta1.ImageResolverType
-		configv1.StorageBackend // -> *v1beta1.StorageType
+		configv1.CacheBackend | // -> v1beta1.CacheBackend
+		configv1.PatchEngine | // -> v1beta1.PatchEngine
+		configv1.KubernetesAgentUpgradeSpec_ImageResolver | // -> v1beta1.ImageResolverType
+		configv1.StorageBackend // -> v1beta1.StorageType
 }
 
-func V1ConfigOf[T v1beta1types](in T) any {
-	return v1ConfigOfUnchecked(in)
+type v1configoutputtypes interface {
+	v1configtypes |
+		*configv1.PluginUpgradesSpec |
+		*configv1.BinaryPluginUpgradeSpec |
+		*configv1.PluginsSpec
+}
+
+func V1ConfigOf[O v1configoutputtypes, T v1beta1types](in T) O {
+	return v1ConfigOfUnchecked(in).(O)
 }
 
 func v1ConfigOfUnchecked(in any) any {
@@ -57,7 +83,7 @@ func v1ConfigOfUnchecked(in any) any {
 		return &configv1.GatewayConfigSpec{
 			Server: &configv1.ServerSpec{
 				HttpListenAddress: &in.HTTPListenAddress,
-				GrpcListenAddress: lo.ToPtr(strings.TrimPrefix(in.GRPCAdvertiseAddress, "tcp://")),
+				GrpcListenAddress: lo.ToPtr(strings.TrimPrefix(in.GRPCListenAddress, "tcp://")),
 				AdvertiseAddress:  &in.GRPCAdvertiseAddress,
 			},
 			Management: &configv1.ManagementServerSpec{
@@ -73,23 +99,22 @@ func v1ConfigOfUnchecked(in any) any {
 				HttpListenAddress: &in.MetricsListenAddress,
 			},
 			Dashboard: &configv1.DashboardServerSpec{
-				HttpListenAddress: &in.Management.WebListenAddress,
+				HttpListenAddress: lo.ToPtr(in.Management.GetWebListenAddress()),
 				Hostname:          &in.Hostname,
 				AdvertiseAddress:  &in.Management.WebAdvertiseAddress,
 				TrustedProxies:    in.TrustedProxies,
 			},
-			Storage: V1ConfigOf(&in.Storage).(*configv1.StorageSpec),
-			Certs:   V1ConfigOf(&in.Certs).(*configv1.CertsSpec),
-			Plugins: V1ConfigOf(&in.Plugins).(*configv1.PluginsSpec),
-			Keyring: V1ConfigOf(&in.Keyring).(*configv1.KeyringSpec),
+			Storage: V1ConfigOf[*configv1.StorageSpec](&in.Storage),
+			Certs:   V1ConfigOf[*configv1.CertsSpec](&in.Certs),
+			Plugins: V1ConfigOf[*configv1.PluginsSpec](&in.Plugins),
+			Keyring: V1ConfigOf[*configv1.KeyringSpec](&in.Keyring),
 			Upgrades: &configv1.UpgradesSpec{
-				Agents: V1ConfigOf(&in.AgentUpgrades).(*configv1.AgentUpgradesSpec),
+				Agents: V1ConfigOf[*configv1.AgentUpgradesSpec](&in.AgentUpgrades),
 				Plugins: &configv1.PluginUpgradesSpec{
-					Driver: configv1.PluginUpgradesSpec_Binary.Enum(),
-					Binary: V1ConfigOf(&in.Plugins.Binary).(*configv1.BinaryPluginUpgradeSpec),
+					Binary: V1ConfigOf[*configv1.BinaryPluginUpgradeSpec](&in.Plugins.Binary),
 				},
 			},
-			RateLimiting: V1ConfigOf(in.RateLimit).(*configv1.RateLimitingSpec),
+			RateLimiting: V1ConfigOf[*configv1.RateLimitingSpec](in.RateLimit),
 			Auth:         &configv1.AuthSpec{},
 		}
 	case *v1beta1.StorageSpec:
@@ -97,9 +122,9 @@ func v1ConfigOfUnchecked(in any) any {
 			return (*configv1.StorageSpec)(nil)
 		}
 		return &configv1.StorageSpec{
-			Backend:   V1ConfigOf(in.Type).(configv1.StorageBackend).Enum(),
-			Etcd:      V1ConfigOf(in.Etcd).(*configv1.EtcdSpec),
-			JetStream: V1ConfigOf(in.JetStream).(*configv1.JetStreamSpec),
+			Backend:   V1ConfigOf[configv1.StorageBackend](in.Type).Enum(),
+			Etcd:      V1ConfigOf[*configv1.EtcdSpec](in.Etcd),
+			JetStream: V1ConfigOf[*configv1.JetStreamSpec](in.JetStream),
 		}
 	case *v1beta1.EtcdStorageSpec:
 		if in == nil {
@@ -107,7 +132,7 @@ func v1ConfigOfUnchecked(in any) any {
 		}
 		return &configv1.EtcdSpec{
 			Endpoints: in.Endpoints,
-			Certs:     V1ConfigOf(in.Certs).(*configv1.MTLSSpec),
+			Certs:     V1ConfigOf[*configv1.MTLSSpec](in.Certs),
 		}
 	case *v1beta1.JetStreamStorageSpec:
 		if in == nil {
@@ -146,7 +171,7 @@ func v1ConfigOfUnchecked(in any) any {
 		return &configv1.PluginsSpec{
 			Dir: &in.Dir,
 			Cache: &configv1.CacheSpec{
-				Backend: V1ConfigOf(in.Binary.Cache.Backend).(configv1.CacheBackend).Enum(),
+				Backend: V1ConfigOf[configv1.CacheBackend](in.Binary.Cache.Backend).Enum(),
 				Filesystem: &configv1.FilesystemCacheSpec{
 					Dir: &in.Binary.Cache.Filesystem.Dir,
 				},
@@ -164,9 +189,8 @@ func v1ConfigOfUnchecked(in any) any {
 			return (*configv1.AgentUpgradesSpec)(nil)
 		}
 		return &configv1.AgentUpgradesSpec{
-			Driver: configv1.AgentUpgradesSpec_Kubernetes.Enum(),
 			Kubernetes: &configv1.KubernetesAgentUpgradeSpec{
-				ImageResolver: V1ConfigOf(in.Kubernetes.ImageResolver).(configv1.KubernetesAgentUpgradeSpec_ImageResolver).Enum(),
+				ImageResolver: V1ConfigOf[configv1.KubernetesAgentUpgradeSpec_ImageResolver](in.Kubernetes.ImageResolver).Enum(),
 			},
 		}
 	case *v1beta1.BinaryPluginsSpec:
@@ -174,7 +198,7 @@ func v1ConfigOfUnchecked(in any) any {
 			return (*configv1.PluginUpgradesSpec)(nil)
 		}
 		return &configv1.BinaryPluginUpgradeSpec{
-			PatchEngine: V1ConfigOf(in.Cache.PatchEngine).(configv1.PatchEngine).Enum(),
+			PatchEngine: V1ConfigOf[configv1.PatchEngine](in.Cache.PatchEngine).Enum(),
 		}
 	case *v1beta1.RateLimitSpec:
 		if in == nil {
@@ -221,8 +245,8 @@ func v1ConfigOfUnchecked(in any) any {
 	}
 }
 
-func V1BetaConfigOf[T v1configtypes](in T) any {
-	return v1betaConfigOfUnchecked(in)
+func V1BetaConfigOf[O v1beta1outputtypes, T v1configtypes](in T) O {
+	return v1betaConfigOfUnchecked(in).(O)
 }
 
 func v1betaConfigOfUnchecked(in any) any {
@@ -246,27 +270,27 @@ func v1betaConfigOfUnchecked(in any) any {
 			},
 			MetricsListenAddress: in.GetHealth().GetHttpListenAddress(),
 			Hostname:             in.GetDashboard().GetHostname(),
-			Storage:              *V1BetaConfigOf(in.Storage).(*v1beta1.StorageSpec),
-			Certs:                *V1BetaConfigOf(in.Certs).(*v1beta1.CertsSpec),
+			Storage:              *V1BetaConfigOf[*v1beta1.StorageSpec](in.Storage),
+			Certs:                *V1BetaConfigOf[*v1beta1.CertsSpec](in.Certs),
 			Plugins: v1beta1.PluginsSpec{
 				Dir: in.GetPlugins().GetDir(),
 				Binary: v1beta1.BinaryPluginsSpec{
 					Cache: v1beta1.CacheSpec{
-						PatchEngine: V1BetaConfigOf(in.GetUpgrades().GetPlugins().GetBinary().GetPatchEngine()).(v1beta1.PatchEngine),
-						Backend:     V1BetaConfigOf(in.GetPlugins().GetCache().GetBackend()).(v1beta1.CacheBackend),
+						PatchEngine: V1BetaConfigOf[v1beta1.PatchEngine](in.GetUpgrades().GetPlugins().GetBinary().GetPatchEngine()),
+						Backend:     V1BetaConfigOf[v1beta1.CacheBackend](in.GetPlugins().GetCache().GetBackend()),
 						Filesystem: v1beta1.FilesystemCacheSpec{
 							Dir: in.GetPlugins().GetCache().GetFilesystem().GetDir(),
 						},
 					},
 				},
 			},
-			Keyring: *V1BetaConfigOf(in.Keyring).(*v1beta1.KeyringSpec),
+			Keyring: *V1BetaConfigOf[*v1beta1.KeyringSpec](in.Keyring),
 			AgentUpgrades: v1beta1.AgentUpgradesSpec{
 				Kubernetes: v1beta1.KubernetesAgentUpgradeSpec{
-					ImageResolver: V1BetaConfigOf(in.GetUpgrades().GetAgents().GetKubernetes().GetImageResolver()).(v1beta1.ImageResolverType),
+					ImageResolver: V1BetaConfigOf[v1beta1.ImageResolverType](in.GetUpgrades().GetAgents().GetKubernetes().GetImageResolver()),
 				},
 			},
-			RateLimit: V1BetaConfigOf(in.RateLimiting).(*v1beta1.RateLimitSpec),
+			RateLimit: V1BetaConfigOf[*v1beta1.RateLimitSpec](in.RateLimiting),
 			Metrics: v1beta1.MetricsSpec{
 				Path: "/metrics",
 			},
@@ -277,9 +301,9 @@ func v1betaConfigOfUnchecked(in any) any {
 			return (*v1beta1.StorageSpec)(nil)
 		}
 		return &v1beta1.StorageSpec{
-			Type:      V1BetaConfigOf(in.GetBackend()).(v1beta1.StorageType),
-			Etcd:      V1BetaConfigOf(in.Etcd).(*v1beta1.EtcdStorageSpec),
-			JetStream: V1BetaConfigOf(in.JetStream).(*v1beta1.JetStreamStorageSpec),
+			Type:      V1BetaConfigOf[v1beta1.StorageType](in.GetBackend()),
+			Etcd:      V1BetaConfigOf[*v1beta1.EtcdStorageSpec](in.Etcd),
+			JetStream: V1BetaConfigOf[*v1beta1.JetStreamStorageSpec](in.JetStream),
 		}
 	case *configv1.EtcdSpec:
 		if in == nil {
@@ -287,7 +311,7 @@ func v1betaConfigOfUnchecked(in any) any {
 		}
 		return &v1beta1.EtcdStorageSpec{
 			Endpoints: in.GetEndpoints(),
-			Certs:     V1BetaConfigOf(in.Certs).(*v1beta1.MTLSSpec),
+			Certs:     V1BetaConfigOf[*v1beta1.MTLSSpec](in.Certs),
 		}
 	case *configv1.JetStreamSpec:
 		if in == nil {

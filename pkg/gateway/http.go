@@ -246,8 +246,10 @@ func (s *GatewayHTTPServer) ListenAndServe(ctx context.Context) error {
 			}()
 		}, httpListenAddr, s.certs)
 		<-ctx.Done()
-		cancel()
-		<-done
+		if cancel != nil {
+			cancel()
+			<-done
+		}
 		return ctx.Err()
 	})
 
