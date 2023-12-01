@@ -407,7 +407,7 @@ persist their default configurations in the KV store.
 				}
 
 				if applyDefaultFlags {
-					updateMask := fieldmask.Leaves(fieldmask.Diff(configDefaults, config), config.ProtoReflect().Descriptor())
+					updateMask := fieldmask.Leaves(fieldmask.Diff(configDefaults.ProtoReflect(), config.ProtoReflect()), config.ProtoReflect().Descriptor())
 					resp, err := mgr.DryRun(ctx, &configv1.DryRunRequest{
 						Target:   driverutil.Target_ActiveConfiguration,
 						Action:   driverutil.Action_Reset,

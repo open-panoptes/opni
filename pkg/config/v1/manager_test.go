@@ -146,7 +146,7 @@ var _ = Describe("Gateway Config Manager", Label("unit"), func() {
 
 		By("verifying that both watches received an update")
 		// some fields have a limited set of possible values
-		updatedFields := fieldmask.Diff(spec, spec2).Paths
+		updatedFields := fieldmask.Diff(spec.ProtoReflect(), spec2.ProtoReflect()).Paths
 		pathsToCheck := map[string]struct{}{}
 		for _, path := range updatedFields {
 			parts := strings.Split(path, ".")

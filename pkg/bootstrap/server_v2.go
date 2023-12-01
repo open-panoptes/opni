@@ -67,7 +67,8 @@ func NewServerV2(ctx context.Context, storage Storage, certs reactive.Reactive[*
 }
 
 func (h *ServerV2) Join(ctx context.Context, _ *bootstrapv2.BootstrapJoinRequest) (*bootstrapv2.BootstrapJoinResponse, error) {
-	if h.privateKey.Load() == nil {
+	pkey := h.privateKey.Load()
+	if pkey == nil {
 		return nil, status.Error(codes.Unavailable, "server is not accepting bootstrap requests")
 	}
 
@@ -82,7 +83,7 @@ func (h *ServerV2) Join(ctx context.Context, _ *bootstrapv2.BootstrapJoinRequest
 		if err != nil {
 			return nil, err
 		}
-		sig, err := rawToken.SignDetached(h.privateKey)
+		sig, err := rawToken.SignDetached(*pkey)
 		if err != nil {
 			return nil, fmt.Errorf("error signing token: %w", err)
 		}
@@ -97,7 +98,8 @@ func (h *ServerV2) Join(ctx context.Context, _ *bootstrapv2.BootstrapJoinRequest
 }
 
 func (h *ServerV2) Auth(ctx context.Context, authReq *bootstrapv2.BootstrapAuthRequest) (*bootstrapv2.BootstrapAuthResponse, error) {
-	if h.privateKey.Load() == nil {
+	pkey := h.privateKey.Load()
+	if pkey == nil {
 		return nil, status.Error(codes.Unavailable, "server is not accepting bootstrap requests")
 	}
 
@@ -118,7 +120,7 @@ func (h *ServerV2) Auth(ctx context.Context, authReq *bootstrapv2.BootstrapAuthR
 	// Remove "Bearer " from the header
 	bearerToken := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer"))
 	// Verify the token
-	payload, err := jws.Verify([]byte(bearerToken), jwa.EdDSA, (*h.privateKey.Load()).Public())
+	payload, err := jws.Verify([]byte(bearerToken), jwa.EdDSA, (*pkey).Public())
 	if err != nil {
 		return nil, util.StatusError(codes.PermissionDenied)
 	}

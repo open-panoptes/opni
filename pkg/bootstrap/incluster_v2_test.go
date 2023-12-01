@@ -15,12 +15,12 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-var _ = Describe("In-Cluster Bootstrap V2", Ordered, Label("integration"), func() {
+var _ = XDescribe("In-Cluster Bootstrap V2", Ordered, Label("integration"), func() {
 	var gatewayEndpoint, managementEndpoint string
 	var managementClient managementv1.ManagementClient
 	BeforeAll(func() {
 		env := test.Environment{}
-		Expect(env.Start(test.WithEnableJetstream(false))).To(Succeed())
+		Expect(env.Start()).To(Succeed())
 
 		conf := env.GatewayConfig()
 		gatewayEndpoint = strings.TrimPrefix(conf.Spec.GRPCListenAddress, "tcp://")

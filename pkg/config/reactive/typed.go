@@ -42,7 +42,7 @@ func (m *typedReactive[E, T]) Value() T {
 
 func (m *typedReactive[E, T]) Watch(ctx context.Context) <-chan T {
 	wc := m.base.Watch(ctx)
-	ch := make(chan T, 1)
+	ch := make(chan T, cap(wc))
 
 	select {
 	case v := <-wc:
@@ -54,17 +54,7 @@ func (m *typedReactive[E, T]) Watch(ctx context.Context) <-chan T {
 		defer close(ch)
 		for v := range wc {
 			vt := m.encoder.FromValue(v)
-			select {
-			case ch <- vt:
-			default:
-				// replicate the behavior of reactiveMessage.update since we are
-				// wrapping the original channel
-				select {
-				case <-ch:
-				default:
-				}
-				ch <- vt
-			}
+			ch <- vt
 		}
 	}()
 	return ch

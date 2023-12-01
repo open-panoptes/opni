@@ -26,7 +26,7 @@ import (
 	"github.com/rancher/opni/pkg/util/protorand"
 )
 
-var _ = FDescribe("Reactive Controller", Label("unit"), Ordered, func() {
+var _ = Describe("Reactive Controller", Label("unit"), Ordered, func() {
 	var ctrl *reactive.Controller[*ext.SampleConfiguration]
 	defaultStore := inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
 	activeStore := inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
@@ -147,7 +147,7 @@ var _ = FDescribe("Reactive Controller", Label("unit"), Ordered, func() {
 
 		By("verifying that both watches received an update")
 		// some fields have a limited set of possible values
-		updatedFields := fieldmask.Diff(spec, spec2).Paths
+		updatedFields := fieldmask.Diff(spec.ProtoReflect(), spec2.ProtoReflect()).Paths
 		pathsToCheck := map[string]struct{}{}
 		for _, path := range updatedFields {
 			parts := strings.Split(path, ".")
@@ -191,6 +191,9 @@ var _ = FDescribe("Reactive Controller", Label("unit"), Ordered, func() {
 			spec := &ext.SampleConfiguration{
 				StringField: lo.ToPtr("foo"),
 			}
+			defaultStore := inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
+			activeStore := inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
+
 			err := activeStore.Put(context.Background(), spec)
 			Expect(err).NotTo(HaveOccurred())
 
