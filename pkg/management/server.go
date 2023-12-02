@@ -81,7 +81,6 @@ type Server struct {
 	logger            *slog.Logger
 	coreDataSource    CoreDataSource
 	dashboardSettings *DashboardSettingsManager
-	router            *gin.Engine
 	localAuth         local.LocalAuthenticator
 	director          StreamDirector
 
@@ -138,7 +137,6 @@ func NewServer(
 			kv:     cds.StorageBackend().KeyValueStore("dashboard"),
 			logger: lg,
 		},
-		router: gin.New(),
 	}
 	m.director = m.configureApiExtensionDirector(ctx, pluginLoader)
 
@@ -317,11 +315,17 @@ func (m *Server) listenAndServeHttp(ctx context.Context) error {
 	httpListenAddr := m.mgr.Reactive(configv1.ProtoPath().Management().HttpListenAddress())
 	grpcListenAddr := m.mgr.Reactive(configv1.ProtoPath().Management().GrpcListenAddress())
 
-	var server *http.Server
+	var mu sync.Mutex
+	var stopServer func()
+
 	reactive.Bind(ctx, func(v []protoreflect.Value) {
-		if server != nil {
-			server.Shutdown(ctx)
+		mu.Lock()
+		defer mu.Unlock()
+
+		if stopServer != nil {
+			stopServer()
 		}
+
 		httpAddr := v[0].String()
 		grpcAddr := v[1].String()
 
@@ -336,35 +340,39 @@ func (m *Server) listenAndServeHttp(ctx context.Context) error {
 		m.logger.With(
 			"address", listener.Addr().String(),
 		).Info("management HTTP server starting")
-
 		gwmux := runtime.NewServeMux(
 			runtime.WithMarshalerOption("application/json", &LegacyJsonMarshaler{}),
 			runtime.WithMarshalerOption("application/octet-stream", &DynamicV1Marshaler{}),
 			runtime.WithMarshalerOption(runtime.MIMEWildcard, &DynamicV1Marshaler{}),
 		)
-
-		m.configureManagementHttpApi(ctx, server, grpcAddr, gwmux)
-		m.configureHttpApiExtensions(server, gwmux)
-		m.router.Any("/*any", gin.WrapF(gwmux.ServeHTTP))
-		server = &http.Server{
+		router := gin.New()
+		server := &http.Server{
 			Addr: httpAddr,
 			BaseContext: func(net.Listener) context.Context {
 				return ctx
 			},
-			Handler: m.router.Handler(),
+			Handler: router.Handler(),
 		}
-		go func() {
+		stopServer = sync.OnceFunc(func() {
+			server.Close()
+		})
+		m.configureManagementHttpApi(ctx, server, grpcAddr, gwmux)
+		m.configureHttpApiExtensions(server, gwmux)
+		router.Any("/*any", gin.WrapF(gwmux.ServeHTTP))
+		go func(server *http.Server) {
 			if err := server.Serve(listener); err != nil {
 				m.logger.With(logger.Err(err)).Warn("management HTTP server exited with error")
 			} else {
 				m.logger.Info("management HTTP server stopped")
 			}
-		}()
+		}(server)
 	}, httpListenAddr, grpcListenAddr)
 	<-ctx.Done()
-	if server != nil {
-		server.Shutdown(ctx)
+	mu.Lock()
+	if stopServer != nil {
+		stopServer()
 	}
+	mu.Unlock()
 	return ctx.Err()
 }
 

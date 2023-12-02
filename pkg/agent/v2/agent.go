@@ -278,7 +278,7 @@ func New(ctx context.Context, conf *v1beta1.AgentConfig, opts ...AgentOption) (*
 	}
 
 	// Load ephemeral keyrings from disk, if any search dirs are configured
-	ekeys, err := machinery.LoadEphemeralKeys(afero.Afero{
+	ekeys, err := keyring.LoadEphemeralKeys(afero.Afero{
 		Fs: afero.NewOsFs(),
 	}, conf.Spec.Keyring.EphemeralKeyDirs...)
 	if err != nil {

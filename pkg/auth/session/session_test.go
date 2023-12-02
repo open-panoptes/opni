@@ -99,8 +99,34 @@ var _ = Describe("Session Attributes Challenge", Ordered, Label("unit"), func() 
 		},
 	}
 
+	newLoader := func(kr keyring.Keyring) (*atomic.Pointer[session.AttributeLoader], error) {
+		p := &atomic.Pointer[session.AttributeLoader]{}
+		loader, err := session.AttributeLoaderFromKeyring(kr)
+		if err != nil {
+			return nil, err
+		}
+		p.Store(&loader)
+		return p, nil
+	}
+
+	newServerChallenge := func(kr keyring.Keyring, opts ...session.ServerChallengeOption) (*session.ServerChallenge, error) {
+		l, err := newLoader(kr)
+		if err != nil {
+			return nil, err
+		}
+		options := session.ServerChallengeOptions{}
+		session.WithAttributeRequestLimit(10)(&options)
+		for _, op := range opts {
+			op(&options)
+		}
+		return &session.ServerChallenge{
+			ServerChallengeOptions: options,
+			Loader:                 l,
+		}, nil
+	}
+
 	JustBeforeEach(func() {
-		attrChallenge, err := session.NewServerChallenge(testKeyring, session.WithAttributeRequestLimit(50))
+		attrChallenge, err := newServerChallenge(testKeyring, session.WithAttributeRequestLimit(50))
 		Expect(err).NotTo(HaveOccurred())
 
 		broker := mock_storage.NewTestKeyringStoreBroker(ctrl)
@@ -131,10 +157,10 @@ var _ = Describe("Session Attributes Challenge", Ordered, Label("unit"), func() 
 	When("creating a new challenge handler", func() {
 		When("there are no ephemeral keys in the keyring", func() {
 			It("should succeed, but have no attributes", func() {
-				s, err := session.NewServerChallenge(keyring.New())
+				s, err := newServerChallenge(keyring.New())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(s).NotTo(BeNil())
-				Expect(s.Attributes()).To(BeEmpty())
+				Expect(s.Loader.Load().Attributes()).To(BeEmpty())
 
 				c, err := session.NewClientChallenge(keyring.New())
 				Expect(err).NotTo(HaveOccurred())
@@ -142,7 +168,7 @@ var _ = Describe("Session Attributes Challenge", Ordered, Label("unit"), func() 
 				Expect(c.Attributes()).To(BeEmpty())
 			})
 			Specify("InterceptContext should be a no-op", func() {
-				s, err := session.NewServerChallenge(keyring.New())
+				s, err := newServerChallenge(keyring.New())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(s.InterceptContext(context.Background())).To(Equal(context.Background()))
 
@@ -155,19 +181,19 @@ var _ = Describe("Session Attributes Challenge", Ordered, Label("unit"), func() 
 			When("any keys are invalid", func() {
 				It("should fail", func() {
 					kr := keyring.New(goodKey1, badKey1, goodKey2, badKey2, skipKey1, skipKey2)
-					_, err := session.NewServerChallenge(kr)
+					_, err := newServerChallenge(kr)
 					Expect(err).To(HaveOccurred())
 					_, err = session.NewClientChallenge(kr)
 					Expect(err).To(HaveOccurred())
 
 					kr = keyring.New(goodKey1, badKey1, goodKey1, skipKey1, skipKey2)
-					_, err = session.NewServerChallenge(kr)
+					_, err = newServerChallenge(kr)
 					Expect(err).To(HaveOccurred())
 					_, err = session.NewClientChallenge(kr)
 					Expect(err).To(HaveOccurred())
 
 					kr = keyring.New(goodKey1, badKey1, goodKey2, skipKey1, skipKey2)
-					_, err = session.NewServerChallenge(kr)
+					_, err = newServerChallenge(kr)
 					Expect(err).To(HaveOccurred())
 					_, err = session.NewClientChallenge(kr)
 					Expect(err).To(HaveOccurred())
@@ -177,7 +203,7 @@ var _ = Describe("Session Attributes Challenge", Ordered, Label("unit"), func() 
 		When("all keys are valid", func() {
 			It("should succeed", func() {
 				kr := keyring.New(goodKey1, goodKey2, skipKey1, skipKey2)
-				_, err := session.NewServerChallenge(kr)
+				_, err := newServerChallenge(kr)
 				Expect(err).NotTo(HaveOccurred())
 				_, err = session.NewClientChallenge(kr)
 				Expect(err).NotTo(HaveOccurred())
@@ -185,12 +211,12 @@ var _ = Describe("Session Attributes Challenge", Ordered, Label("unit"), func() 
 			})
 			It("should have the correct attributes", func() {
 				kr := keyring.New(goodKey1, goodKey2, skipKey1, skipKey2)
-				c, err := session.NewServerChallenge(kr)
+				c, err := newServerChallenge(kr)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(c.Attributes()).To(ConsistOf("good1", "good2"))
+				Expect(c.Loader.Load().Attributes()).To(ConsistOf("good1", "good2"))
 				_, err = session.NewClientChallenge(kr)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(c.Attributes()).To(ConsistOf("good1", "good2"))
+				Expect(c.Loader.Load().Attributes()).To(ConsistOf("good1", "good2"))
 			})
 		})
 	})
@@ -338,7 +364,7 @@ var _ = Describe("Session Attributes Challenge", Ordered, Label("unit"), func() 
 					m := mock_grpc.NewMockServerStream(ctrl)
 					m.EXPECT().Context().Return(ctx).AnyTimes()
 
-					sc, err := session.NewServerChallenge(testKeyring)
+					sc, err := newServerChallenge(testKeyring)
 					Expect(err).NotTo(HaveOccurred())
 					out, err := sc.DoChallenge(m)
 					Expect(err).To(testutil.MatchStatusCode(codes.InvalidArgument, ContainSubstring("metadata not found")))
@@ -360,7 +386,7 @@ var _ = Describe("Session Attributes Challenge", Ordered, Label("unit"), func() 
 					m.EXPECT().Context().Return(ctx).AnyTimes()
 					m.EXPECT().SendMsg(gomock.Any()).Return(errors.New("send error"))
 
-					sc, err := session.NewServerChallenge(testKeyring)
+					sc, err := newServerChallenge(testKeyring)
 					Expect(err).NotTo(HaveOccurred())
 					out, err := sc.DoChallenge(m)
 					Expect(err).To(testutil.MatchStatusCode(codes.Unknown, ContainSubstring("send error")))
@@ -383,7 +409,7 @@ var _ = Describe("Session Attributes Challenge", Ordered, Label("unit"), func() 
 					m.EXPECT().SendMsg(gomock.Any()).Return(nil)
 					m.EXPECT().RecvMsg(gomock.Any()).Return(errors.New("recv error"))
 
-					sc, err := session.NewServerChallenge(testKeyring)
+					sc, err := newServerChallenge(testKeyring)
 					Expect(err).NotTo(HaveOccurred())
 					out, err := sc.DoChallenge(m)
 					Expect(err).To(testutil.MatchStatusCode(codes.Unknown, ContainSubstring("recv error")))
@@ -413,7 +439,7 @@ var _ = Describe("Session Attributes Challenge", Ordered, Label("unit"), func() 
 						return nil
 					})
 
-					sc, err := session.NewServerChallenge(testKeyring)
+					sc, err := newServerChallenge(testKeyring)
 					Expect(err).NotTo(HaveOccurred())
 					out, err := sc.DoChallenge(m)
 					Expect(err).To(testutil.MatchStatusCode(codes.InvalidArgument, ContainSubstring("invalid number of challenge responses")))

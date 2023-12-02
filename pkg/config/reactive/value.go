@@ -5,74 +5,72 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	gsync "github.com/kralicky/gpkg/sync"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type reactiveValue struct {
-	valueMu         sync.Mutex
-	rev             int64
-	value           protoreflect.Value
-	watchChannelsMu sync.RWMutex
-	watchChannels   map[string]chan protoreflect.Value
-	watchFuncs      gsync.Map[string, *func(int64, protoreflect.Value)]
-
-	groupMu sync.Mutex
-	group   <-chan struct{}
+	mu            sync.RWMutex
+	rev           int64
+	value         protoreflect.Value
+	watchChannels map[string]chan protoreflect.Value
+	watchFuncs    map[string]func(int64, protoreflect.Value)
+	group         <-chan struct{}
+	newGroup      chan struct{}
 }
 
 func newReactiveValue() *reactiveValue {
 	return &reactiveValue{
 		watchChannels: make(map[string]chan protoreflect.Value),
+		watchFuncs:    make(map[string]func(int64, protoreflect.Value)),
+		newGroup:      make(chan struct{}),
 	}
 }
 
 func (r *reactiveValue) Update(rev int64, v protoreflect.Value, group <-chan struct{}) {
-	r.valueMu.Lock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	r.rev = rev
 	r.value = v
-	r.valueMu.Unlock()
-
-	r.groupMu.Lock()
+	if r.group != nil {
+		select {
+		case r.newGroup <- struct{}{}:
+		default:
+		}
+	}
 	r.group = group
-	r.groupMu.Unlock()
 
-	r.watchChannelsMu.RLock()
 	for _, w := range r.watchChannels {
 		w <- v
 	}
-	r.watchChannelsMu.RUnlock()
 
-	r.watchFuncs.Range(func(key string, value *func(int64, protoreflect.Value)) bool {
-		(*value)(rev, v)
-		return true
-	})
+	for _, f := range r.watchFuncs {
+		f(rev, v)
+	}
 }
 
 func (r *reactiveValue) Value() protoreflect.Value {
-	r.valueMu.Lock()
-	defer r.valueMu.Unlock()
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	return r.value
 }
 
 func (r *reactiveValue) Watch(ctx context.Context) <-chan protoreflect.Value {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	ch := make(chan protoreflect.Value, 4)
 
-	r.valueMu.Lock()
 	if r.rev != 0 {
 		ch <- r.value
 	}
-	r.valueMu.Unlock()
 
 	key := uuid.NewString()
-	r.watchChannelsMu.Lock()
 	r.watchChannels[key] = ch
-	r.watchChannelsMu.Unlock()
 	context.AfterFunc(ctx, func() {
-		r.watchChannelsMu.Lock()
+		r.mu.Lock()
+		defer r.mu.Unlock()
 		delete(r.watchChannels, key)
 		close(ch)
-		r.watchChannelsMu.Unlock()
 	})
 	return ch
 }
@@ -84,26 +82,36 @@ func (r *reactiveValue) WatchFunc(ctx context.Context, onChanged func(protorefle
 }
 
 func (r *reactiveValue) watchFuncWithRev(ctx context.Context, onChanged func(int64, protoreflect.Value)) {
-	r.valueMu.Lock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	if r.rev != 0 {
-		onChanged(r.rev, r.value)
+		defer onChanged(r.rev, r.value)
 	}
-	r.valueMu.Unlock()
 
 	key := uuid.NewString()
-	r.watchFuncs.Store(key, &onChanged)
+	r.watchFuncs[key] = onChanged
+
 	context.AfterFunc(ctx, func() {
-		r.watchFuncs.Delete(key)
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		delete(r.watchFuncs, key)
 	})
 }
 
 func (r *reactiveValue) wait() {
-	r.groupMu.Lock()
-	group := r.group
-	r.groupMu.Unlock()
-
-	if group == nil {
-		return
+	for {
+		r.mu.Lock()
+		group := r.group
+		if group == nil {
+			return
+		}
+		r.mu.Unlock()
+		select {
+		case <-group:
+			return
+		case <-r.newGroup:
+			continue
+		}
 	}
-	<-group
 }

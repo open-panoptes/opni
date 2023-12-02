@@ -76,9 +76,13 @@ func NewGRPCServer(
 }
 
 func (s *GatewayGRPCServer) ListenAndServe(ctx context.Context) (serveError error) {
+	var mu sync.Mutex
 	var cancel context.CancelFunc
 	var done chan struct{}
 	doServe := func(addr string, certs *configv1.CertsSpec) error {
+		mu.Lock()
+		defer mu.Unlock()
+
 		if cancel != nil {
 			cancel()
 			select {
@@ -99,10 +103,10 @@ func (s *GatewayGRPCServer) ListenAndServe(ctx context.Context) (serveError erro
 		if err != nil {
 			return err
 		}
-		go func() {
+		go func(done chan struct{}) {
 			s.serve(serveCtx, listener, tlsConfig)
 			close(done)
-		}()
+		}(done)
 		return nil
 	}
 

@@ -25,9 +25,7 @@ import (
 	"github.com/rancher/opni/pkg/config/reactive/subtle"
 	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/health"
-	"github.com/rancher/opni/pkg/keyring"
 	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/machinery"
 	"github.com/rancher/opni/pkg/management"
 	"github.com/rancher/opni/pkg/plugins"
 	"github.com/rancher/opni/pkg/plugins/hooks"
@@ -40,7 +38,6 @@ import (
 	patchserver "github.com/rancher/opni/pkg/update/patch/server"
 	"github.com/rancher/opni/pkg/util"
 	"github.com/samber/lo"
-	"github.com/spf13/afero"
 	"golang.org/x/mod/module"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -167,28 +164,10 @@ func NewGateway(
 		panic(fmt.Errorf("failed to create http server: %w", err))
 	}
 
-	runtimeKeyDirList := subtle.WaitOne(ctx, mgr.Reactive(configv1.ProtoPath().Keyring().RuntimeKeyDirs())).List()
-	runtimeKeyDirs := make([]string, 0, runtimeKeyDirList.Len())
-	for i, l := 0, runtimeKeyDirList.Len(); i < l; i++ {
-		runtimeKeyDirs = append(runtimeKeyDirs, runtimeKeyDirList.Get(i).String())
-	}
-
-	// Set up cluster auth
-	ephemeralKeys, err := machinery.LoadEphemeralKeys(afero.Afero{
-		Fs: afero.NewOsFs(),
-	}, runtimeKeyDirs...)
-	if err != nil {
-		lg.With(
-			logger.Err(err),
-		).Error("failed to load ephemeral keys")
-		panic("failed to load ephemeral keys")
-	}
-
 	v1Verifier := challenges.NewKeyringVerifier(storageBackend, authv1.DomainString, lg.WithGroup("authv1"))
 	v2Verifier := challenges.NewKeyringVerifier(storageBackend, authv2.DomainString, lg.WithGroup("authv2"))
 
-	sessionAttrChallenge, err := session.NewServerChallenge(
-		keyring.New(lo.ToAnySlice(ephemeralKeys)...))
+	sessionAttrChallenge, err := session.NewServerChallenge(ctx, mgr, lg)
 	if err != nil {
 		lg.With(
 			logger.Err(err),
