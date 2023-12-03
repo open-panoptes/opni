@@ -114,7 +114,7 @@ func (m *Server) configureApiExtensionDirector(ctx context.Context, pl plugins.L
 				fullName := fmt.Sprintf("/%s/%s", svcName, mtd.GetName())
 				lg.With(
 					"name", fullName,
-				).Info("loading method")
+				).Log(context.Background(), slog.LevelDebug-1, "loading method")
 
 				methodTable.Store(fullName, &UnknownStreamMetadata{
 					Conn:            cc,
@@ -135,7 +135,7 @@ func (m *Server) configureApiExtensionDirector(ctx context.Context, pl plugins.L
 				lg.With(
 					"name", svcName,
 					"rules", httpRules,
-				).Debug("rule descriptors")
+				).Log(context.Background(), slog.LevelDebug-1, "rule descriptors")
 			} else {
 				lg.With(
 					"name", svcName,

@@ -179,7 +179,7 @@ func (p *PluginLoader) LoadOne(ctx context.Context, md meta.PluginMeta, cc *plug
 			p.hooksMu.RLock()
 			numHooks := len(p.loadHooks)
 			if numHooks > 0 {
-				lg.Debug(fmt.Sprintf("invoking load hooks (%d)", numHooks))
+				lg.Log(context.Background(), slog.LevelDebug-1, fmt.Sprintf("invoking load hooks (%d)", numHooks))
 			}
 			for _, h := range p.loadHooks {
 				if h.hook.ShouldInvoke(raw) {
