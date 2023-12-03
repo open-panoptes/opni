@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"runtime"
+	"slices"
 	"sync"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"go.uber.org/atomic"
 
 	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/plugins/hooks"
 	"github.com/rancher/opni/pkg/plugins/meta"
@@ -166,7 +168,6 @@ func (p *PluginLoader) LoadOne(ctx context.Context, md meta.PluginMeta, cc *plug
 		raw, err := rpcClient.Dispense(id)
 		if err != nil {
 			lg.With(
-				logger.Err(err),
 				"id", id,
 			).Debug("no implementation found")
 			continue
@@ -184,6 +185,7 @@ func (p *PluginLoader) LoadOne(ctx context.Context, md meta.PluginMeta, cc *plug
 				if h.hook.ShouldInvoke(raw) {
 					wg.Add(1)
 					h := h
+					id := id
 					go func() {
 						_, span := tracer.Start(tc, "PluginLoadHook",
 							trace.WithAttributes(attribute.String("caller", h.caller)))
@@ -219,6 +221,7 @@ func (p *PluginLoader) LoadOne(ctx context.Context, md meta.PluginMeta, cc *plug
 type LoadOptions struct {
 	manifest      *controlv1.UpdateManifest
 	clientOptions []ClientOption
+	filters       *configv1.PluginFilters
 }
 
 type LoadOption func(*LoadOptions)
@@ -242,6 +245,14 @@ func WithClientOptions(clientOptions ...ClientOption) LoadOption {
 func WithManifest(manifest *controlv1.UpdateManifest) LoadOption {
 	return func(o *LoadOptions) {
 		o.manifest = manifest
+	}
+}
+
+// WithFilters will use the provided filters to restrict the set of plugins
+// that will be loaded.
+func WithFilters(filters *configv1.PluginFilters) LoadOption {
+	return func(o *LoadOptions) {
+		o.filters = filters
 	}
 }
 
@@ -280,6 +291,13 @@ func (p *PluginLoader) LoadPlugins(ctx context.Context, pluginDir string, scheme
 	dc := DiscoveryConfig{
 		Dir:    pluginDir,
 		Logger: p.logger,
+	}
+	if options.filters != nil {
+		dc.Filters = []func(meta meta.PluginMeta) bool{
+			func(md meta.PluginMeta) bool {
+				return !slices.Contains(options.filters.GetExclude(), md.Module)
+			},
+		}
 	}
 	plugins := dc.Discover()
 
