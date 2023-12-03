@@ -202,17 +202,6 @@ service Management {
       get: "/apiextensions"
     };
   }
-  rpc GetConfig(google.protobuf.Empty) returns (GatewayConfig) {
-    option (google.api.http) = {
-      get: "/config"
-    };
-  }
-  rpc UpdateConfig(UpdateConfigRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {
-      put:  "/config"
-      body: "*"
-    };
-  }
   rpc ListCapabilities(google.protobuf.Empty) returns (CapabilityList) {
     option (google.api.http) = {
       get: "/capabilities"

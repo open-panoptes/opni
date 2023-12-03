@@ -30,6 +30,7 @@ import (
 	"github.com/rancher/opni/plugins/metrics/apis/remoteread"
 	metrics_agent_drivers "github.com/rancher/opni/plugins/metrics/pkg/agent/drivers"
 	"github.com/rancher/opni/plugins/metrics/pkg/cortex/configutil"
+	"github.com/rancher/opni/plugins/metrics/pkg/gateway/drivers"
 	metrics_drivers "github.com/rancher/opni/plugins/metrics/pkg/gateway/drivers"
 	"github.com/samber/lo"
 	"google.golang.org/grpc/codes"
@@ -349,6 +350,51 @@ func (d *TestEnvMetricsClusterDriver) Status(context.Context, *emptypb.Empty) (o
 		out.Metadata = map[string]string{"test-environment": "true"}
 	})
 	return
+}
+
+func (d *TestEnvMetricsClusterDriver) GetCortexServiceConfig() drivers.CortexServiceConfig {
+	ports := d.Env.GetPorts()
+	tempDir := d.Env.GetTempDirectory()
+	return drivers.CortexServiceConfig{
+		Distributor: drivers.HttpGrpcConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+			GRPCAddress: fmt.Sprintf("localhost:%d", ports.CortexGRPC),
+		},
+		Ingester: drivers.HttpGrpcConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+			GRPCAddress: fmt.Sprintf("localhost:%d", ports.CortexGRPC),
+		},
+		StoreGateway: drivers.HttpGrpcConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+			GRPCAddress: fmt.Sprintf("localhost:%d", ports.CortexGRPC),
+		},
+		Ruler: drivers.HttpGrpcConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+			GRPCAddress: fmt.Sprintf("localhost:%d", ports.CortexGRPC),
+		},
+		QueryFrontend: drivers.HttpGrpcConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+			GRPCAddress: fmt.Sprintf("localhost:%d", ports.CortexGRPC),
+		},
+		Alertmanager: drivers.HttpConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+		},
+		Compactor: drivers.HttpConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+		},
+		Querier: drivers.HttpConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+		},
+		Purger: drivers.HttpConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+		},
+		Certs: drivers.MTLSConfig{
+			ServerCA:   path.Join(tempDir, "cortex/root.crt"),
+			ClientCA:   path.Join(tempDir, "cortex/root.crt"),
+			ClientCert: path.Join(tempDir, "cortex/client.crt"),
+			ClientKey:  path.Join(tempDir, "cortex/client.key"),
+		},
+	}
 }
 
 type TestEnvPrometheusNodeDriver struct {

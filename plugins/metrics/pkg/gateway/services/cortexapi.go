@@ -10,6 +10,7 @@ import (
 
 	"github.com/rancher/opni/pkg/auth"
 	"github.com/rancher/opni/pkg/capabilities/wellknown"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/logger"
 	httpext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/http"
 	"github.com/rancher/opni/pkg/plugins/driverutil"
@@ -41,7 +42,7 @@ type CortexApiService struct {
 
 func (s *CortexApiService) Activate() error {
 	defer close(s.cortexClientSetMu)
-	s.cortexClientSet = s.Context.Memoize(cortex.NewClientSet(s.Context.GatewayConfig()))
+	s.cortexClientSet = s.Context.Memoize(cortex.NewClientSet(s.Context.ClusterDriver()))
 	return nil
 }
 
@@ -56,7 +57,11 @@ func (s *CortexApiService) ConfigureRoutes(router *gin.Engine) {
 	lg.Info("configuring http api server")
 
 	router.Use(logger.GinLogger(lg), gin.Recovery())
-	config := s.Context.GatewayConfig().Spec
+	config, err := s.Context.GatewayConfigClient().GetConfiguration(s.Context, &driverutil.GetRequest{})
+	if err != nil {
+		lg.With(logger.Err(err)).Error("failed to get gateway configuration")
+		return
+	}
 
 	provider := NewRBACProvider(s.Context)
 	rbacMiddleware := rbac.NewMiddleware(rbac.MiddlewareConfig{
@@ -67,11 +72,30 @@ func (s *CortexApiService) ConfigureRoutes(router *gin.Engine) {
 		Capability: wellknown.CapabilityMetrics,
 	})
 
-	authMiddleware, ok := s.Context.AuthMiddlewares()[config.AuthProvider]
-	if !ok {
+	var authMiddleware auth.Middleware
+	switch config.GetAuth().GetBackend() {
+	case configv1.AuthSpec_Basic:
+		var ok bool
+		authMiddleware, ok = s.Context.AuthMiddlewares()[string(auth.AuthTypeBasic)]
+		if !ok {
+			lg.With(
+				"name", auth.AuthTypeBasic,
+			).Error("auth backend not found")
+			os.Exit(1)
+		}
+	case configv1.AuthSpec_OpenID:
+		var ok bool
+		authMiddleware, ok = s.Context.AuthMiddlewares()[string(auth.AuthTypeOIDC)]
+		if !ok {
+			lg.With(
+				"name", auth.AuthTypeOIDC,
+			).Error("auth backend not found")
+			os.Exit(1)
+		}
+	default:
 		lg.With(
-			"name", config.AuthProvider,
-		).Error("auth provider not found")
+			"name", config.GetAuth().GetBackend().String(),
+		).Error("unknown auth backend")
 		os.Exit(1)
 	}
 
@@ -81,10 +105,12 @@ func (s *CortexApiService) ConfigureRoutes(router *gin.Engine) {
 		return
 	}
 
+	cortexConfig := s.Context.ClusterDriver().GetCortexServiceConfig()
+
 	fwds := &forwarders{
-		QueryFrontend: fwd.To(config.Cortex.QueryFrontend.HTTPAddress, fwd.WithLogger(lg), fwd.WithTLS(clientSet.TLSConfig()), fwd.WithName("query-frontend")),
-		Alertmanager:  fwd.To(config.Cortex.Alertmanager.HTTPAddress, fwd.WithLogger(lg), fwd.WithTLS(clientSet.TLSConfig()), fwd.WithName("alertmanager")),
-		Ruler:         fwd.To(config.Cortex.Ruler.HTTPAddress, fwd.WithLogger(lg), fwd.WithTLS(clientSet.TLSConfig()), fwd.WithName("ruler")),
+		QueryFrontend: fwd.To(cortexConfig.QueryFrontend.HTTPAddress, fwd.WithLogger(lg), fwd.WithTLS(clientSet.TLSConfig()), fwd.WithName("query-frontend")),
+		Alertmanager:  fwd.To(cortexConfig.Alertmanager.HTTPAddress, fwd.WithLogger(lg), fwd.WithTLS(clientSet.TLSConfig()), fwd.WithName("alertmanager")),
+		Ruler:         fwd.To(cortexConfig.Ruler.HTTPAddress, fwd.WithLogger(lg), fwd.WithTLS(clientSet.TLSConfig()), fwd.WithName("ruler")),
 	}
 
 	mws := &middlewares{

@@ -155,8 +155,6 @@ func BuildManagementCmd() *cobra.Command {
 		BuildManagementGetRoleBindingCmd(),
 		BuildManagementListRoleBindingsCmd(),
 		BuildManagementAPIExtensionsCmd(),
-		BuildManagementGetConfigCmd(),
-		BuildManagementUpdateConfigCmd(),
 		BuildManagementListCapabilitiesCmd(),
 		BuildManagementInstallCapabilityCmd(),
 		BuildManagementUninstallCapabilityCmd(),
@@ -993,64 +991,6 @@ HTTP handlers for this method:
 	return cmd
 }
 
-func BuildManagementGetConfigCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "get-config",
-		Short: "",
-		Long: `
-HTTP handlers for this method:
-- GET /config
-`[1:],
-		Args:              cobra.NoArgs,
-		ValidArgsFunction: cobra.NoFileCompletions,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			client, ok := ManagementContextInjector.ClientFromContext(cmd.Context())
-			if !ok {
-				cmd.PrintErrln("failed to get client from context")
-				return nil
-			}
-			response, err := client.GetConfig(cmd.Context(), &emptypb.Empty{})
-			if err != nil {
-				return err
-			}
-			cli.RenderOutput(cmd, response)
-			return nil
-		},
-	}
-	return cmd
-}
-
-func BuildManagementUpdateConfigCmd() *cobra.Command {
-	in := &UpdateConfigRequest{}
-	cmd := &cobra.Command{
-		Use:   "update-config",
-		Short: "",
-		Long: `
-HTTP handlers for this method:
-- PUT /config
-`[1:],
-		Args:              cobra.NoArgs,
-		ValidArgsFunction: cobra.NoFileCompletions,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			client, ok := ManagementContextInjector.ClientFromContext(cmd.Context())
-			if !ok {
-				cmd.PrintErrln("failed to get client from context")
-				return nil
-			}
-			if in == nil {
-				return errors.New("no input provided")
-			}
-			_, err := client.UpdateConfig(cmd.Context(), in)
-			if err != nil {
-				return err
-			}
-			return nil
-		},
-	}
-	cmd.Flags().AddFlagSet(in.FlagSet())
-	return cmd
-}
-
 func BuildManagementListCapabilitiesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list-capabilities",
@@ -1322,12 +1262,6 @@ func (in *EditClusterRequest) FlagSet(prefix ...string) *pflag.FlagSet {
 	}
 	fs.AddFlagSet(in.Cluster.FlagSet(append(prefix, "cluster")...))
 	fs.StringToStringVar(&in.Labels, strings.Join(append(prefix, "labels"), "."), nil, "")
-	return fs
-}
-
-func (in *UpdateConfigRequest) FlagSet(prefix ...string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("UpdateConfigRequest", pflag.ExitOnError)
-	fs.SortFlags = true
 	return fs
 }
 

@@ -50,7 +50,6 @@ func (r *RBACBackendService) info() *capabilityv1.Details {
 		Name:             wellknown.CapabilityMetrics,
 		Source:           "plugin_metrics",
 		AvailableDrivers: drivers.ClusterDrivers.List(),
-		EnabledDriver:    r.Context.GatewayConfig().Spec.Cortex.Management.ClusterDriver,
 	}
 }
 

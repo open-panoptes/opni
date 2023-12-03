@@ -138,8 +138,6 @@ const (
 	Management_GetRoleBinding_FullMethodName                 = "/management.Management/GetRoleBinding"
 	Management_ListRoleBindings_FullMethodName               = "/management.Management/ListRoleBindings"
 	Management_APIExtensions_FullMethodName                  = "/management.Management/APIExtensions"
-	Management_GetConfig_FullMethodName                      = "/management.Management/GetConfig"
-	Management_UpdateConfig_FullMethodName                   = "/management.Management/UpdateConfig"
 	Management_ListCapabilities_FullMethodName               = "/management.Management/ListCapabilities"
 	Management_InstallCapability_FullMethodName              = "/management.Management/InstallCapability"
 	Management_UninstallCapability_FullMethodName            = "/management.Management/UninstallCapability"
@@ -182,8 +180,6 @@ type ManagementClient interface {
 	GetRoleBinding(ctx context.Context, in *v1.Reference, opts ...grpc.CallOption) (*v1.RoleBinding, error)
 	ListRoleBindings(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v1.RoleBindingList, error)
 	APIExtensions(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*APIExtensionInfoList, error)
-	GetConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GatewayConfig, error)
-	UpdateConfig(ctx context.Context, in *UpdateConfigRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListCapabilities(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CapabilityList, error)
 	InstallCapability(ctx context.Context, in *v11.InstallRequest, opts ...grpc.CallOption) (*v11.InstallResponse, error)
 	UninstallCapability(ctx context.Context, in *v11.UninstallRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -500,24 +496,6 @@ func (c *managementClient) APIExtensions(ctx context.Context, in *emptypb.Empty,
 	return out, nil
 }
 
-func (c *managementClient) GetConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GatewayConfig, error) {
-	out := new(GatewayConfig)
-	err := c.cc.Invoke(ctx, Management_GetConfig_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *managementClient) UpdateConfig(ctx context.Context, in *UpdateConfigRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, Management_UpdateConfig_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *managementClient) ListCapabilities(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CapabilityList, error) {
 	out := new(CapabilityList)
 	err := c.cc.Invoke(ctx, Management_ListCapabilities_FullMethodName, in, out, opts...)
@@ -622,8 +600,6 @@ type ManagementServer interface {
 	GetRoleBinding(context.Context, *v1.Reference) (*v1.RoleBinding, error)
 	ListRoleBindings(context.Context, *emptypb.Empty) (*v1.RoleBindingList, error)
 	APIExtensions(context.Context, *emptypb.Empty) (*APIExtensionInfoList, error)
-	GetConfig(context.Context, *emptypb.Empty) (*GatewayConfig, error)
-	UpdateConfig(context.Context, *UpdateConfigRequest) (*emptypb.Empty, error)
 	ListCapabilities(context.Context, *emptypb.Empty) (*CapabilityList, error)
 	InstallCapability(context.Context, *v11.InstallRequest) (*v11.InstallResponse, error)
 	UninstallCapability(context.Context, *v11.UninstallRequest) (*emptypb.Empty, error)
@@ -721,12 +697,6 @@ func (UnimplementedManagementServer) ListRoleBindings(context.Context, *emptypb.
 }
 func (UnimplementedManagementServer) APIExtensions(context.Context, *emptypb.Empty) (*APIExtensionInfoList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method APIExtensions not implemented")
-}
-func (UnimplementedManagementServer) GetConfig(context.Context, *emptypb.Empty) (*GatewayConfig, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
-}
-func (UnimplementedManagementServer) UpdateConfig(context.Context, *UpdateConfigRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateConfig not implemented")
 }
 func (UnimplementedManagementServer) ListCapabilities(context.Context, *emptypb.Empty) (*CapabilityList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListCapabilities not implemented")
@@ -1274,42 +1244,6 @@ func _Management_APIExtensions_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Management_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ManagementServer).GetConfig(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Management_GetConfig_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ManagementServer).GetConfig(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Management_UpdateConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateConfigRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ManagementServer).UpdateConfig(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Management_UpdateConfig_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ManagementServer).UpdateConfig(ctx, req.(*UpdateConfigRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Management_ListCapabilities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -1564,14 +1498,6 @@ var Management_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "APIExtensions",
 			Handler:    _Management_APIExtensions_Handler,
-		},
-		{
-			MethodName: "GetConfig",
-			Handler:    _Management_GetConfig_Handler,
-		},
-		{
-			MethodName: "UpdateConfig",
-			Handler:    _Management_UpdateConfig_Handler,
 		},
 		{
 			MethodName: "ListCapabilities",

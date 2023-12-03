@@ -23,13 +23,14 @@ import (
 
 	"github.com/rancher/opni/pkg/alerting/server"
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
+	"github.com/rancher/opni/pkg/config/adapt"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/config/v1beta1"
 	"github.com/rancher/opni/pkg/machinery"
 	"github.com/rancher/opni/pkg/plugins/apis/system"
 	"github.com/rancher/opni/pkg/plugins/driverutil"
 	natsutil "github.com/rancher/opni/pkg/util/nats"
 	"github.com/rancher/opni/plugins/alerting/pkg/apis/node"
-	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -39,48 +40,11 @@ import (
 )
 
 func (p *Plugin) UseManagementAPI(client managementv1.ManagementClient) {
-	opt := &shared.AlertingClusterOptions{}
 	p.mgmtClient.Set(client)
-	cfg, err := client.GetConfig(context.Background(),
-		&emptypb.Empty{}, grpc.WaitForReady(true))
-	if err != nil {
-		p.logger.With(
-			"err", err,
-		).Error("Failed to get mgmnt config")
-		os.Exit(1)
-	}
-	objectList, err := machinery.LoadDocuments(cfg.Documents)
-	if err != nil {
-		p.logger.With(
-			"err", err,
-		).Error("failed to load config")
-		os.Exit(1)
-	}
-	objectList.Visit(func(config *v1beta1.GatewayConfig) {
-		p.gatewayConfig.Set(config)
-		backend, err := machinery.ConfigureStorageBackend(p.ctx, &config.Spec.Storage)
-		if err != nil {
-			p.logger.With(logger.Err(err)).Error("failed to configure storage backend")
-			os.Exit(1)
-		}
-		p.storageBackend.Set(backend)
-		opt = &shared.AlertingClusterOptions{
-			Namespace:             config.Spec.Alerting.Namespace,
-			WorkerNodesService:    config.Spec.Alerting.WorkerNodeService,
-			WorkerNodePort:        config.Spec.Alerting.WorkerPort,
-			WorkerStatefulSet:     config.Spec.Alerting.WorkerStatefulSet,
-			ControllerNodeService: config.Spec.Alerting.ControllerNodeService,
-			ControllerNodePort:    config.Spec.Alerting.ControllerNodePort,
-			ControllerClusterPort: config.Spec.Alerting.ControllerClusterPort,
-			ConfigMap:             config.Spec.Alerting.ConfigMap,
-			ManagementHookHandler: config.Spec.Alerting.ManagementHookHandler,
-		}
 
-	})
 	tlsConfig := p.loadCerts()
 	p.configureDriver(
 		p.ctx,
-		driverutil.NewOption("alertingOptions", opt),
 		driverutil.NewOption("logger", p.logger.WithGroup("alerting-manager")),
 		driverutil.NewOption("subscribers", []chan alertingClient.AlertingClient{p.clusterNotifier}),
 		driverutil.NewOption("tlsConfig", tlsConfig),
@@ -89,6 +53,27 @@ func (p *Plugin) UseManagementAPI(client managementv1.ManagementClient) {
 	go p.handleDriverNotifications()
 	go p.runSync()
 	p.useWatchers(client)
+	<-p.ctx.Done()
+}
+
+func (p *Plugin) UseConfigAPI(client configv1.GatewayConfigClient) {
+	config, err := client.GetConfiguration(p.ctx, &driverutil.GetRequest{})
+	if err != nil {
+		p.logger.With(logger.Err(err)).Error("failed to get gateway configuration")
+		return
+	}
+	p.gatewayConfig.Set(&v1beta1.GatewayConfig{
+		Spec: *adapt.V1BetaConfigOf[*v1beta1.GatewayConfigSpec](config),
+	})
+	backend, err := machinery.ConfigureStorageBackendV1(p.ctx, config.Storage)
+	if err != nil {
+		p.logger.With(
+			"err", err,
+		).Error("failed to configure storage backend")
+		os.Exit(1)
+	}
+	p.storageBackend.Set(backend)
+
 	<-p.ctx.Done()
 }
 

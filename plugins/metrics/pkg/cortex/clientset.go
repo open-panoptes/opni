@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	"github.com/rancher/opni/plugins/metrics/apis/cortexadmin"
+	"github.com/rancher/opni/plugins/metrics/pkg/gateway/drivers"
 	"golang.org/x/tools/pkg/memoize"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -25,7 +26,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/rancher/opni/pkg/config/v1beta1"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 )
 
 type HTTPClientOptions struct {
@@ -60,12 +61,14 @@ type ClientSet interface {
 }
 
 type DistributorClient interface {
+	URL() string
 	distributorpb.DistributorClient
 	ConfigClient
 	Status(ctx context.Context) (*cortexadmin.DistributorStatus, error)
 }
 
 type IngesterClient interface {
+	URL() string
 	Status(ctx context.Context) (*cortexadmin.IngesterStatus, error)
 }
 
@@ -110,27 +113,33 @@ func (c *configClient) Config(ctx context.Context, mode ...ConfigMode) (string, 
 }
 
 type RulerClient interface {
+	Address() string
 	ruler.RulerClient
 	Status(ctx context.Context) (*cortexadmin.RulerStatus, error)
 }
 
 type PurgerClient interface {
+	Address() string
 	Status(ctx context.Context) (*cortexadmin.PurgerStatus, error)
 }
 
 type CompactorClient interface {
+	Address() string
 	Status(ctx context.Context) (*cortexadmin.CompactorStatus, error)
 }
 
 type StoreGatewayClient interface {
+	Address() string
 	Status(ctx context.Context) (*cortexadmin.StoreGatewayStatus, error)
 }
 
 type QuerierClient interface {
+	Address() string
 	Status(ctx context.Context) (*cortexadmin.QuerierStatus, error)
 }
 
 type QueryFrontendClient interface {
+	Address() string
 	Status(ctx context.Context) (*cortexadmin.QueryFrontendStatus, error)
 }
 
@@ -173,7 +182,7 @@ func (c *servicesStatusClient) ServicesStatus(ctx context.Context) (*cortexadmin
 		if resp.StatusCode == http.StatusNotFound ||
 			resp.StatusCode == http.StatusServiceUnavailable ||
 			resp.StatusCode == http.StatusInternalServerError {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, status.Error(codes.Internal, resp.Status)
 		}
 		return nil, fmt.Errorf("unexpected status: %s (request: %s)", resp.Status, req.URL.String())
 	}
@@ -216,7 +225,7 @@ func (c *memberlistStatusClient) MemberlistStatus(ctx context.Context) (*cortexa
 		if resp.StatusCode == http.StatusNotFound ||
 			resp.StatusCode == http.StatusServiceUnavailable ||
 			resp.StatusCode == http.StatusInternalServerError {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, status.Error(codes.Internal, resp.Status)
 		}
 		return nil, fmt.Errorf("unexpected status: %s (request: %s)", resp.Status, req.URL.String())
 	}
@@ -279,7 +288,7 @@ func (c *ringStatusClient) RingStatus(ctx context.Context) (*cortexadmin.RingSta
 		if resp.StatusCode == http.StatusNotFound ||
 			resp.StatusCode == http.StatusServiceUnavailable ||
 			resp.StatusCode == http.StatusInternalServerError {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, status.Error(codes.Internal, resp.Status)
 		}
 		return nil, fmt.Errorf("unexpected status: %s (request: %s)", resp.Status, req.URL.String())
 	}
@@ -303,6 +312,11 @@ type distributorClient struct {
 	ConfigClient
 	ServicesStatusClient
 	RingStatusClient
+	url string
+}
+
+func (c *distributorClient) URL() string {
+	return c.url
 }
 
 func (c *distributorClient) Status(ctx context.Context) (*cortexadmin.DistributorStatus, error) {
@@ -324,6 +338,11 @@ type ingesterClient struct {
 	ServicesStatusClient
 	MemberlistStatusClient
 	RingStatusClient
+	url string
+}
+
+func (c *ingesterClient) URL() string {
+	return c.url
 }
 
 func (c *ingesterClient) Status(ctx context.Context) (*cortexadmin.IngesterStatus, error) {
@@ -351,6 +370,11 @@ type rulerClient struct {
 	ServicesStatusClient
 	MemberlistStatusClient
 	RingStatusClient
+	url string
+}
+
+func (c *rulerClient) Address() string {
+	return c.url
 }
 
 func (c *rulerClient) Status(ctx context.Context) (*cortexadmin.RulerStatus, error) {
@@ -375,6 +399,11 @@ func (c *rulerClient) Status(ctx context.Context) (*cortexadmin.RulerStatus, err
 
 type purgerClient struct {
 	ServicesStatusClient
+	url string
+}
+
+func (c *purgerClient) Address() string {
+	return c.url
 }
 
 func (c *purgerClient) Status(ctx context.Context) (*cortexadmin.PurgerStatus, error) {
@@ -391,6 +420,11 @@ type compactorClient struct {
 	ServicesStatusClient
 	MemberlistStatusClient
 	RingStatusClient
+	url string
+}
+
+func (c *compactorClient) Address() string {
+	return c.url
 }
 
 func (c *compactorClient) Status(ctx context.Context) (*cortexadmin.CompactorStatus, error) {
@@ -417,6 +451,11 @@ type storeGatewayClient struct {
 	ServicesStatusClient
 	MemberlistStatusClient
 	RingStatusClient
+	url string
+}
+
+func (c *storeGatewayClient) Address() string {
+	return c.url
 }
 
 func (c *storeGatewayClient) Status(ctx context.Context) (*cortexadmin.StoreGatewayStatus, error) {
@@ -442,6 +481,11 @@ func (c *storeGatewayClient) Status(ctx context.Context) (*cortexadmin.StoreGate
 type querierClient struct {
 	ServicesStatusClient
 	MemberlistStatusClient
+	url string
+}
+
+func (c *querierClient) Address() string {
+	return c.url
 }
 
 func (c *querierClient) Status(ctx context.Context) (*cortexadmin.QuerierStatus, error) {
@@ -461,6 +505,11 @@ func (c *querierClient) Status(ctx context.Context) (*cortexadmin.QuerierStatus,
 
 type queryFrontendClient struct {
 	ServicesStatusClient
+	url string
+}
+
+func (c *queryFrontendClient) Address() string {
+	return c.url
 }
 
 func (c *queryFrontendClient) Status(ctx context.Context) (*cortexadmin.QueryFrontendStatus, error) {
@@ -556,20 +605,26 @@ func AcquireClientSet(ctx context.Context, promise *memoize.Promise) (ClientSet,
 	return clientSetResult.ClientSet, clientSetResult.Err
 }
 
-func NewClientSet(config *v1beta1.GatewayConfig) (any, memoize.Function) {
+func NewClientSet(driver drivers.ClusterDriver) (any, memoize.Function) {
+	svcConfig := driver.GetCortexServiceConfig()
 	return clientSetKey, func(ctx context.Context, arg any) any {
 		var res clientSetResult
-		tlsConfig, err := LoadTLSConfig(config)
+		tlsConfig, err := (&configv1.MTLSSpec{
+			ServerCA:   &svcConfig.Certs.ServerCA,
+			ClientCA:   &svcConfig.Certs.ClientCA,
+			ClientCert: &svcConfig.Certs.ClientCert,
+			ClientKey:  &svcConfig.Certs.ClientKey,
+		}).AsTlsConfig()
 		if err != nil {
 			res.Err = err
 			return res
 		}
-		res.ClientSet, res.Err = newClientSet(ctx, &config.Spec.Cortex, tlsConfig)
+		res.ClientSet, res.Err = newClientSet(ctx, svcConfig, tlsConfig)
 		return res
 	}
 }
 
-func newClientSet(ctx context.Context, cortexSpec *v1beta1.CortexSpec, tlsConfig *tls.Config) (ClientSet, error) {
+func newClientSet(ctx context.Context, cortexSpec drivers.CortexServiceConfig, tlsConfig *tls.Config) (ClientSet, error) {
 	distributorCC, err := grpc.DialContext(ctx, cortexSpec.Distributor.GRPCAddress,
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
 		grpc.WithChainStreamInterceptor(otelgrpc.StreamClientInterceptor()),
@@ -602,6 +657,7 @@ func newClientSet(ctx context.Context, cortexSpec *v1beta1.CortexSpec, tlsConfig
 
 	return &clientSet{
 		distributorClient: &distributorClient{
+			url: cortexSpec.Distributor.HTTPAddress,
 			ConfigClient: &configClient{
 				url:        cortexSpec.Distributor.HTTPAddress,
 				httpClient: httpClient,
@@ -617,6 +673,7 @@ func newClientSet(ctx context.Context, cortexSpec *v1beta1.CortexSpec, tlsConfig
 			},
 		},
 		ingesterClient: &ingesterClient{
+			url: cortexSpec.Ingester.HTTPAddress,
 			ServicesStatusClient: &servicesStatusClient{
 				url:        cortexSpec.Ingester.HTTPAddress,
 				httpClient: httpClient,
@@ -631,6 +688,7 @@ func newClientSet(ctx context.Context, cortexSpec *v1beta1.CortexSpec, tlsConfig
 			},
 		},
 		rulerClient: &rulerClient{
+			url:         cortexSpec.Ruler.HTTPAddress,
 			RulerClient: ruler.NewRulerClient(rulerCC),
 			ServicesStatusClient: &servicesStatusClient{
 				url:        cortexSpec.Ruler.HTTPAddress,
@@ -646,12 +704,14 @@ func newClientSet(ctx context.Context, cortexSpec *v1beta1.CortexSpec, tlsConfig
 			},
 		},
 		purgerClient: &purgerClient{
+			url: cortexSpec.Purger.HTTPAddress,
 			ServicesStatusClient: &servicesStatusClient{
 				url:        cortexSpec.Purger.HTTPAddress,
 				httpClient: httpClient,
 			},
 		},
 		compactorClient: &compactorClient{
+			url: cortexSpec.Compactor.HTTPAddress,
 			ServicesStatusClient: &servicesStatusClient{
 				url:        cortexSpec.Compactor.HTTPAddress,
 				httpClient: httpClient,
@@ -666,6 +726,7 @@ func newClientSet(ctx context.Context, cortexSpec *v1beta1.CortexSpec, tlsConfig
 			},
 		},
 		storeGatewayClient: &storeGatewayClient{
+			url: cortexSpec.StoreGateway.HTTPAddress,
 			ServicesStatusClient: &servicesStatusClient{
 				url:        cortexSpec.StoreGateway.HTTPAddress,
 				httpClient: httpClient,
@@ -680,12 +741,14 @@ func newClientSet(ctx context.Context, cortexSpec *v1beta1.CortexSpec, tlsConfig
 			},
 		},
 		queryFrontendClient: &queryFrontendClient{
+			url: cortexSpec.QueryFrontend.HTTPAddress,
 			ServicesStatusClient: &servicesStatusClient{
 				url:        cortexSpec.QueryFrontend.HTTPAddress,
 				httpClient: httpClient,
 			},
 		},
 		querierClient: &querierClient{
+			url: cortexSpec.Querier.HTTPAddress,
 			ServicesStatusClient: &servicesStatusClient{
 				url:        cortexSpec.QueryFrontend.HTTPAddress,
 				httpClient: httpClient,

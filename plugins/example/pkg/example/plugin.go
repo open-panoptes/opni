@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -17,13 +18,14 @@ import (
 	"github.com/rancher/opni/pkg/caching"
 	"github.com/rancher/opni/pkg/capabilities"
 	"github.com/rancher/opni/pkg/capabilities/wellknown"
-	"github.com/rancher/opni/pkg/config/v1beta1"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/machinery"
 	"github.com/rancher/opni/pkg/machinery/uninstall"
 	managementext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/management"
 	"github.com/rancher/opni/pkg/plugins/apis/capability"
 	"github.com/rancher/opni/pkg/plugins/apis/system"
+	driverutil "github.com/rancher/opni/pkg/plugins/driverutil"
 	"github.com/rancher/opni/pkg/plugins/meta"
 	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/storage/kvutil"
@@ -31,7 +33,6 @@ import (
 	"github.com/rancher/opni/pkg/util"
 	"github.com/rancher/opni/pkg/util/future"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -94,29 +95,24 @@ func (p *ExamplePlugin) UseCachingProvider(cacheProvider caching.CachingProvider
 }
 
 func (p *ExamplePlugin) UseManagementAPI(client managementv1.ManagementClient) {
-	cfg, err := client.GetConfig(context.Background(), &emptypb.Empty{}, grpc.WaitForReady(true))
-	if err != nil {
-		p.logger.With(logger.Err(err)).Error("failed to get config")
-		return
-	}
-	objectList, err := machinery.LoadDocuments(cfg.Documents)
-	if err != nil {
-		p.logger.With(logger.Err(err)).Error("failed to load config")
-		return
-	}
-	machinery.LoadAuthProviders(p.ctx, objectList)
-	objectList.Visit(func(config *v1beta1.GatewayConfig) {
-		backend, err := machinery.ConfigureStorageBackend(p.ctx, &config.Spec.Storage)
-		if err != nil {
-			p.logger.With(logger.Err(err)).Error("failed to configure storage backend")
-			return
-		}
-		p.storageBackend.Set(backend)
-	})
+	<-p.ctx.Done()
+}
 
-	if !p.storageBackend.IsSet() {
+func (p *ExamplePlugin) UseConfigAPI(client configv1.GatewayConfigClient) {
+	config, err := client.GetConfiguration(p.ctx, &driverutil.GetRequest{})
+	if err != nil {
+		p.logger.With(logger.Err(err)).Error("failed to get gateway configuration")
 		return
 	}
+	backend, err := machinery.ConfigureStorageBackendV1(p.ctx, config.Storage)
+	if err != nil {
+		p.logger.With(
+			"err", err,
+		).Error("failed to configure storage backend")
+		os.Exit(1)
+	}
+	p.storageBackend.Set(backend)
+
 	<-p.ctx.Done()
 }
 

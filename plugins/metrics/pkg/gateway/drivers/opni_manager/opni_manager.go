@@ -231,6 +231,49 @@ func (k *OpniManager) ShouldDisableNode(_ *corev1.Reference) error {
 	}
 }
 
+func (k *OpniManager) GetCortexServiceConfig() drivers.CortexServiceConfig {
+	return drivers.CortexServiceConfig{
+		Distributor: drivers.HttpGrpcConfig{
+			HTTPAddress: "cortex-distributor:8080",
+			GRPCAddress: "cortex-distributor-headless:9095",
+		},
+		Ingester: drivers.HttpGrpcConfig{
+			HTTPAddress: "cortex-ingester:8080",
+			GRPCAddress: "cortex-ingester-headless:9095",
+		},
+		StoreGateway: drivers.HttpGrpcConfig{
+			HTTPAddress: "cortex-store-gateway:8080",
+			GRPCAddress: "cortex-store-gateway-headless:9095",
+		},
+		Ruler: drivers.HttpGrpcConfig{
+			HTTPAddress: "cortex-ruler:8080",
+			GRPCAddress: "cortex-ruler-headless:9095",
+		},
+		QueryFrontend: drivers.HttpGrpcConfig{
+			HTTPAddress: "cortex-query-frontend:8080",
+			GRPCAddress: "cortex-query-frontend-headless:9095",
+		},
+		Alertmanager: drivers.HttpConfig{
+			HTTPAddress: "cortex-alertmanager:8080",
+		},
+		Compactor: drivers.HttpConfig{
+			HTTPAddress: "cortex-compactor:8080",
+		},
+		Querier: drivers.HttpConfig{
+			HTTPAddress: "cortex-querier:8080",
+		},
+		Purger: drivers.HttpConfig{
+			HTTPAddress: "cortex-purger:8080",
+		},
+		Certs: drivers.MTLSConfig{
+			ServerCA:   "/run/cortex/certs/server/ca.crt",
+			ClientCA:   "/run/cortex/certs/client/ca.crt",
+			ClientCert: "/run/cortex/certs/client/tls.crt",
+			ClientKey:  "/run/cortex/certs/client/tls.key",
+		},
+	}
+}
+
 func init() {
 	drivers.ClusterDrivers.Register("opni-manager", func(ctx context.Context, opts ...driverutil.Option) (drivers.ClusterDriver, error) {
 		options := OpniManagerClusterDriverOptions{
