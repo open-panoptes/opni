@@ -34,8 +34,8 @@ func Bind(ctx context.Context, callback func([]protoreflect.Value), reactiveValu
 	}
 	for i, rv := range reactiveValues {
 		i := i
-		rv.watchFuncWithRev(ctx, func(rev int64, v protoreflect.Value) {
-			b.onUpdate(i, rev, v)
+		rv.watchFuncInternal(ctx, func(rev int64, v protoreflect.Value, group <-chan struct{}) {
+			b.onUpdate(i, rev, v, group)
 		})
 	}
 }
@@ -47,31 +47,28 @@ type binder struct {
 }
 
 type queuedUpdate struct {
-	lazyInit sync.Once
 	valuesMu sync.Mutex
 	values   []protoreflect.Value
 	resolve  sync.Once
 }
 
-func (q *queuedUpdate) doLazyInit(size int) {
-	q.lazyInit.Do(func() {
-		q.values = make([]protoreflect.Value, size)
-	})
-}
-
-func (b *binder) onUpdate(i int, rev int64, v protoreflect.Value) {
+func (b *binder) onUpdate(i int, rev int64, v protoreflect.Value, group <-chan struct{}) {
 	q := &queuedUpdate{}
 	if prev, ok, _ := b.queues.PeekOrAdd(rev, q); ok {
 		q = prev
+		q.valuesMu.Lock()
+	} else {
+		q.valuesMu.Lock()
+		// only allocate the values slice once
+		q.values = make([]protoreflect.Value, len(b.reactiveValues))
 	}
-	q.doLazyInit(len(b.reactiveValues))
 	// this *must* happen synchronously, since the group channel is closed
 	// once all callbacks have returned.
-	q.valuesMu.Lock()
 	q.values[i] = v
 	q.valuesMu.Unlock()
 
 	go func() {
+		<-group
 		q.resolve.Do(func() {
 			b.doResolve(q)
 		})

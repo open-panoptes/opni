@@ -16,6 +16,7 @@ import (
 
 	"github.com/rancher/opni/pkg/config/reactive"
 	"github.com/rancher/opni/pkg/plugins/driverutil"
+	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/storage/inmemory"
 	"github.com/rancher/opni/pkg/test/testdata/plugins/ext"
 	"github.com/rancher/opni/pkg/test/testutil"
@@ -28,10 +29,11 @@ import (
 
 var _ = Describe("Reactive Controller", Label("unit"), Ordered, func() {
 	var ctrl *reactive.Controller[*ext.SampleConfiguration]
-	defaultStore := inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
-	activeStore := inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
+	var defaultStore, activeStore storage.ValueStoreT[*ext.SampleConfiguration]
 
 	BeforeEach(func() {
+		defaultStore = inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
+		activeStore = inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
 		ctrl = reactive.NewController(driverutil.NewDefaultingConfigTracker(defaultStore, activeStore, flagutil.LoadDefaults))
 		ctx, ca := context.WithCancel(context.Background())
 		Expect(ctrl.Start(ctx)).To(Succeed())
@@ -170,15 +172,48 @@ var _ = Describe("Reactive Controller", Label("unit"), Ordered, func() {
 	When("a reactive message is watched before a value is set", func() {
 		It("should receive the value when it is set", func(ctx SpecContext) {
 			msg := &ext.SampleConfiguration{}
-			rm := ctrl.Reactive(msg.ProtoPath().StringField())
-			w := rm.Watch(ctx)
-			Expect(len(w)).To(BeZero())
+			rm1 := ctrl.Reactive(msg.ProtoPath().StringField())
+			rm2 := ctrl.Reactive(msg.ProtoPath().MessageField().Field5().Field3())
+			w1 := rm1.Watch(ctx)
+			w2 := rm2.Watch(ctx)
+			w2_2 := rm2.Watch(ctx)
+			Expect(len(w1)).To(BeZero())
+			Expect(len(w2)).To(BeZero())
+			Expect(len(w2_2)).To(BeZero())
 
+			spec := &ext.SampleConfiguration{
+				StringField: lo.ToPtr("foo"),
+				MessageField: &ext.SampleMessage{
+					Field5: &ext.Sample5FieldMsg{
+						Field3: 1234,
+					},
+				},
+			}
+			err := activeStore.Put(ctx, spec)
+			Expect(err).NotTo(HaveOccurred())
+
+			var v protoreflect.Value
+			Eventually(w1).Should(Receive(&v))
+			Expect(v).To(testutil.ProtoValueEqual(protoreflect.ValueOfString("foo")))
+
+			Eventually(w2).Should(Receive(&v))
+			Expect(v).To(testutil.ProtoValueEqual(protoreflect.ValueOfInt32(1234)))
+			Eventually(w2_2).Should(Receive(&v))
+			Expect(v).To(testutil.ProtoValueEqual(protoreflect.ValueOfInt32(1234)))
+		})
+	})
+
+	When("a reactive message is watched after a value is set", func() {
+		It("should receive the value immediately", func(ctx SpecContext) {
 			spec := &ext.SampleConfiguration{
 				StringField: lo.ToPtr("foo"),
 			}
 			err := activeStore.Put(ctx, spec)
 			Expect(err).NotTo(HaveOccurred())
+
+			msg := &ext.SampleConfiguration{}
+			rm := ctrl.Reactive(msg.ProtoPath().StringField())
+			w := rm.Watch(ctx)
 
 			var v protoreflect.Value
 			Eventually(w).Should(Receive(&v))
@@ -186,7 +221,7 @@ var _ = Describe("Reactive Controller", Label("unit"), Ordered, func() {
 		})
 	})
 
-	When("the active store has an existing value on creation", func() {
+	When("the active store has an existing value on controller creation", func() {
 		It("should start with the existing revision and value", func() {
 			spec := &ext.SampleConfiguration{
 				StringField: lo.ToPtr("foo"),
@@ -216,6 +251,8 @@ var _ = Describe("Reactive Controller", Label("unit"), Ordered, func() {
 			msg := &ext.SampleConfiguration{}
 			rm1 := ctrl.Reactive(msg.ProtoPath().StringField())
 			rm2 := ctrl.Reactive(msg.ProtoPath().StringField())
+			Expect(rm1).To(Equal(rm2)) // the underlying reactive value should be the same
+
 			w1 := rm1.Watch(ctx)
 			w2 := rm2.Watch(ctx)
 

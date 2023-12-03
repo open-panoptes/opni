@@ -66,12 +66,8 @@ func (m *typedReactive[E, T]) WatchFunc(ctx context.Context, onChanged func(T)) 
 	})
 }
 
-func (m *typedReactive[E, T]) watchFuncWithRev(ctx context.Context, onChanged func(int64, T)) {
-	m.base.watchFuncWithRev(ctx, func(rev int64, v protoreflect.Value) {
-		onChanged(rev, m.encoder.FromValue(v))
+func (m *typedReactive[E, T]) watchFuncInternal(ctx context.Context, onChanged func(int64, T, <-chan struct{})) {
+	m.base.watchFuncInternal(ctx, func(rev int64, v protoreflect.Value, group <-chan struct{}) {
+		onChanged(rev, m.encoder.FromValue(v), group)
 	})
-}
-
-func (m *typedReactive[E, T]) wait() {
-	m.base.wait()
 }

@@ -11,41 +11,39 @@ import (
 type reactiveValue struct {
 	mu            sync.RWMutex
 	rev           int64
+	pendingInit   bool
 	value         protoreflect.Value
 	watchChannels map[string]chan protoreflect.Value
-	watchFuncs    map[string]func(int64, protoreflect.Value)
-	group         <-chan struct{}
-	newGroup      chan struct{}
+	watchFuncs    map[string]func(int64, protoreflect.Value, <-chan struct{})
 }
 
 func newReactiveValue() *reactiveValue {
 	return &reactiveValue{
+		pendingInit:   true,
 		watchChannels: make(map[string]chan protoreflect.Value),
-		watchFuncs:    make(map[string]func(int64, protoreflect.Value)),
-		newGroup:      make(chan struct{}),
+		watchFuncs:    make(map[string]func(int64, protoreflect.Value, <-chan struct{})),
 	}
 }
 
-func (r *reactiveValue) Update(rev int64, v protoreflect.Value, group <-chan struct{}) {
+func (r *reactiveValue) Update(rev int64, v protoreflect.Value, group <-chan struct{}, notify bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	r.rev = rev
 	r.value = v
-	if r.group != nil {
-		select {
-		case r.newGroup <- struct{}{}:
-		default:
-		}
+
+	if r.pendingInit {
+		r.pendingInit = false
+	} else if !notify {
+		return
 	}
-	r.group = group
 
 	for _, w := range r.watchChannels {
 		w <- v
 	}
 
 	for _, f := range r.watchFuncs {
-		f(rev, v)
+		f(rev, v, group)
 	}
 }
 
@@ -60,7 +58,8 @@ func (r *reactiveValue) Watch(ctx context.Context) <-chan protoreflect.Value {
 	defer r.mu.Unlock()
 	ch := make(chan protoreflect.Value, 4)
 
-	if r.rev != 0 {
+	if r.rev != 0 && r.pendingInit {
+		r.pendingInit = false
 		ch <- r.value
 	}
 
@@ -76,17 +75,18 @@ func (r *reactiveValue) Watch(ctx context.Context) <-chan protoreflect.Value {
 }
 
 func (r *reactiveValue) WatchFunc(ctx context.Context, onChanged func(protoreflect.Value)) {
-	r.watchFuncWithRev(ctx, func(_ int64, value protoreflect.Value) {
+	r.watchFuncInternal(ctx, func(_ int64, value protoreflect.Value, _ <-chan struct{}) {
 		onChanged(value)
 	})
 }
 
-func (r *reactiveValue) watchFuncWithRev(ctx context.Context, onChanged func(int64, protoreflect.Value)) {
+func (r *reactiveValue) watchFuncInternal(ctx context.Context, onChanged func(int64, protoreflect.Value, <-chan struct{})) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.rev != 0 {
-		defer onChanged(r.rev, r.value)
+	if r.rev != 0 && r.pendingInit {
+		r.pendingInit = false
+		onChanged(r.rev, r.value, nil)
 	}
 
 	key := uuid.NewString()
@@ -97,21 +97,4 @@ func (r *reactiveValue) watchFuncWithRev(ctx context.Context, onChanged func(int
 		defer r.mu.Unlock()
 		delete(r.watchFuncs, key)
 	})
-}
-
-func (r *reactiveValue) wait() {
-	for {
-		r.mu.Lock()
-		group := r.group
-		if group == nil {
-			return
-		}
-		r.mu.Unlock()
-		select {
-		case <-group:
-			return
-		case <-r.newGroup:
-			continue
-		}
-	}
 }

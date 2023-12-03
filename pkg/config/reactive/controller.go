@@ -15,6 +15,7 @@ import (
 	"github.com/rancher/opni/pkg/util/fieldmask"
 	"google.golang.org/protobuf/reflect/protopath"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 type DiffMode int
@@ -91,23 +92,6 @@ func (s *Controller[T]) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if rev != 0 {
-		// The first event must be handled before this function returns, if
-		// there is an existing configuration. Otherwise, a logic race will occur
-		// between the goroutine below and calls to Reactive() after this
-		// function returns. New reactive values have late-join initialization
-		// logic; if the first event is not consumed, the late-join logic and
-		// the goroutine below (when it is scheduled) would cause duplicate
-		// updates to be sent to newly created reactive values.
-		firstEvent, ok := <-w
-		if !ok {
-			return fmt.Errorf("watch channel closed unexpectedly")
-		}
-
-		// At this point there will most likely not be any reactive values, but
-		// this function sets s.currentRev and also logs the first event.
-		s.handleWatchEvent(firstEvent)
-	}
 	go func() {
 		for {
 			cfg, ok := <-w
@@ -129,6 +113,9 @@ func (s *Controller[T]) handleWatchEvent(cfg storage.WatchEvent[storage.KeyRevis
 		close(group)
 	}()
 
+	var currentRev int64
+	var currentVal protoreflect.Value
+	var diffMask *fieldmaskpb.FieldMask
 	switch cfg.EventType {
 	case storage.WatchEventDelete:
 		if s.logger != nil {
@@ -137,20 +124,19 @@ func (s *Controller[T]) handleWatchEvent(cfg storage.WatchEvent[storage.KeyRevis
 				"prevRevision", cfg.Previous.Revision(),
 			).Info("configuration deleted")
 		}
-		s.reactiveMessages.Walk(func(node *pathTrieNode[*reactiveValue]) {
-			node.value.Update(cfg.Previous.Revision(), protoreflect.Value{}, group)
-		})
+		currentRev = cfg.Previous.Revision()
+		currentVal = protoreflect.Value{}
+		diffMask = fieldmask.Diff(cfg.Previous.Value().ProtoReflect(), cfg.Previous.Value().ProtoReflect().Type().Zero())
 	case storage.WatchEventPut:
-		s.currentRevMu.Lock()
-		s.currentRev = cfg.Current.Revision()
-		s.currentRevMu.Unlock()
+		currentRev = cfg.Current.Revision()
+		currentVal = protoreflect.ValueOf(cfg.Current.Value().ProtoReflect())
 
 		// efficiently compute a list of paths (or prefixes) that have changed
 		var prevValue T
 		if cfg.Previous != nil {
 			prevValue = cfg.Previous.Value()
 		}
-		diffMask := fieldmask.Diff(prevValue.ProtoReflect(), cfg.Current.Value().ProtoReflect())
+		diffMask = fieldmask.Diff(prevValue.ProtoReflect(), cfg.Current.Value().ProtoReflect())
 
 		if s.logger != nil {
 			opts := jsondiff.DefaultConsoleOptions()
@@ -159,21 +145,31 @@ func (s *Controller[T]) handleWatchEvent(cfg storage.WatchEvent[storage.KeyRevis
 			stat := driverutil.DiffStat(diff, opts)
 			switch s.diffMode {
 			case DiffStat:
-				s.logger.Info("configuration updated", "revision", cfg.Current.Revision(), "diff", stat)
+				s.logger.Info("configuration updated", "revision", currentRev, "diff", stat)
 			case DiffFull:
-				s.logger.Info("configuration updated", "revision", cfg.Current.Revision(), "diff", stat)
+				s.logger.Info("configuration updated", "revision", currentRev, "diff", stat)
 				s.logger.Info("⤷ diff:\n" + diff)
 			}
 		}
-		for _, pathStr := range diffMask.GetPaths() {
-			node := s.reactiveMessages.FindString(pathStr)
-			val := protoreflect.ValueOf(cfg.Current.Value().ProtoReflect())
-			for _, step := range node.Path[1:] {
-				val = val.Message().Get(step.FieldDescriptor())
-			}
-			node.value.Update(cfg.Current.Revision(), val, group)
-		}
 	}
+	s.currentRevMu.Lock()
+	s.currentRev = currentRev
+	s.currentRevMu.Unlock()
+
+	pathsToNotify := make(map[string]struct{})
+	for _, pathStr := range diffMask.GetPaths() {
+		pathsToNotify[pathStr] = struct{}{}
+	}
+	s.reactiveMessages.WalkValues(func(node *pathTrieNode[*reactiveValue], value protoreflect.Value) {
+		var shouldNotify bool
+		if len(node.Path) == 1 {
+			// root node, always notify
+			shouldNotify = true
+		} else if _, ok := pathsToNotify[node.Path[1:].String()[1:]]; ok {
+			shouldNotify = true
+		}
+		node.value.Update(currentRev, value, group, shouldNotify)
+	}, currentVal)
 }
 
 func (s *Controller[T]) Reactive(path protopath.Path) Value {
@@ -236,10 +232,6 @@ func (t *pathTrie[V]) Find(path protopath.Path) *pathTrieNode[V] {
 	return t.index[path[1:].String()[1:]]
 }
 
-func (t *pathTrie[V]) FindString(path string) *pathTrieNode[V] {
-	return t.index[path]
-}
-
 // Walk performs a depth-first post-order traversal of the trie, calling fn
 // for each node. The root node is visited last.
 func (t *pathTrie[V]) Walk(fn func(*pathTrieNode[V])) {
@@ -251,4 +243,19 @@ func (t *pathTrie[V]) Walk(fn func(*pathTrieNode[V])) {
 		fn(node)
 	}
 	walk(t.root)
+}
+
+func (t *pathTrie[V]) WalkValues(fn func(node *pathTrieNode[V], value protoreflect.Value), rootValue protoreflect.Value) {
+	var walk func(*pathTrieNode[V], protoreflect.Value)
+	walk = func(node *pathTrieNode[V], value protoreflect.Value) {
+		for _, child := range node.nodes {
+			if !value.IsValid() {
+				walk(child, protoreflect.Value{})
+			} else {
+				walk(child, value.Message().Get(child.Path.Index(-1).FieldDescriptor()))
+			}
+		}
+		fn(node, value)
+	}
+	walk(t.root, rootValue)
 }

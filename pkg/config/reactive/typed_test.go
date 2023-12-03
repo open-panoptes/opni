@@ -20,7 +20,7 @@ var _ = Describe("Typed Reactive Messages", Label("unit"), func() {
 		}
 
 		val := protoreflect.ValueOf(actual.ProtoReflect())
-		rv.Update(1, val, make(chan struct{}))
+		rv.Update(1, val, make(chan struct{}), true)
 		Expect(rv.Value()).To(testutil.ProtoValueEqual(val))
 
 		typedRv := reactive.Message[*ext.Sample2FieldMsg](rv)
@@ -48,7 +48,7 @@ var _ = Describe("Typed Reactive Messages", Label("unit"), func() {
 		check = func(m *ext.Sample2FieldMsg) {
 			Expect(m).To(testutil.ProtoEqual(actual2))
 		}
-		rv.Update(2, protoreflect.ValueOf(actual2.ProtoReflect()), make(chan struct{}))
+		rv.Update(2, protoreflect.ValueOf(actual2.ProtoReflect()), make(chan struct{}), true)
 
 		Eventually(typedW).Should(Receive(testutil.ProtoEqual(actual2)))
 		Expect(called).To(BeTrue(), "watch func was not called")
@@ -59,7 +59,7 @@ var _ = Describe("Typed Reactive Messages", Label("unit"), func() {
 
 		actual := int32(100)
 
-		rv.Update(1, protoreflect.ValueOf(actual), make(chan struct{}))
+		rv.Update(1, protoreflect.ValueOf(actual), make(chan struct{}), true)
 		Expect(rv.Value().Int()).To(Equal(int64(100))) // note the type conversion by Int()
 
 		typedRv := reactive.Scalar[int32](rv)
@@ -83,7 +83,7 @@ var _ = Describe("Typed Reactive Messages", Label("unit"), func() {
 		check = func(m int32) {
 			Expect(m).To(Equal(actual2))
 		}
-		rv.Update(2, protoreflect.ValueOf(actual2), make(chan struct{}))
+		rv.Update(2, protoreflect.ValueOf(actual2), make(chan struct{}), true)
 
 		Eventually(typedW).Should(Receive(Equal(actual2)))
 		Expect(called).To(BeTrue(), "watch func was not called")

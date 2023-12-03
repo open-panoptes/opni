@@ -24,6 +24,5 @@ type Encoder[T any] interface {
 }
 
 type reactiveInternal[V any] interface {
-	watchFuncWithRev(ctx context.Context, onChanged func(rev int64, value V))
-	wait()
+	watchFuncInternal(ctx context.Context, onChanged func(rev int64, value V, group <-chan struct{}))
 }
