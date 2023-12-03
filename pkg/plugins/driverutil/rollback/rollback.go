@@ -47,7 +47,6 @@ func BuildCmd[
 	},
 ](use string, cci I) *cobra.Command {
 	var (
-		revision   *int64
 		target     driverutil.Target
 		diffFull   bool
 		diffFormat string
@@ -125,7 +124,7 @@ the secret values will not change from the current configuration.
 				return fmt.Errorf("invalid target %q", target)
 			}
 			if currentConfig.GetRevision().GetRevision() == targetConfig.GetRevision().GetRevision() {
-				return fmt.Errorf("current configuration is already at revision %d", *revision)
+				return fmt.Errorf("current configuration is already at revision %d", getRequest.GetRevision().GetRevision())
 			}
 			driverutil.CopyRevision(targetConfig, currentConfig)
 
@@ -225,7 +224,7 @@ the secret values will not change from the current configuration.
 
 				// prompt for confirmation
 				message := fmt.Sprintf("Rollback the %s configuration to revision %d?",
-					strings.ToLower(strings.TrimSuffix(target.String(), "Configuration")), *revision)
+					strings.ToLower(strings.TrimSuffix(target.String(), "Configuration")), getRequest.GetRevision().GetRevision())
 				yes := "Yes"
 
 				comments := []string{}
@@ -281,8 +280,8 @@ the secret values will not change from the current configuration.
 					// reset using a mask that includes all present fields in the target config,
 					// and the target config as the patch.
 					resetReq := util.NewMessage[R]()
-					resetReq.ProtoReflect().Set(util.FieldByName[S]("mask"), protoreflect.ValueOfMessage(fieldmask.ByPresence(targetConfig.ProtoReflect()).ProtoReflect()))
-					resetReq.ProtoReflect().Set(util.FieldByName[S]("patch"), protoreflect.ValueOfMessage(targetConfig.ProtoReflect()))
+					resetReq.ProtoReflect().Set(util.FieldByName[R]("mask"), protoreflect.ValueOfMessage(fieldmask.ByPresence(targetConfig.ProtoReflect()).ProtoReflect()))
+					resetReq.ProtoReflect().Set(util.FieldByName[R]("patch"), protoreflect.ValueOfMessage(targetConfig.ProtoReflect()))
 
 					_, err = client.ResetConfiguration(cmd.Context(), resetReq)
 				case driverutil.Target_DefaultConfiguration:
@@ -294,7 +293,7 @@ the secret values will not change from the current configuration.
 				if err != nil {
 					cmd.PrintErrln("rollback failed:", err)
 				}
-				cmd.Printf("successfully rolled back to revision %d\n", *revision)
+				cmd.Printf("successfully rolled back to revision %d\n", getRequest.GetRevision().GetRevision())
 				return nil
 			}
 		},
