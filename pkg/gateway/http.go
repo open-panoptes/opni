@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -208,9 +209,13 @@ func (s *GatewayHTTPServer) ListenAndServe(ctx context.Context) error {
 	metricsListenAddr := s.mgr.Reactive(configv1.ProtoPath().Health().HttpListenAddress())
 
 	e1 := lo.Async(func() error {
+		var mu sync.Mutex
 		var cancel context.CancelFunc
 		var done chan struct{}
 		reactive.Bind(ctx, func(v []protoreflect.Value) {
+			mu.Lock()
+			defer mu.Unlock()
+
 			if cancel != nil {
 				cancel()
 				<-done
@@ -241,22 +246,32 @@ func (s *GatewayHTTPServer) ListenAndServe(ctx context.Context) error {
 			go func() {
 				defer close(done)
 				if err := util.ServeHandler(serveContext, s.router.Handler(), listener); err != nil {
-					lg.With(logger.Err(err)).Warn("gateway HTTP server exited with error")
+					if !errors.Is(err, context.Canceled) {
+						lg.With(logger.Err(err)).Warn("gateway HTTP server exited with error")
+						return
+					}
 				}
+				lg.Info("gateway HTTP server stopped")
 			}()
 		}, httpListenAddr, s.certs)
 		<-ctx.Done()
+		mu.Lock()
 		if cancel != nil {
 			cancel()
 			<-done
 		}
+		mu.Unlock()
 		return ctx.Err()
 	})
 
 	e2 := lo.Async(func() error {
+		var mu sync.Mutex
 		var cancel context.CancelFunc
 		var done chan struct{}
 		metricsListenAddr.WatchFunc(ctx, func(v protoreflect.Value) {
+			mu.Lock()
+			defer mu.Unlock()
+
 			if cancel != nil {
 				cancel()
 				<-done
@@ -280,13 +295,21 @@ func (s *GatewayHTTPServer) ListenAndServe(ctx context.Context) error {
 			go func() {
 				defer close(done)
 				if err := util.ServeHandler(serveContext, s.metricsRouter.Handler(), listener); err != nil {
-					lg.With(logger.Err(err)).Warn("metrics HTTP server exited with error")
+					if !errors.Is(err, context.Canceled) {
+						lg.With(logger.Err(err)).Warn("metrics HTTP server exited with error")
+						return
+					}
 				}
+				lg.Info("metrics HTTP server stopped")
 			}()
 		})
 		<-ctx.Done()
-		cancel()
-		<-done
+		mu.Lock()
+		if cancel != nil {
+			cancel()
+			<-done
+		}
+		mu.Unlock()
 		return ctx.Err()
 	})
 

@@ -75,10 +75,11 @@ func NewGRPCServer(
 	}
 }
 
-func (s *GatewayGRPCServer) ListenAndServe(ctx context.Context) (serveError error) {
+func (s *GatewayGRPCServer) ListenAndServe(ctx context.Context) error {
 	var mu sync.Mutex
 	var cancel context.CancelFunc
 	var done chan struct{}
+	var serveError error
 	doServe := func(addr string, certs *configv1.CertsSpec) error {
 		mu.Lock()
 		defer mu.Unlock()
@@ -103,22 +104,32 @@ func (s *GatewayGRPCServer) ListenAndServe(ctx context.Context) (serveError erro
 		if err != nil {
 			return err
 		}
-		go func(done chan struct{}) {
+		go func() {
 			s.serve(serveCtx, listener, tlsConfig)
 			close(done)
-		}(done)
+		}()
 		return nil
 	}
 
 	reactive.Bind(ctx,
 		func(v []protoreflect.Value) {
-			serveError = doServe(v[0].String(), v[1].Message().Interface().(*configv1.CertsSpec))
+			err := doServe(v[0].String(), v[1].Message().Interface().(*configv1.CertsSpec))
+			mu.Lock()
+			serveError = err
+			mu.Unlock()
 		},
 		s.mgr.Reactive(configv1.ProtoPath().Server().GrpcListenAddress()),
 		s.mgr.Reactive(protopath.Path(configv1.ProtoPath().Certs())),
 	)
 	<-ctx.Done()
-	return
+
+	mu.Lock()
+	defer mu.Unlock()
+	err := serveError
+	if cancel != nil {
+		cancel()
+	}
+	return err
 }
 
 func (s *GatewayGRPCServer) serve(ctx context.Context, listener net.Listener, tlsConfig *tls.Config) error {

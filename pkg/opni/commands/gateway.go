@@ -13,7 +13,6 @@ import (
 	opnicorev1 "github.com/rancher/opni/apis/core/v1"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	"github.com/rancher/opni/pkg/config/reactive"
-	"github.com/rancher/opni/pkg/config/reactive/subtle"
 	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/gateway"
 	"github.com/rancher/opni/pkg/logger"
@@ -29,6 +28,7 @@ import (
 	"github.com/rancher/opni/pkg/validation"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/reflect/protopath"
 	"k8s.io/apimachinery/pkg/types"
 
 	_ "github.com/rancher/opni/pkg/oci/kubernetes"
@@ -462,18 +462,21 @@ persist their default configurations in the KV store.
 
 			g.MustRegisterCollector(m)
 
-			doneLoadingPlugins := make(chan struct{})
-			dir := subtle.WaitOne(ctx, mgr.Reactive(config.ProtoPath().Plugins().Dir())).String()
-			pluginLoader.Hook(hooks.OnLoadingCompleted(func(numLoaded int) {
-				lg.Info(fmt.Sprintf("loaded %d plugins", numLoaded))
-				close(doneLoadingPlugins)
-			}))
-			pluginLoader.LoadPlugins(ctx, dir, plugins.GatewayScheme)
-			select {
-			case <-doneLoadingPlugins:
-			case <-ctx.Done():
-				return ctx.Err()
-			}
+			go func() {
+				ctx, ca := context.WithCancel(ctx)
+				defer ca()
+				w := reactive.Message[*configv1.PluginsSpec](mgr.Reactive(protopath.Path(config.ProtoPath().Plugins()))).Watch(ctx)
+				pluginLoader.Hook(hooks.OnLoadingCompleted(func(numLoaded int) {
+					lg.Info(fmt.Sprintf("loaded %d plugins", numLoaded))
+				}))
+				conf := <-w
+				if conf == nil {
+					lg.Error("no plugin configuration found")
+					return
+				}
+				lg.Info("loaded plugin configuration", "dir", conf.GetDir())
+				pluginLoader.LoadPlugins(ctx, conf.GetDir(), plugins.GatewayScheme, plugins.WithFilters(conf.GetFilters()))
+			}()
 
 			var eg errgroup.Group
 			eg.Go(func() error {

@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"errors"
 	"math"
 	"net"
 	"sync"
@@ -260,34 +261,59 @@ type RelayServer struct {
 	logger            *slog.Logger
 }
 
-func (rs *RelayServer) ListenAndServe(ctx context.Context) (err error) {
+func (rs *RelayServer) ListenAndServe(ctx context.Context) error {
 	var cancel context.CancelFunc
 	var done chan struct{}
+	var mu sync.Mutex
+	var err error
 	rs.listenAddress.WatchFunc(ctx, func(listenAddress string) {
+		mu.Lock()
+		defer mu.Unlock()
+
 		if cancel != nil {
 			cancel()
 			<-done
 		}
-		ctx, cancel = context.WithCancel(ctx)
-		done = make(chan struct{})
 
 		var listener net.Listener
 		listener, err = util.NewProtocolListener(listenAddress)
 		if err != nil {
+			rs.logger.With(
+				"address", listenAddress,
+				logger.Err(err),
+			).Error("failed to start relay server")
 			return
 		}
+		rs.logger.With(
+			"address", listener.Addr().String(),
+		).Info("relay server starting")
+
+		ctx, ca := context.WithCancel(ctx)
+		cancel = ca
+		done = make(chan struct{})
 		go func() {
 			defer close(done)
 			err := rs.serve(ctx, listener)
 			if err != nil {
-				rs.logger.With(
-					logger.Err(err),
-				).Error("relay server exited with error")
+				if !errors.Is(err, context.Canceled) {
+					rs.logger.With(
+						logger.Err(err),
+					).Error("relay server exited with error")
+					return
+				}
 			}
+			rs.logger.Info("relay server stopped")
 		}()
 	})
 	<-ctx.Done()
-	return // last error
+	mu.Lock()
+	if cancel != nil {
+		cancel()
+		<-done
+	}
+	lastErr := err
+	mu.Unlock()
+	return lastErr
 }
 
 func (rs *RelayServer) serve(ctx context.Context, listener net.Listener) error {

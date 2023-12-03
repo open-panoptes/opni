@@ -186,45 +186,59 @@ func NewGateway(
 	//set up update server
 	updateServer := update.NewUpdateServer(lg)
 
-	// set up plugin sync server
-	pluginConfig := subtle.WaitOneMessage[*configv1.PluginsSpec](ctx, mgr.Reactive(protopath.Path(configv1.ProtoPath().Plugins())))
-	patchEngine := patch.NewReactivePatchEngine(ctx, lg, mgr.Reactive(configv1.ProtoPath().Upgrades().Plugins().Binary().PatchEngine()))
-
-	binarySyncServer, err := patchserver.NewFilesystemPluginSyncServer(ctx, pluginConfig.Cache, patchEngine, lg,
-		patchserver.WithPluginSyncFilters(func(pm meta.PluginMeta) bool {
-			if pm.ExtendedMetadata != nil {
-				// only sync plugins that have the agent mode set
-				return slices.Contains(pm.ExtendedMetadata.ModeList.Modes, meta.ModeAgent)
+	go func() {
+		// set up plugin sync server
+		lg.Debug("waiting for plugin config...")
+		pluginConfig := subtle.WaitOneMessage[*configv1.PluginsSpec](ctx, mgr.Reactive(protopath.Path(configv1.ProtoPath().Plugins())))
+		if pluginConfig == nil {
+			if ctx.Err() != nil {
+				return
 			}
-			return true // default to syncing all plugins
-		}),
-	)
-	if err != nil {
-		lg.With(
-			logger.Err(err),
-		).Error("failed to create plugin sync server")
-		panic("failed to create plugin sync server")
-	}
+			lg.Error("plugin config not received")
+			return
+		}
+		lg.Debug("plugin config received")
+		patchEngine := patch.NewReactivePatchEngine(ctx, lg, mgr.Reactive(configv1.ProtoPath().Upgrades().Plugins().Binary().PatchEngine()))
 
-	if err := binarySyncServer.RunGarbageCollection(ctx, storageBackend); err != nil {
-		lg.With(
-			logger.Err(err),
-		).Error("failed to run garbage collection")
-	}
+		binarySyncServer, err := patchserver.NewFilesystemPluginSyncServer(ctx, pluginConfig.Cache, patchEngine, lg,
+			patchserver.WithPluginSyncFilters(func(pm meta.PluginMeta) bool {
+				if pm.ExtendedMetadata != nil {
+					// only sync plugins that have the agent mode set
+					return slices.Contains(pm.ExtendedMetadata.ModeList.Modes, meta.ModeAgent)
+				}
+				return true // default to syncing all plugins
+			}),
+		)
+		if err != nil {
+			lg.With(
+				logger.Err(err),
+			).Error("failed to create plugin sync server")
+			return
+		}
+		lg.With("strategy", binarySyncServer.Strategy()).Info("plugin sync server starting")
 
-	updateServer.RegisterUpdateHandler(binarySyncServer.Strategy(), binarySyncServer)
+		if err := binarySyncServer.RunGarbageCollection(ctx, storageBackend); err != nil {
+			lg.With(
+				logger.Err(err),
+			).Error("failed to run garbage collection")
+		}
 
-	k8sSyncServerConfig := reactive.Message[*configv1.KubernetesAgentUpgradeSpec](
-		mgr.Reactive(protopath.Path(configv1.ProtoPath().Upgrades().Agents().Kubernetes())))
-	kubernetesSyncServer, err := k8sserver.NewKubernetesSyncServer(ctx, k8sSyncServerConfig, lg)
-	if err != nil {
-		lg.With(
-			logger.Err(err),
-		).Error("failed to create kubernetes agent sync server")
-		// panic("failed to create kubernetes agent sync server")
-	} else {
-		updateServer.RegisterUpdateHandler(kubernetesSyncServer.Strategy(), kubernetesSyncServer)
-	}
+		updateServer.RegisterUpdateHandler(binarySyncServer.Strategy(), binarySyncServer)
+	}()
+
+	go func() {
+		k8sSyncServerConfig := reactive.Message[*configv1.KubernetesAgentUpgradeSpec](
+			mgr.Reactive(protopath.Path(configv1.ProtoPath().Upgrades().Agents().Kubernetes())))
+		kubernetesSyncServer, err := k8sserver.NewKubernetesSyncServer(ctx, k8sSyncServerConfig, lg)
+		if err != nil {
+			lg.With(
+				logger.Err(err),
+			).Error("failed to create kubernetes agent sync server")
+			// panic("failed to create kubernetes agent sync server")
+		} else {
+			updateServer.RegisterUpdateHandler(kubernetesSyncServer.Strategy(), kubernetesSyncServer)
+		}
+	}()
 
 	for _, handler := range options.extraUpdateHandlers {
 		updateServer.RegisterUpdateHandler(handler.Strategy(), handler)

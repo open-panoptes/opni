@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -191,7 +192,9 @@ func (m *Server) ListenAndServe(ctx context.Context) error {
 		lo.Async(func() error {
 			err := m.listenAndServeGrpc(ctx)
 			if err != nil {
-				return fmt.Errorf("management grpc server exited with error: %w", err)
+				if !errors.Is(err, context.Canceled) {
+					return fmt.Errorf("management grpc server exited with error: %w", err)
+				}
 			}
 			m.logger.Info("management grpc server stopped")
 			return nil
@@ -200,7 +203,9 @@ func (m *Server) ListenAndServe(ctx context.Context) error {
 		lo.Async(func() error {
 			err := m.listenAndServeHttp(ctx)
 			if err != nil {
-				return fmt.Errorf("management http server exited with error: %w", err)
+				if !errors.Is(err, context.Canceled) {
+					return fmt.Errorf("management http server exited with error: %w", err)
+				}
 			}
 			m.logger.Info("management http server stopped")
 			return nil
@@ -211,63 +216,14 @@ func (m *Server) ListenAndServe(ctx context.Context) error {
 	return context.Cause(ctx)
 }
 
-// func (m *Server) ListenAndServe(ctx context.Context) error {
-// 	var serveContext context.Context
-// 	var cancel context.CancelCauseFunc
-// 	var done chan struct{}
-
-// 	reactive.Message[*configv1.ManagementServerSpec](m.mgr.Reactive(protopath.Path(configv1.ProtoPath().Management()))).
-// 		WatchFunc(ctx, func(conf *configv1.ManagementServerSpec) {
-// 			if cancel != nil {
-// 				m.logger.Info("configuration updated; reloading servers")
-// 				cancel(errors.New("configuration updated"))
-// 				m.logger.Debug("waiting for servers to stop...")
-// 				<-done
-// 				m.logger.Debug("servers stopped; reloading")
-// 			}
-// 			serveContext, cancel = context.WithCancelCause(ctx)
-// 			done = make(chan struct{})
-
-// 			e1 := lo.Async(func() error {
-// 				err := m.listenAndServeGrpc(serveContext, conf)
-// 				if err != nil {
-// 					return fmt.Errorf("management grpc server exited with error: %w", err)
-// 				}
-// 				m.logger.Info("management grpc server stopped")
-// 				return nil
-// 			})
-
-// 			e2 := lo.Async(func() error {
-// 				err := m.listenAndServeHttp(serveContext, conf)
-// 				if err != nil {
-// 					return fmt.Errorf("management http server exited with error: %w", err)
-// 				}
-// 				m.logger.Info("management http server stopped")
-// 				return nil
-// 			})
-
-// 			go func() {
-// 				defer close(done)
-// 				util.WaitAll(serveContext, cancel, e1, e2)
-// 			}()
-// 		})
-// 	<-ctx.Done()
-// 	cancel(ctx.Err())
-// 	<-done
-// 	return context.Cause(ctx)
-// }
-
 func (m *Server) listenAndServeGrpc(ctx context.Context) error {
 	grpcListenAddr := m.mgr.Reactive(configv1.ProtoPath().Management().GrpcListenAddress())
 
 	var server *grpc.Server
-	var done chan struct{}
 	grpcListenAddr.WatchFunc(ctx, func(v protoreflect.Value) {
 		if server != nil {
 			server.Stop()
-			<-done
 		}
-		done = make(chan struct{})
 
 		server = grpc.NewServer(
 			grpc.Creds(insecure.NewCredentials()),
@@ -295,18 +251,17 @@ func (m *Server) listenAndServeGrpc(ctx context.Context) error {
 			"address", listener.Addr().String(),
 		).Info("management gRPC server starting")
 		go func() {
-			defer close(done)
 			if err := server.Serve(listener); err != nil {
-				m.logger.With(logger.Err(err)).Warn("management gRPC server exited with error")
-			} else {
-				m.logger.Info("management gRPC server stopped")
+				if !errors.Is(err, context.Canceled) {
+					m.logger.With(logger.Err(err)).Warn("management gRPC server exited with error")
+				}
 			}
+			m.logger.Info("management gRPC server stopped")
 		}()
 	})
 	<-ctx.Done()
 	if server != nil {
 		server.Stop()
-		<-done
 	}
 	return ctx.Err()
 }
