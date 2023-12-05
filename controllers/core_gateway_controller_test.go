@@ -260,7 +260,7 @@ var _ = XDescribe("Core Gateway Controller", Ordered, Label("controller", "slow"
 						},
 						Config: &configv1.GatewayConfigSpec{
 							Auth: &configv1.AuthSpec{
-								Backend: configv1.AuthSpec_OpenID,
+								Backend: configv1.AuthSpec_OpenID.Enum(),
 								Openid: &configv1.OpenIDAuthSpec{
 									Issuer:       lo.ToPtr("https://test-issuer/"),
 									ClientId:     lo.ToPtr("test-client-id"),

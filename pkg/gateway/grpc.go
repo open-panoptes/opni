@@ -113,7 +113,12 @@ func (s *GatewayGRPCServer) ListenAndServe(ctx context.Context) error {
 
 	reactive.Bind(ctx,
 		func(v []protoreflect.Value) {
-			err := doServe(v[0].String(), v[1].Message().Interface().(*configv1.CertsSpec))
+			addr := v[0].String()
+			var certs *configv1.CertsSpec
+			if v[1].IsValid() {
+				certs = v[1].Message().Interface().(*configv1.CertsSpec)
+			}
+			err := doServe(addr, certs)
 			mu.Lock()
 			serveError = err
 			mu.Unlock()

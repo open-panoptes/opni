@@ -537,7 +537,7 @@ message AuthSpec {
   }
 
   // Auth backend to use.
-  Backend backend = 1 [
+  optional Backend backend = 1 [
     (cli.flag).default                     = "Basic",
     (buf.validate.field).enum.defined_only = true
   ];

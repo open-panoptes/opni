@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
+	backoffv2 "github.com/lestrrat-go/backoff/v2"
 	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	"github.com/rancher/opni/pkg/bootstrap"
@@ -351,7 +352,13 @@ func (a *Agent) ListenAndServe(ctx context.Context) error {
 	}
 
 	for _, conf := range []update.SyncConfig{agentSyncConf, pluginSyncConf} {
-		for ctx.Err() == nil {
+		retrier := backoffv2.Exponential(
+			backoffv2.WithMaxRetries(0),
+			backoffv2.WithMinInterval(100*time.Millisecond),
+			backoffv2.WithMaxInterval(1*time.Minute),
+		)
+		syncer := retrier.Start(ctx)
+		for backoffv2.Continue(syncer) {
 			err := conf.DoSync(ctx)
 			if err != nil {
 				switch status.Code(err) {

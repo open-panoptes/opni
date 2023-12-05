@@ -24,18 +24,33 @@ var _ = Describe("Multi Gateway etcd", Ordered, Label("integration"), func() {
 		env1 := &test.Environment{
 			Logger: testlog.Log.WithGroup("env1"),
 		}
-		Expect(env1.Start(test.WithStorageBackend(v1beta1.StorageTypeEtcd))).To(Succeed())
+		Expect(env1.Start(
+			test.WithStorageBackend(v1beta1.StorageTypeEtcd),
+			test.WithInMemoryActiveStore(true),
+		)).To(Succeed())
 		env2 := &test.Environment{
 			Logger: testlog.Log.WithGroup("env2"),
 		}
-		Expect(env2.Start(test.WithStorageBackend(v1beta1.StorageTypeEtcd), test.WithRemoteEtcdPort(env1.GetPorts().Etcd))).To(Succeed())
+		Expect(env2.Start(
+			test.WithStorageBackend(v1beta1.StorageTypeEtcd),
+			test.WithRemoteEtcdPort(env1.GetPorts().Etcd),
+			test.WithInMemoryActiveStore(true),
+		)).To(Succeed())
 		env3 := &test.Environment{
 			Logger: testlog.Log.WithGroup("env3"),
 		}
-		Expect(env3.Start(test.WithStorageBackend(v1beta1.StorageTypeEtcd), test.WithRemoteEtcdPort(env1.GetPorts().Etcd))).To(Succeed())
+		Expect(env3.Start(
+			test.WithStorageBackend(v1beta1.StorageTypeEtcd),
+			test.WithRemoteEtcdPort(env1.GetPorts().Etcd),
+			test.WithInMemoryActiveStore(true),
+		)).To(Succeed())
 
 		resolver := test.NewEnvironmentResolver(env3, env2, env1)
-		cc, err := grpc.Dial("testenv:///management", grpc.WithResolvers(resolver), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDefaultCallOptions(grpc.WaitForReady(true)))
+		cc, err := grpc.Dial("testenv:///management",
+			grpc.WithResolvers(resolver),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithDefaultCallOptions(grpc.WaitForReady(true)),
+		)
 		Expect(err).NotTo(HaveOccurred())
 		mgmtClient = managementv1.NewManagementClient(cc)
 
@@ -112,7 +127,10 @@ var _ = Describe("Multi Gateway js", Ordered, Label("integration"), func() {
 		env1 := &test.Environment{
 			Logger: testlog.Log.WithGroup("env1"),
 		}
-		Expect(env1.Start(test.WithStorageBackend(v1beta1.StorageTypeJetStream))).To(Succeed())
+		Expect(env1.Start(
+			test.WithStorageBackend(v1beta1.StorageTypeJetStream),
+			test.WithInMemoryActiveStore(true),
+		)).To(Succeed())
 		seedPath := env1.JetStreamConfig().GetNkeySeedPath()
 
 		time.Sleep(1 * time.Second)
@@ -124,6 +142,7 @@ var _ = Describe("Multi Gateway js", Ordered, Label("integration"), func() {
 			test.WithStorageBackend(v1beta1.StorageTypeJetStream),
 			test.WithRemoteJetStreamPort(env1.GetPorts().Jetstream),
 			test.WithRemoteJetStreamSeedPath(seedPath),
+			test.WithInMemoryActiveStore(true),
 		)).To(Succeed())
 		env3 := &test.Environment{
 			Logger: testlog.Log.WithGroup("env3"),
@@ -131,8 +150,9 @@ var _ = Describe("Multi Gateway js", Ordered, Label("integration"), func() {
 		Expect(env3.Start(
 			test.WithStorageBackend(v1beta1.StorageTypeJetStream),
 			test.WithRemoteJetStreamPort(env1.GetPorts().Jetstream),
-			test.WithRemoteJetStreamSeedPath(seedPath)),
-		).To(Succeed())
+			test.WithRemoteJetStreamSeedPath(seedPath),
+			test.WithInMemoryActiveStore(true),
+		)).To(Succeed())
 
 		resolver := test.NewEnvironmentResolver(env3, env2, env1)
 		cc, err := grpc.Dial("testenv:///management", grpc.WithResolvers(resolver), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDefaultCallOptions(grpc.WaitForReady(true)))

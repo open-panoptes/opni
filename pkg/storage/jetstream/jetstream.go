@@ -127,14 +127,14 @@ func NewJetStreamStore(ctx context.Context, conf *configv1.JetStreamSpec, opts .
 		}
 	}
 
-	js, err := nc.JetStream(nats.Context(ctx))
+	js, err := nc.JetStream(nats.Context(context.WithoutCancel(ctx)))
 	if err != nil {
 		return nil, err
 	}
 
 	store := &JetStreamStore{
 		JetStreamStoreOptions: options,
-		ctx:                   ctx,
+		ctx:                   context.WithoutCancel(ctx),
 		nc:                    nc,
 		js:                    js,
 		logger:                lg,
@@ -198,7 +198,7 @@ func (s *JetStreamStore) KeyringStore(prefix string, ref *corev1.Reference) stor
 func (s *JetStreamStore) LockManager(
 	prefix string,
 ) storage.LockManager {
-	return NewLockManager(s.ctx, s.js, prefix, logger.NewNop())
+	return NewLockManager(s.ctx, s.js, prefix, s.logger.WithGroup("lock"))
 }
 
 func (s *JetStreamStore) KeyValueStore(prefix string) storage.KeyValueStore {

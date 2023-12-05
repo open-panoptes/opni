@@ -21,7 +21,9 @@ import (
 	"github.com/prometheus/procfs"
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
 	"github.com/rancher/opni/pkg/clients"
+	"github.com/rancher/opni/pkg/config/adapt"
 	"github.com/rancher/opni/pkg/config/meta"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/config/v1beta1"
 	"github.com/rancher/opni/pkg/test"
 	"github.com/rancher/opni/pkg/test/freeport"
@@ -135,25 +137,26 @@ var _ = Describe("Agent Memory Tests", Ordered, Serial, Label("integration", "sl
 		file.Close()
 
 		gatewayConfig = environment.NewGatewayConfig()
-		gatewayConfig.Spec.Plugins = v1beta1.PluginsSpec{
-			Dir: path.Join(tempDir, "plugins"),
-			Binary: v1beta1.BinaryPluginsSpec{
-				Cache: v1beta1.CacheSpec{
-					PatchEngine: v1beta1.PatchEngineBsdiff,
-					Backend:     v1beta1.CacheBackendFilesystem,
-					Filesystem: v1beta1.FilesystemCacheSpec{
-						Dir: path.Join(tempDir, "cache"),
-					},
-				},
-			},
-		}
-		configData, err := yaml.Marshal(gatewayConfig)
-		Expect(err).NotTo(HaveOccurred())
-		configFile := path.Join(tempDir, "config.yaml")
-		Expect(os.WriteFile(configFile, configData, 0644)).To(Succeed())
+
+		cfgv1 := adapt.V1ConfigOf[*configv1.GatewayConfigSpec](&gatewayConfig.Spec)
 
 		startGateway = func() {
-			cmd := exec.Command("bin/opni", "gateway", "--config", configFile)
+			cmd := exec.Command("bin/opni", "gateway",
+				"--storage.etcd.endpoints", strings.Join(cfgv1.Storage.Etcd.GetEndpoints(), ","),
+				"--defaults.certs.ca-cert-data", cfgv1.Certs.GetCaCertData(),
+				"--defaults.certs.serving-cert-data", cfgv1.Certs.GetServingCertData(),
+				"--defaults.certs.serving-key-data", cfgv1.Certs.GetServingKeyData(),
+				"--defaults.management.grpc-listen-address", cfgv1.Management.GetGrpcListenAddress(),
+				"--defaults.management.http-listen-address", cfgv1.Management.GetHttpListenAddress(),
+				"--defaults.server.grpc-listen-address", cfgv1.Server.GetGrpcListenAddress(),
+				"--defaults.server.http-listen-address", cfgv1.Server.GetHttpListenAddress(),
+				"--defaults.health.http-listen-address", cfgv1.Health.GetHttpListenAddress(),
+				"--defaults.dashboard.http-listen-address", cfgv1.Dashboard.GetHttpListenAddress(),
+				"--defaults.relay.grpc-listen-address", cfgv1.Relay.GetGrpcListenAddress(),
+				"--defaults.plugins.dir", path.Join(tempDir, "plugins"),
+				"--defaults.plugins.cache.filesystem.dir", path.Join(tempDir, "cache"),
+			)
+
 			cmd.Dir = "../../"
 			cmd.SysProcAttr = &syscall.SysProcAttr{
 				Setsid: true,
@@ -162,7 +165,7 @@ var _ = Describe("Agent Memory Tests", Ordered, Serial, Label("integration", "sl
 			Expect(err).NotTo(HaveOccurred())
 			waitForGatewayReady(10 * time.Second)
 			DeferCleanup(func() {
-				gatewaySession.Terminate().Wait()
+				gatewaySession.Interrupt().Wait()
 			})
 		}
 
@@ -206,12 +209,6 @@ var _ = Describe("Agent Memory Tests", Ordered, Serial, Label("integration", "sl
 						Type: v1beta1.StorageTypeEtcd,
 						Etcd: &v1beta1.EtcdStorageSpec{
 							Endpoints: environment.EtcdConfig().Endpoints,
-							Certs: &v1beta1.MTLSSpec{
-								ServerCA:   environment.EtcdConfig().Certs.GetServerCA(),
-								ClientCA:   environment.EtcdConfig().Certs.GetClientCA(),
-								ClientCert: environment.EtcdConfig().Certs.GetClientCert(),
-								ClientKey:  environment.EtcdConfig().Certs.GetClientKey(),
-							},
 						},
 					},
 					Bootstrap: &v1beta1.BootstrapSpec{
@@ -239,7 +236,7 @@ var _ = Describe("Agent Memory Tests", Ordered, Serial, Label("integration", "sl
 			agentSession, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			DeferCleanup(func() {
-				agentSession.Terminate().Wait()
+				agentSession.Interrupt().Wait()
 			})
 		})
 	})
@@ -263,7 +260,7 @@ var _ = Describe("Agent Memory Tests", Ordered, Serial, Label("integration", "sl
 			exp.RecordValue("rss", float64(rssKB), gmeasure.Units("KB"))
 			rssValues = append(rssValues, rssKB)
 
-			gatewaySession.Terminate().Wait()
+			gatewaySession.Interrupt().Wait()
 			waitForAgentUnready(10 * time.Second)
 			By("restarting the gateway", startGateway)
 		}

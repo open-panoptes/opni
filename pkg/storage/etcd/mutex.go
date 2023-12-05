@@ -84,7 +84,7 @@ func (e *etcdMutex) teardown() {
 	}
 	// sessions must be forcibly orphaned in order to make the guarantee that non-blocking calls
 	// to unlock always unlock
-	e.session.Orphan()
+	e.session.Close()
 }
 
 // best effort unlock until context is done, at which point we
@@ -96,11 +96,10 @@ func (e *etcdMutex) unlock() error {
 		return errors.New("mutex not acquired")
 	}
 
-	defer e.teardown()
-
 	mutex := *e.mutex
 	e.mutex = nil
 	go func() {
+		defer e.teardown()
 		ctxca, ca := context.WithTimeout(context.Background(), 60*time.Second)
 		defer ca()
 		if err := mutex.Unlock(ctxca); err != nil {

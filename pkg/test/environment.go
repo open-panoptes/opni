@@ -191,7 +191,9 @@ type Environment struct {
 	pluginLoader *plugins.PluginLoader
 	gw           *gateway.Gateway
 
-	shutdownHooks []func()
+	shutdownHooks        []func()
+	prePostShutdownHooks []func()
+	postShutdownHooks    []func()
 }
 
 type EnvironmentOptions struct {
@@ -205,6 +207,7 @@ type EnvironmentOptions struct {
 	defaultAgentVersion     string
 	enableDisconnectServer  bool
 	enableNodeExporter      bool
+	inMemoryActiveStore     bool
 	storageBackend          v1beta1.StorageType
 }
 
@@ -273,6 +276,12 @@ func WithRemoteJetStreamPort(port int) EnvironmentOption {
 func WithRemoteJetStreamSeedPath(path string) EnvironmentOption {
 	return func(o *EnvironmentOptions) {
 		o.remoteJetStreamSeedPath = path
+	}
+}
+
+func WithInMemoryActiveStore(enable bool) EnvironmentOption {
+	return func(o *EnvironmentOptions) {
+		o.inMemoryActiveStore = enable
 	}
 }
 
@@ -588,6 +597,14 @@ func (e *Environment) Stop(cause ...string) error {
 			}()
 		}
 		wg.Wait()
+
+		for _, h := range e.prePostShutdownHooks {
+			h()
+		}
+
+		for _, h := range e.postShutdownHooks {
+			h()
+		}
 	}
 	if e.embeddedJS != nil {
 		e.embeddedJS.Shutdown()
@@ -661,13 +678,15 @@ func (e *Environment) startJetstream() {
 		fmt.Sprintf("--port=%d", e.ports.Jetstream),
 	}
 	jetstreamBin := path.Join(e.TestBin, "nats-server")
-	cmd := exec.CommandContext(e.ctx, jetstreamBin, defaultArgs...)
+	cctx, ca := context.WithCancel(context.WithoutCancel(e.ctx))
+	cmd := exec.CommandContext(cctx, jetstreamBin, defaultArgs...)
 	plugins.ConfigureSysProcAttr(cmd)
 	session, err := testutil.StartCmd(cmd)
 	if err != nil {
 		if !errors.Is(e.ctx.Err(), context.Canceled) {
 			panic(err)
 		} else {
+			ca()
 			return
 		}
 	}
@@ -679,7 +698,9 @@ func (e *Environment) startJetstream() {
 		panic("failed to write jetstream auth config")
 	}
 	lg.Info("Waiting for jetstream to start...")
-	e.addShutdownHook(func() {
+	e.postShutdownHooks = append(e.postShutdownHooks, func() {
+		ginkgo.GinkgoHelper()
+		ca()
 		session.Wait()
 	})
 	for e.ctx.Err() == nil {
@@ -812,7 +833,8 @@ func (e *Environment) startEtcd() {
 		fmt.Sprintf("--data-dir=%s", path.Join(e.tempDir, "etcd")),
 	}
 	etcdBin := path.Join(e.TestBin, "etcd")
-	cmd := exec.CommandContext(e.ctx, etcdBin, defaultArgs...)
+	cctx, ca := context.WithCancel(context.WithoutCancel(e.ctx))
+	cmd := exec.CommandContext(cctx, etcdBin, defaultArgs...)
 	cmd.Env = []string{"ALLOW_NONE_AUTHENTICATION=yes"}
 	plugins.ConfigureSysProcAttr(cmd)
 	session, err := testutil.StartCmd(cmd)
@@ -820,12 +842,15 @@ func (e *Environment) startEtcd() {
 		if !errors.Is(e.ctx.Err(), context.Canceled) {
 			panic(err)
 		} else {
+			ca()
 			return
 		}
 	}
 
 	lg.Info("Waiting for etcd to start...")
-	e.addShutdownHook(func() {
+	e.postShutdownHooks = append(e.postShutdownHooks, func() {
+		ginkgo.GinkgoHelper()
+		ca()
 		session.Wait()
 	})
 	for e.ctx.Err() == nil {
@@ -1701,6 +1726,10 @@ func (e *Environment) NewGatewayConfig() *v1beta1.GatewayConfig {
 					ClientKey:  path.Join(e.tempDir, "cortex/client.key"),
 				},
 			},
+			RateLimit: &v1beta1.RateLimitSpec{
+				Rate:  10,
+				Burst: 50,
+			},
 			Storage: lo.Switch[v1beta1.StorageType, v1beta1.StorageSpec](e.storageBackend).
 				Case(v1beta1.StorageTypeEtcd, v1beta1.StorageSpec{
 					Type: v1beta1.StorageTypeEtcd,
@@ -1925,9 +1954,15 @@ func (e *Environment) startGateway() {
 	if err != nil {
 		panic(err)
 	}
+	e.prePostShutdownHooks = append(e.prePostShutdownHooks, storageBackend.Close)
 
-	activeStore := kvutil.WithMessageCodec[*configv1.GatewayConfigSpec](
-		kvutil.WithKey(storageBackend.KeyValueStore("gateway"), "config"))
+	var activeStore storage.ValueStoreT[*configv1.GatewayConfigSpec]
+	if e.inMemoryActiveStore {
+		activeStore = inmemory.NewValueStore[*configv1.GatewayConfigSpec](util.ProtoClone)
+	} else {
+		activeStore = kvutil.WithMessageCodec[*configv1.GatewayConfigSpec](
+			kvutil.WithKey(storageBackend.KeyValueStore("gateway"), "config"))
+	}
 
 	defaultStore := inmemory.NewValueStore[*configv1.GatewayConfigSpec](util.ProtoClone)
 	defaultStore.Put(e.ctx, cfgv1)

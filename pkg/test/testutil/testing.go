@@ -27,6 +27,7 @@ func (s *sessionWrapper) G() (*gexec.Session, bool) {
 }
 
 func (s *sessionWrapper) Wait() error {
+	ginkgo.GinkgoHelper()
 	if s == nil {
 		return nil
 	}

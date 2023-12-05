@@ -44,7 +44,9 @@ func NewEtcdLock(
 
 func (e *EtcdLock) newSession(ctx context.Context) (*concurrency.Session, error) {
 	e.lg.Debug("attempting to create new etcd session...")
-	session, err := concurrency.NewSession(e.client)
+	session, err := concurrency.NewSession(e.client,
+		concurrency.WithTTL(mutexLeaseTtlSeconds),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create etcd session: %w", err)
 	}

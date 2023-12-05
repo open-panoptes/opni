@@ -82,6 +82,8 @@ type ConnectionTracker struct {
 
 	localInstanceInfoMu sync.Mutex
 	localInstanceInfo   *corev1.InstanceInfo
+
+	activeStreams sync.WaitGroup
 }
 
 func NewConnectionTracker(
@@ -206,7 +208,22 @@ func (ct *ConnectionTracker) Run(ctx context.Context) error {
 		return nil
 	})
 
-	return eg.Wait()
+	err = eg.Wait()
+	ct.logger.Info("releasing all active connection locks")
+	// release all active connections
+	// ct.mu.Lock()
+	// for _, conn := range ct.activeConnections {
+	// 	if err := ct.connectionsKv.Delete(conn.trackingContext, ct.connKey(conn.agentId)); err != nil {
+	// 		ct.logger.With(
+	// 			logger.Err(err),
+	// 			"agentId", conn.agentId,
+	// 		).Error("failed to release connection lock")
+	// 	}
+	// 	conn.cancelTrackingContext()
+	// }
+	// ct.mu.Unlock()
+	ct.activeStreams.Wait()
+	return err
 }
 
 func (ct *ConnectionTracker) updateInstanceInfo(instanceInfoData []byte) {
@@ -237,14 +254,16 @@ func (ct *ConnectionTracker) connKey(agentId string) string {
 
 func (ct *ConnectionTracker) StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		ct.activeStreams.Add(1)
+		defer ct.activeStreams.Done()
+
 		agentId := cluster.StreamAuthorizedID(ss.Context())
 		instanceInfo := ct.LocalInstanceInfo()
 		key := agentId
-		lock := ct.connectionsLm.NewLock(
-			key,
-		)
+		lock := ct.connectionsLm.NewLock(key)
 		ct.logger.With("agentId", agentId).Debug("attempting to acquire connection lock")
-		if acquired, _, err := lock.TryLock(ss.Context()); !acquired {
+		acquired, done, err := lock.TryLock(ss.Context())
+		if !acquired {
 			ct.logger.With(
 				logger.Err(err),
 				"agentId", agentId,
@@ -264,6 +283,7 @@ func (ct *ConnectionTracker) StreamServerInterceptor() grpc.StreamServerIntercep
 					"agentId", agentId,
 				).Error("failed to release lock on agent connection")
 			}
+			<-done
 		}()
 
 		instanceInfo.Acquired = true
@@ -299,18 +319,17 @@ func (ct *ConnectionTracker) handleConnUpdate(
 ) {
 	key := event.Current.Key()
 	lg := ct.logger.With("key", key, "agentId", agentId)
-	lg.Debug(fmt.Sprintf("found active connection for %s", agentId))
 	if !info.GetAcquired() {
 		// a different instance is only attempting to acquire the lock,
 		// ignore the event
-		ct.logger.With("agent", agentId, "instance", info.GetRelayAddress()).Debug("tracked connection is still being acquired...")
+		lg.With("instance", info.GetRelayAddress()).Debug("tracked connection is still being acquired...")
 		return
 	}
 	if conn.holder == holder {
 		// update revision and instance info, and notify listeners
 		if holder != ct.connKey(agentId) {
 			// don't log this for local instances, it would be too noisy
-			ct.logger.With("agentId", agentId).Debug("tracked connection updated")
+			ct.logger.With("agentId", agentId, "revision", event.Current.Revision()).Debug("tracked connection updated")
 		}
 		conn.revision = event.Current.Revision()
 		conn.instanceInfo = info
@@ -321,7 +340,7 @@ func (ct *ConnectionTracker) handleConnUpdate(
 	}
 	// a different instance has acquired the lock, invalidate
 	// the current tracked connection
-	ct.logger.With("agentId", agentId).Debug("tracked connection invalidated")
+	lg.Debug("tracked connection invalidated")
 	conn.cancelTrackingContext()
 	delete(ct.activeConnections, agentId)
 }

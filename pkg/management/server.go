@@ -36,8 +36,8 @@ import (
 	"github.com/rancher/opni/pkg/plugins/types"
 	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/util"
-	"github.com/samber/lo"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	channelzservice "google.golang.org/grpc/channelz/service"
 	"google.golang.org/grpc/codes"
@@ -200,34 +200,29 @@ type managementApiServer interface {
 }
 
 func (m *Server) ListenAndServe(ctx context.Context) error {
-	ctx, ca := context.WithCancelCause(ctx)
-	channels := []<-chan error{
-		// start grpc server
-		lo.Async(func() error {
-			err := m.listenAndServeGrpc(ctx)
-			if err != nil {
-				if !errors.Is(err, context.Canceled) {
-					return fmt.Errorf("management grpc server exited with error: %w", err)
-				}
+	eg := errgroup.Group{}
+	eg.Go(func() error {
+		err := m.listenAndServeGrpc(ctx)
+		if err != nil {
+			if !errors.Is(err, context.Canceled) {
+				return fmt.Errorf("management grpc server exited with error: %w", err)
 			}
-			m.logger.Info("management grpc server stopped")
-			return nil
-		}),
-		// start http server
-		lo.Async(func() error {
-			err := m.listenAndServeHttp(ctx)
-			if err != nil {
-				if !errors.Is(err, context.Canceled) {
-					return fmt.Errorf("management http server exited with error: %w", err)
-				}
+		}
+		m.logger.Info("management grpc server stopped")
+		return nil
+	})
+	eg.Go(func() error {
+		err := m.listenAndServeHttp(ctx)
+		if err != nil {
+			if !errors.Is(err, context.Canceled) {
+				return fmt.Errorf("management http server exited with error: %w", err)
 			}
-			m.logger.Info("management http server stopped")
-			return nil
-		}),
-	}
+		}
+		m.logger.Info("management http server stopped")
+		return nil
+	})
 
-	util.WaitAll(ctx, ca, channels...)
-	return context.Cause(ctx)
+	return eg.Wait()
 }
 
 func (m *Server) listenAndServeGrpc(ctx context.Context) error {
@@ -280,12 +275,13 @@ func (m *Server) listenAndServeGrpc(ctx context.Context) error {
 	})
 	<-ctx.Done()
 	mu.Lock()
-	defer mu.Unlock()
 	if server != nil {
 		server.Stop()
 	}
-	if done != nil {
-		<-done
+	mu.Unlock()
+	d := done
+	if d != nil {
+		<-d
 	}
 	return serveError
 }
@@ -340,10 +336,11 @@ func (m *Server) listenAndServeHttp(ctx context.Context) error {
 		router.Any("/*any", gin.WrapF(gwmux.ServeHTTP))
 		go func(server *http.Server) {
 			if err := server.Serve(listener); err != nil {
-				m.logger.With(logger.Err(err)).Warn("management HTTP server exited with error")
-			} else {
-				m.logger.Info("management HTTP server stopped")
+				if !errors.Is(err, http.ErrServerClosed) {
+					m.logger.With(logger.Err(err)).Warn("management HTTP server exited with error")
+				}
 			}
+			m.logger.Info("management HTTP server stopped")
 		}(server)
 	}, httpListenAddr, grpcListenAddr)
 	<-ctx.Done()
@@ -359,7 +356,11 @@ func (m *Server) CertsInfo(_ context.Context, _ *emptypb.Empty) (*managementv1.C
 	resp := &managementv1.CertsInfoResponse{
 		Chain: []*corev1.CertInfo{},
 	}
-	for _, tlsCert := range m.coreDataSource.TLSConfig().Certificates[:1] {
+	tlsConfig := m.coreDataSource.TLSConfig()
+	if tlsConfig == nil || len(tlsConfig.Certificates) == 0 {
+		return resp, nil
+	}
+	for _, tlsCert := range tlsConfig.Certificates[:1] {
 		for _, der := range tlsCert.Certificate {
 			cert, err := x509.ParseCertificate(der)
 			if err != nil {

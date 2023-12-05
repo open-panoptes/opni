@@ -260,22 +260,6 @@ func NewGateway(
 
 	httpServer.metricsRegisterer.MustRegister(updateServer.Collectors()...)
 
-	// set up grpc server
-	// tlsConfig, pkey, err := grpcTLSConfig(&conf.Spec)
-	// if err != nil {
-	// 	lg.With(
-	// 		logger.Err(err),
-	// 	).Error("failed to load TLS config")
-	// 	panic("failed to load TLS config")
-	// }
-
-	// rateLimitOpts := []RatelimiterOption{}
-	// if conf.RateLimiting != nil {
-	// 	rateLimitOpts = append(rateLimitOpts, WithRate(conf.RateLimiting.GetRate()))
-	// 	rateLimitOpts = append(rateLimitOpts, WithBurst(int(conf.RateLimiting.GetBurst())))
-	// }
-
-	// set up stream server
 	listener := health.NewListener()
 	buffer := health.NewBuffer()
 

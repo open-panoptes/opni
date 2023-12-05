@@ -351,7 +351,9 @@ persist their default configurations in the KV store.
 					fmt.Fprintln(cmd.ErrOrStderr(), err.Error())
 					return errors.New("exiting due to validation errors")
 				}
-				if err := defaultStore.Put(ctx, config); err != nil {
+				defaultConfig := util.ProtoClone(config)
+				defaultConfig.Storage = storageConfig
+				if err := defaultStore.Put(ctx, defaultConfig); err != nil {
 					return fmt.Errorf("failed to set defaults from flags: %w", err)
 				}
 			}
@@ -401,6 +403,7 @@ persist their default configurations in the KV store.
 					kvutil.WithKey(storageBackend.KeyValueStore("gateway"), "config"))
 			}
 			lg.Info("storage configured", "backend", storageConfig.GetBackend().String())
+			defer storageBackend.Close()
 
 			mgr := configv1.NewGatewayConfigManager(
 				defaultStore, activeStore,

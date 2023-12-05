@@ -472,7 +472,7 @@ func (in *JetStreamSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 func (in *AuthSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("AuthSpec", pflag.ExitOnError)
 	fs.SortFlags = true
-	fs.Var(flagutil.EnumValue(AuthSpec_Basic, &in.Backend), strings.Join(append(prefix, "backend"), "."), "Auth backend to use.")
+	fs.Var(flagutil.EnumPtrValue(flagutil.Ptr(AuthSpec_Basic), &in.Backend), strings.Join(append(prefix, "backend"), "."), "Auth backend to use.")
 	if in.Openid == nil {
 		in.Openid = &OpenIDAuthSpec{}
 	}
