@@ -13,7 +13,7 @@ type GatewaySpec struct {
 	Replicas              *int32                      `json:"replicas,omitempty"`
 	Image                 *opnimeta.ImageSpec         `json:"image,omitempty"`
 	AgentImageTagOverride string                      `json:"agentImageTagOverride,omitempty"`
-	NatsRef               corev1.LocalObjectReference `json:"natsCluster"`
+	NatsRef               corev1.LocalObjectReference `json:"natsCluster,omitempty"`
 	ServiceType           corev1.ServiceType          `json:"serviceType,omitempty"`
 	ServiceAnnotations    map[string]string           `json:"serviceAnnotations,omitempty"`
 	NodeSelector          map[string]string           `json:"nodeSelector,omitempty"`
@@ -37,7 +37,6 @@ type GatewayStatus struct {
 	Ready           bool                        `json:"ready,omitempty"`
 }
 
-// +kubebuilder:skipversion
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 type Gateway struct {
@@ -47,7 +46,6 @@ type Gateway struct {
 	Status            GatewayStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:skipversion
 // +kubebuilder:object:root=true
 type GatewayList struct {
 	metav1.TypeMeta `json:",inline"`

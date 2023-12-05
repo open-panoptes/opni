@@ -25,18 +25,6 @@ gateway:
   enabled: true
   # Service type for the external gateway APIs
   serviceType: LoadBalancer
-  # Gateway hostname (required if gateway.enabled is true)
-  hostname: ""
-  # Auth provider config (required if gateway.enabled is true)
-  auth:
-    # Noauth provider:
-    provider: noauth
-
-    # Openid provider:
-    # provider: openid
-    # openid:
-    #   {} # see docs
-
   nodeSelector: {}
   tolerations: []
   affinity: {}

@@ -84,6 +84,7 @@ func (m methods) FillObjectFromConfig(obj *opnicorev1beta1.MonitoringCluster, co
 func NewOpniManagerClusterDriver(ctx context.Context, options OpniManagerClusterDriverOptions) (*OpniManager, error) {
 	if options.K8sClient == nil {
 		s := scheme.Scheme
+		opnicorev1.AddToScheme(s)
 		opnicorev1beta1.AddToScheme(s)
 		c, err := k8sutil.NewK8sClient(k8sutil.ClientOptions{
 			Scheme: s,

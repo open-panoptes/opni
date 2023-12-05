@@ -1223,8 +1223,6 @@ spec:
                       type: string
                   type: object
                 type: array
-            required:
-            - natsCluster
             type: object
           status:
             properties:
