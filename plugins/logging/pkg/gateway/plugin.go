@@ -24,6 +24,7 @@ import (
 	managementext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/management"
 	streamext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/stream"
 	"github.com/rancher/opni/pkg/plugins/apis/capability"
+	"github.com/rancher/opni/pkg/plugins/apis/proxy"
 	"github.com/rancher/opni/pkg/plugins/apis/system"
 	"github.com/rancher/opni/pkg/plugins/driverutil"
 	"github.com/rancher/opni/pkg/plugins/meta"
@@ -298,6 +299,7 @@ func Scheme(ctx context.Context) meta.Scheme {
 	scheme.Add(system.SystemPluginID, system.NewPlugin(p))
 	scheme.Add(capability.CapabilityBackendPluginID, capability.NewPlugin(&p.logging))
 	scheme.Add(capability.CapabilityRBACPluginID, capability.NewRBACPlugin(&p.logging))
+	scheme.Add(proxy.ProxyPluginID, proxy.NewPlugin(&p.logging))
 	scheme.Add(streamext.StreamAPIExtensionPluginID, streamext.NewGatewayPlugin(p))
 	scheme.Add(managementext.ManagementAPIExtensionPluginID, managementext.NewPlugin(p))
 

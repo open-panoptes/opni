@@ -8,7 +8,6 @@ package v1
 
 import (
 	context "context"
-	v1 "github.com/rancher/opni/pkg/apis/core/v1"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -21,7 +20,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	RegisterProxy_Endpoint_FullMethodName    = "/proxy.RegisterProxy/Endpoint"
+	RegisterProxy_Backend_FullMethodName     = "/proxy.RegisterProxy/Backend"
+	RegisterProxy_Path_FullMethodName        = "/proxy.RegisterProxy/Path"
 	RegisterProxy_AuthHeaders_FullMethodName = "/proxy.RegisterProxy/AuthHeaders"
 )
 
@@ -29,8 +29,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RegisterProxyClient interface {
-	Endpoint(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ProxyEndpoint, error)
-	AuthHeaders(ctx context.Context, in *v1.ReferenceList, opts ...grpc.CallOption) (*HeaderResponse, error)
+	Backend(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*BackendInfo, error)
+	Path(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PathInfo, error)
+	AuthHeaders(ctx context.Context, in *HeaderRequest, opts ...grpc.CallOption) (*HeaderResponse, error)
 }
 
 type registerProxyClient struct {
@@ -41,16 +42,25 @@ func NewRegisterProxyClient(cc grpc.ClientConnInterface) RegisterProxyClient {
 	return &registerProxyClient{cc}
 }
 
-func (c *registerProxyClient) Endpoint(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ProxyEndpoint, error) {
-	out := new(ProxyEndpoint)
-	err := c.cc.Invoke(ctx, RegisterProxy_Endpoint_FullMethodName, in, out, opts...)
+func (c *registerProxyClient) Backend(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*BackendInfo, error) {
+	out := new(BackendInfo)
+	err := c.cc.Invoke(ctx, RegisterProxy_Backend_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *registerProxyClient) AuthHeaders(ctx context.Context, in *v1.ReferenceList, opts ...grpc.CallOption) (*HeaderResponse, error) {
+func (c *registerProxyClient) Path(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PathInfo, error) {
+	out := new(PathInfo)
+	err := c.cc.Invoke(ctx, RegisterProxy_Path_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *registerProxyClient) AuthHeaders(ctx context.Context, in *HeaderRequest, opts ...grpc.CallOption) (*HeaderResponse, error) {
 	out := new(HeaderResponse)
 	err := c.cc.Invoke(ctx, RegisterProxy_AuthHeaders_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -63,18 +73,22 @@ func (c *registerProxyClient) AuthHeaders(ctx context.Context, in *v1.ReferenceL
 // All implementations should embed UnimplementedRegisterProxyServer
 // for forward compatibility
 type RegisterProxyServer interface {
-	Endpoint(context.Context, *emptypb.Empty) (*ProxyEndpoint, error)
-	AuthHeaders(context.Context, *v1.ReferenceList) (*HeaderResponse, error)
+	Backend(context.Context, *emptypb.Empty) (*BackendInfo, error)
+	Path(context.Context, *emptypb.Empty) (*PathInfo, error)
+	AuthHeaders(context.Context, *HeaderRequest) (*HeaderResponse, error)
 }
 
 // UnimplementedRegisterProxyServer should be embedded to have forward compatible implementations.
 type UnimplementedRegisterProxyServer struct {
 }
 
-func (UnimplementedRegisterProxyServer) Endpoint(context.Context, *emptypb.Empty) (*ProxyEndpoint, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Endpoint not implemented")
+func (UnimplementedRegisterProxyServer) Backend(context.Context, *emptypb.Empty) (*BackendInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Backend not implemented")
 }
-func (UnimplementedRegisterProxyServer) AuthHeaders(context.Context, *v1.ReferenceList) (*HeaderResponse, error) {
+func (UnimplementedRegisterProxyServer) Path(context.Context, *emptypb.Empty) (*PathInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Path not implemented")
+}
+func (UnimplementedRegisterProxyServer) AuthHeaders(context.Context, *HeaderRequest) (*HeaderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AuthHeaders not implemented")
 }
 
@@ -89,26 +103,44 @@ func RegisterRegisterProxyServer(s grpc.ServiceRegistrar, srv RegisterProxyServe
 	s.RegisterService(&RegisterProxy_ServiceDesc, srv)
 }
 
-func _RegisterProxy_Endpoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RegisterProxy_Backend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RegisterProxyServer).Endpoint(ctx, in)
+		return srv.(RegisterProxyServer).Backend(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RegisterProxy_Endpoint_FullMethodName,
+		FullMethod: RegisterProxy_Backend_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterProxyServer).Endpoint(ctx, req.(*emptypb.Empty))
+		return srv.(RegisterProxyServer).Backend(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RegisterProxy_Path_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterProxyServer).Path(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RegisterProxy_Path_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterProxyServer).Path(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _RegisterProxy_AuthHeaders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(v1.ReferenceList)
+	in := new(HeaderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -120,7 +152,7 @@ func _RegisterProxy_AuthHeaders_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: RegisterProxy_AuthHeaders_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterProxyServer).AuthHeaders(ctx, req.(*v1.ReferenceList))
+		return srv.(RegisterProxyServer).AuthHeaders(ctx, req.(*HeaderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -133,8 +165,12 @@ var RegisterProxy_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*RegisterProxyServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Endpoint",
-			Handler:    _RegisterProxy_Endpoint_Handler,
+			MethodName: "Backend",
+			Handler:    _RegisterProxy_Backend_Handler,
+		},
+		{
+			MethodName: "Path",
+			Handler:    _RegisterProxy_Path_Handler,
 		},
 		{
 			MethodName: "AuthHeaders",

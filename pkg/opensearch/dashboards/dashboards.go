@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"fmt"
 	"mime/multipart"
 	"net"
 	"net/http"
@@ -29,11 +30,12 @@ type Client struct {
 type Config struct {
 	Username string
 	Password string
-	URL      string
+	Host     string
 }
 
 type ClientOptions struct {
 	transport http.RoundTripper
+	insecure  bool
 }
 
 type ClientOption func(*ClientOptions)
@@ -47,6 +49,12 @@ func (o *ClientOptions) apply(opts ...ClientOption) {
 func WithTransport(transport http.RoundTripper) ClientOption {
 	return func(o *ClientOptions) {
 		o.transport = transport
+	}
+}
+
+func WithInsecure() ClientOption {
+	return func(o *ClientOptions) {
+		o.insecure = true
 	}
 }
 
@@ -67,7 +75,12 @@ func NewClient(cfg Config, opts ...ClientOption) (*Client, error) {
 
 	o.apply(opts...)
 
-	newURL, err := url.Parse(cfg.URL)
+	scheme := "https"
+	if o.insecure {
+		scheme = "http"
+	}
+
+	newURL, err := url.Parse(fmt.Sprintf("%s://%s", scheme, cfg.Host))
 	if err != nil {
 		return nil, err
 	}
