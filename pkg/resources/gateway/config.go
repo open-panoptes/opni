@@ -88,6 +88,7 @@ func (r *Reconciler) checkConfiguration() k8sutil.RequeueOp {
 	}
 
 	if shouldInitializeConfig(r.gw) {
+		r.lg.Info("initializing default gateway config")
 		return r.initDefaultActiveConfig(certs)
 	}
 
@@ -110,7 +111,10 @@ func shouldInitializeConfig(gw *apicorev1.Gateway) bool {
 	if gw.Spec.Config == nil {
 		return true
 	}
-	return k8sutil.FieldManagerForPath(gw, fieldpath.MakePathOrDie("spec", "config")) != crds.FieldManagerName
+	// pick an arbitrary field that we know will always be present (spec.config
+	// doesn't count as a field here)
+	// spec.config.certs is set unconditionaly below
+	return k8sutil.FieldManagerForPath(gw, fieldpath.MakePathOrDie("spec", "config", "certs")) != crds.FieldManagerName
 }
 
 func (r *Reconciler) initDefaultActiveConfig(certs *configv1.CertsSpec) k8sutil.RequeueOp {

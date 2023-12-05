@@ -2,6 +2,7 @@ package reactive
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 
 	"github.com/google/uuid"
@@ -10,6 +11,7 @@ import (
 
 type reactiveValue struct {
 	mu            sync.RWMutex
+	logger        *slog.Logger
 	rev           int64
 	pendingInit   bool
 	value         protoreflect.Value
@@ -17,34 +19,49 @@ type reactiveValue struct {
 	watchFuncs    map[string]func(int64, protoreflect.Value, <-chan struct{})
 }
 
-func newReactiveValue() *reactiveValue {
+func newReactiveValue(lg *slog.Logger) *reactiveValue {
 	return &reactiveValue{
+		logger:        lg,
 		pendingInit:   true,
 		watchChannels: make(map[string]chan protoreflect.Value),
 		watchFuncs:    make(map[string]func(int64, protoreflect.Value, <-chan struct{})),
 	}
 }
 
+func (s *reactiveValue) traceLog(msg string, attrs ...any) {
+	if s.logger == nil {
+		return
+	}
+	s.logger.Log(context.Background(), traceLogLevel, msg, attrs...)
+}
+
 func (r *reactiveValue) Update(rev int64, v protoreflect.Value, group <-chan struct{}, notify bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	r.traceLog("updating reactive value", "revision", rev, "group", group, "notify", notify)
 
 	r.rev = rev
 	r.value = v
 
 	if r.pendingInit {
 		r.pendingInit = false
+		r.traceLog("pending init complete")
 	} else if !notify {
+		r.traceLog("skipping notify")
 		return
 	}
 
+	r.traceLog("notifying watch channels", "count", len(r.watchChannels))
 	for _, w := range r.watchChannels {
 		w <- v
 	}
 
+	r.traceLog("notifying watch funcs", "count", len(r.watchFuncs))
 	for _, f := range r.watchFuncs {
 		f(rev, v, group)
 	}
+
+	r.traceLog("update complete")
 }
 
 func (r *reactiveValue) Value() protoreflect.Value {
@@ -58,16 +75,20 @@ func (r *reactiveValue) Watch(ctx context.Context) <-chan protoreflect.Value {
 	defer r.mu.Unlock()
 	ch := make(chan protoreflect.Value, 4)
 
-	if r.rev != 0 && r.pendingInit {
-		r.pendingInit = false
+	r.traceLog("starting watch", "pendingInit", r.pendingInit)
+
+	if !r.pendingInit {
+		r.traceLog("not pending init; writing current value", "revision", r.rev, "value", r.value)
 		ch <- r.value
 	}
 
 	key := uuid.NewString()
 	r.watchChannels[key] = ch
+	r.traceLog("adding watch channel", "key", key)
 	context.AfterFunc(ctx, func() {
 		r.mu.Lock()
 		defer r.mu.Unlock()
+		r.traceLog("removing watch channel", "key", key)
 		delete(r.watchChannels, key)
 		close(ch)
 	})
@@ -84,17 +105,20 @@ func (r *reactiveValue) watchFuncInternal(ctx context.Context, onChanged func(in
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.rev != 0 && r.pendingInit {
-		r.pendingInit = false
+	r.traceLog("starting watch func", "pendingInit", r.pendingInit)
+
+	if !r.pendingInit {
+		r.traceLog("not pending init; calling watch func", "revision", r.rev, "value", r.value)
 		onChanged(r.rev, r.value, nil)
 	}
 
 	key := uuid.NewString()
 	r.watchFuncs[key] = onChanged
-
+	r.traceLog("adding watch func", "key", key)
 	context.AfterFunc(ctx, func() {
 		r.mu.Lock()
 		defer r.mu.Unlock()
+		r.traceLog("removing watch func", "key", key)
 		delete(r.watchFuncs, key)
 	})
 }

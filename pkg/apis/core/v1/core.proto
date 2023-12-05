@@ -423,3 +423,26 @@ message Value {
     repeated MapEntry entries = 2;
   }
 }
+
+message ReactiveWatchRequest {
+  // If true, uses [reactive.Bind] to watch all paths at once.
+  // If false, each path recieves updates separately.
+  bool bind = 1;
+
+  // List of paths to watch. These must be in fieldmask format.
+  // The path '.' refers to the entire object.
+  repeated string paths = 2;
+}
+
+message ReactiveEvents {
+  // In bind mode, this will contain one item for each path in the request,
+  // in order. Otherwise, this will only contain a single item.
+  repeated ReactiveEvent items = 1;
+}
+
+message ReactiveEvent {
+  // The path that triggered this event, as an index into the request path list.
+  int32 index = 1;
+
+  core.Value value = 2;
+}

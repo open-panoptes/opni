@@ -118,15 +118,15 @@ func (r *Reconciler) gatewayCAIssuer() client.Object {
 }
 
 func (r *Reconciler) gatewayServingCert() client.Object {
-	advertiseAddress := r.gw.Spec.Config.GetServer().GetAdvertiseAddress()
+	hostname := r.gw.Spec.Config.GetDashboard().GetHostname()
 	dnsNames := []string{
 		fmt.Sprintf("opni.%s.svc", r.gw.Namespace),
 		fmt.Sprintf("opni.%s.svc.cluster.local", r.gw.Namespace),
 		fmt.Sprintf("opni-internal.%s.svc", r.gw.Namespace),
 		fmt.Sprintf("opni-internal.%s.svc.cluster.local", r.gw.Namespace),
 	}
-	if advertiseAddress != "" {
-		dnsNames = append(dnsNames, advertiseAddress)
+	if hostname != "" {
+		dnsNames = append(dnsNames, hostname)
 	}
 	return &cmv1.Certificate{
 		ObjectMeta: metav1.ObjectMeta{

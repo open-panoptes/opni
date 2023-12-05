@@ -10,6 +10,7 @@ import (
 
 	"github.com/bufbuild/protovalidate-go"
 	"github.com/nsf/jsondiff"
+	"github.com/rancher/opni/apis"
 	opnicorev1 "github.com/rancher/opni/apis/core/v1"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	"github.com/rancher/opni/pkg/config/reactive"
@@ -25,6 +26,7 @@ import (
 	"github.com/rancher/opni/pkg/util"
 	"github.com/rancher/opni/pkg/util/fieldmask"
 	"github.com/rancher/opni/pkg/util/flagutil"
+	"github.com/rancher/opni/pkg/util/k8sutil"
 	"github.com/rancher/opni/pkg/validation"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -37,7 +39,6 @@ import (
 	"github.com/rancher/opni/pkg/plugins/driverutil"
 	"github.com/rancher/opni/pkg/plugins/hooks"
 	"github.com/rancher/opni/pkg/storage/crds"
-	_ "github.com/rancher/opni/pkg/storage/crds"
 	_ "github.com/rancher/opni/pkg/storage/etcd"
 	"github.com/rancher/opni/pkg/storage/inmemory"
 	_ "github.com/rancher/opni/pkg/storage/jetstream"
@@ -358,14 +359,33 @@ persist their default configurations in the KV store.
 
 			if inCluster {
 				lg.Info("loading config (in-cluster)")
+				k8sClient, err := k8sutil.NewK8sClient(k8sutil.ClientOptions{
+					Scheme: apis.NewScheme(),
+				})
+				if err != nil {
+					return err
+				}
 				activeStore = crds.NewCRDValueStore[*opnicorev1.Gateway, *configv1.GatewayConfigSpec](types.NamespacedName{
 					Namespace: os.Getenv("POD_NAMESPACE"),
 					Name:      os.Getenv("GATEWAY_NAME"),
-				}, opnicorev1.ValueStoreMethods{})
+				}, opnicorev1.ValueStoreMethods{}, crds.WithClient(k8sClient))
 				active, err := activeStore.Get(ctx)
 				if err != nil {
 					return err
 				}
+				lg := lg.With("backend",
+					active.GetStorage().GetBackend(),
+				)
+				switch active.GetStorage().GetBackend() {
+				case configv1.StorageBackend_Etcd:
+					lg = lg.With("endpoints", active.GetStorage().GetEtcd().GetEndpoints())
+				case configv1.StorageBackend_JetStream:
+					lg = lg.With(
+						"endpoint", active.GetStorage().GetJetStream().GetEndpoint(),
+						"nkeySeedPath", active.GetStorage().GetJetStream().GetNkeySeedPath(),
+					)
+				}
+				lg.Info("configuring storage backend")
 				storageBackend, err = machinery.ConfigureStorageBackendV1(ctx, active.GetStorage())
 				if err != nil {
 					return err
@@ -377,10 +397,10 @@ persist their default configurations in the KV store.
 				if err != nil {
 					return err
 				}
-				lg.Info("storage configured", "backend", storageConfig.GetBackend().String())
+				activeStore = kvutil.WithMessageCodec[*configv1.GatewayConfigSpec](
+					kvutil.WithKey(storageBackend.KeyValueStore("gateway"), "config"))
 			}
-			activeStore = kvutil.WithMessageCodec[*configv1.GatewayConfigSpec](
-				kvutil.WithKey(storageBackend.KeyValueStore("gateway"), "config"))
+			lg.Info("storage configured", "backend", storageConfig.GetBackend().String())
 
 			mgr := configv1.NewGatewayConfigManager(
 				defaultStore, activeStore,
@@ -445,9 +465,11 @@ persist their default configurations in the KV store.
 				}
 			}
 
+			lg.Debug("starting config manager")
 			if err := mgr.Start(ctx); err != nil {
 				return fmt.Errorf("failed to start config manager: %w", err)
 			}
+			lg.Debug("config manager started")
 
 			pluginLoader := plugins.NewPluginLoader(plugins.WithLogger(lg.WithGroup("gateway")))
 
@@ -480,6 +502,7 @@ persist their default configurations in the KV store.
 
 			var eg errgroup.Group
 			eg.Go(func() error {
+				lg.Debug("starting gateway server")
 				err := g.ListenAndServe(ctx)
 				if errors.Is(err, context.Canceled) {
 					lg.Info("gateway server stopped")
@@ -489,6 +512,7 @@ persist their default configurations in the KV store.
 				return err
 			})
 			eg.Go(func() error {
+				lg.Debug("starting management server")
 				err := m.ListenAndServe(ctx)
 				if errors.Is(err, context.Canceled) {
 					lg.Info("management server stopped")
@@ -498,6 +522,7 @@ persist their default configurations in the KV store.
 				return err
 			})
 
+			lg.Debug("gateway startup complete")
 			return eg.Wait()
 		},
 	}

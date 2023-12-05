@@ -110,6 +110,9 @@ func (m *MTLSSpec) AsTlsConfig() (*tls.Config, error) {
 }
 
 func (c *CertsSpec) AsTlsConfig(clientAuth tls.ClientAuthType) (*tls.Config, error) {
+	if c == nil {
+		return nil, fmt.Errorf("%w: no certs configured", ErrInsecure)
+	}
 	var caCertData, servingCertData, servingKeyData []byte
 	switch {
 	case c.CaCert != nil:

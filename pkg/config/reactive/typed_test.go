@@ -12,7 +12,7 @@ import (
 
 var _ = Describe("Typed Reactive Messages", Label("unit"), func() {
 	It("should create typed messages", func(ctx SpecContext) {
-		rv := reactive.NewReactiveValue()
+		rv := reactive.NewReactiveValue(nil)
 
 		actual := &ext.Sample2FieldMsg{
 			Field1: 100,
@@ -55,7 +55,7 @@ var _ = Describe("Typed Reactive Messages", Label("unit"), func() {
 	})
 
 	It("should create typed scalars", func(ctx SpecContext) {
-		rv := reactive.NewReactiveValue()
+		rv := reactive.NewReactiveValue(nil)
 
 		actual := int32(100)
 

@@ -71,8 +71,17 @@ func NewController[T driverutil.ConfigType[T]](tracker *driverutil.DefaultingCon
 	return &Controller[T]{
 		ControllerOptions: options,
 		tracker:           tracker,
-		reactiveMessages:  newPathTrie(util.NewMessage[T]().ProtoReflect().Descriptor(), newReactiveValue),
+		reactiveMessages: newPathTrie(util.NewMessage[T]().ProtoReflect().Descriptor(), func() *reactiveValue {
+			return newReactiveValue(options.logger.WithGroup("value"))
+		}),
 	}
+}
+
+func (s *Controller[T]) traceLog(msg string, attrs ...any) {
+	if s.logger == nil {
+		return
+	}
+	s.logger.Log(context.Background(), traceLogLevel, msg, attrs...)
 }
 
 func (s *Controller[T]) Start(ctx context.Context) error {
@@ -80,7 +89,6 @@ func (s *Controller[T]) Start(ctx context.Context) error {
 		panic("bug: Run called twice")
 	}
 	s.runContext = ctx
-
 	var rev int64
 	_, err := s.tracker.ActiveStore().Get(ctx, storage.WithRevisionOut(&rev))
 	if err != nil {
@@ -92,12 +100,15 @@ func (s *Controller[T]) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	s.traceLog("controller starting", "revision", rev)
 	go func() {
 		for {
 			cfg, ok := <-w
 			if !ok {
+				s.traceLog("controller watch channel closed")
 				return
 			}
+			s.traceLog("controller received watch event")
 			s.handleWatchEvent(cfg)
 		}
 	}()
@@ -130,13 +141,16 @@ func (s *Controller[T]) handleWatchEvent(cfg storage.WatchEvent[storage.KeyRevis
 	case storage.WatchEventPut:
 		currentRev = cfg.Current.Revision()
 		currentVal = protoreflect.ValueOf(cfg.Current.Value().ProtoReflect())
+		s.traceLog("configuration updated", "revision", currentRev)
 
 		// efficiently compute a list of paths (or prefixes) that have changed
 		var prevValue T
 		if cfg.Previous != nil {
+			s.traceLog("previous config existed", "revision", cfg.Previous.Revision())
 			prevValue = cfg.Previous.Value()
 		}
 		diffMask = fieldmask.Diff(prevValue.ProtoReflect(), cfg.Current.Value().ProtoReflect())
+		s.traceLog("diff mask", "paths", diffMask.GetPaths())
 
 		if s.logger != nil {
 			opts := jsondiff.DefaultConsoleOptions()
@@ -154,12 +168,14 @@ func (s *Controller[T]) handleWatchEvent(cfg storage.WatchEvent[storage.KeyRevis
 	}
 	s.currentRevMu.Lock()
 	s.currentRev = currentRev
+	s.traceLog("storing current revision", "revision", currentRev)
 	s.currentRevMu.Unlock()
 
 	pathsToNotify := make(map[string]struct{})
 	for _, pathStr := range diffMask.GetPaths() {
 		pathsToNotify[pathStr] = struct{}{}
 	}
+	s.traceLog("paths to notify", "paths", pathsToNotify)
 	s.reactiveMessages.WalkValues(func(node *pathTrieNode[*reactiveValue], value protoreflect.Value) {
 		var shouldNotify bool
 		if len(node.Path) == 1 {
@@ -168,8 +184,15 @@ func (s *Controller[T]) handleWatchEvent(cfg storage.WatchEvent[storage.KeyRevis
 		} else if _, ok := pathsToNotify[node.Path[1:].String()[1:]]; ok {
 			shouldNotify = true
 		}
+		s.traceLog("dispatching update", "currentRev", currentRev, "path", node.Path, "value", value, "shouldNotify", shouldNotify)
 		node.value.Update(currentRev, value, group, shouldNotify)
 	}, currentVal)
+}
+
+func (s *Controller[T]) usePathTrie(fn func(p *pathTrie[*reactiveValue])) {
+	s.reactiveMessagesMu.Lock()
+	defer s.reactiveMessagesMu.Unlock()
+	fn(s.reactiveMessages)
 }
 
 func (s *Controller[T]) Reactive(path protopath.Path) Value {
@@ -230,6 +253,10 @@ func buildNode[V any](node *pathTrieNode[V], desc protoreflect.MessageDescriptor
 
 func (t *pathTrie[V]) Find(path protopath.Path) *pathTrieNode[V] {
 	return t.index[path[1:].String()[1:]]
+}
+
+func (t *pathTrie[V]) FindString(pathStr string) *pathTrieNode[V] {
+	return t.index[pathStr]
 }
 
 // Walk performs a depth-first post-order traversal of the trie, calling fn
