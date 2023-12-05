@@ -142,8 +142,22 @@ func NewServer(
 	m.director = m.configureApiExtensionDirector(ctx, pluginLoader)
 
 	pluginLoader.Hook(hooks.OnLoadM(func(sp types.SystemPlugin, md meta.PluginMeta) {
-		go sp.ServeConfigAPI(m.mgr)
-		go sp.ServeManagementAPI(m)
+		go func() {
+			if err := sp.ServeConfigAPI(m.mgr.AsServer()); err != nil {
+				lg.With(
+					"plugin", md.Module,
+					logger.Err(err),
+				).Error("failed to serve config API to plugin")
+			}
+		}()
+		go func() {
+			if err := sp.ServeManagementAPI(m); err != nil {
+				lg.With(
+					"plugin", md.Module,
+					logger.Err(err),
+				).Error("failed to serve management API to plugin")
+			}
+		}()
 	}))
 
 	pluginLoader.Hook(hooks.OnLoadM(func(p types.CapabilityRBACPlugin, md meta.PluginMeta) {
@@ -234,7 +248,7 @@ func (m *Server) listenAndServeGrpc(ctx context.Context) error {
 				otelgrpc.UnaryServerInterceptor()),
 		)
 		managementv1.RegisterManagementServer(server, m)
-		configv1.RegisterGatewayConfigServer(server, m.mgr)
+		configv1.RegisterGatewayConfigServer(server, m.mgr.AsServer())
 		managementv1.RegisterLocalPasswordServer(server, m)
 		channelzservice.RegisterChannelzServiceToServer(server)
 

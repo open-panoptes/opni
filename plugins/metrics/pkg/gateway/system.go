@@ -27,6 +27,7 @@ func (p *Plugin) UseAPIExtensions(intf system.ExtensionClientInterface) {
 	<-p.ctx.Done()
 }
 
+// UseConfigAPI implements system.SystemPluginServer.
 func (p *Plugin) UseConfigAPI(client configv1.GatewayConfigClient) {
 	p.gatewayConfigClient.C() <- client
 	<-p.ctx.Done()

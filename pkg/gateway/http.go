@@ -181,7 +181,7 @@ func NewHTTPServer(
 	}))
 
 	pl.Hook(hooks.OnLoadM(func(p types.HTTPAPIExtensionPlugin, md meta.PluginMeta) {
-		certs.WatchFunc(ctx, func(v protoreflect.Value) {
+		go certs.WatchFunc(ctx, func(v protoreflect.Value) {
 			ctx, ca := context.WithTimeout(ctx, 10*time.Second)
 			defer ca()
 			certs := v.Message().Interface().(*configv1.CertsSpec)
@@ -193,7 +193,13 @@ func NewHTTPServer(
 				).Error("failed to configure routes")
 				return
 			}
-			srv.setupPluginRoutes(cfg, md, certs)
+			if err := srv.setupPluginRoutes(cfg, md, certs); err != nil {
+				lg.With(
+					"plugin", md.Module,
+					logger.Err(err),
+				).Error("failed to setup plugin routes")
+				return
+			}
 		})
 	}))
 
@@ -321,7 +327,7 @@ func (s *GatewayHTTPServer) setupPluginRoutes(
 	cfg *apiextensions.HTTPAPIExtensionConfig,
 	pluginMeta meta.PluginMeta,
 	certs *configv1.CertsSpec,
-) {
+) error {
 	s.routesMu.Lock()
 	defer s.routesMu.Unlock()
 	tlsConfig, err := certs.AsTlsConfig(tls.NoClientCert)
@@ -329,7 +335,7 @@ func (s *GatewayHTTPServer) setupPluginRoutes(
 		s.logger.With(
 			logger.Err(err),
 		).Error("failed to configure TLS for plugin routes")
-		return
+		return err
 	}
 	sampledLogger := logger.New(
 		logger.WithSampling(&slogsampling.ThresholdSamplingOption{Threshold: 1, Tick: logger.NoRepeatInterval, Rate: 0})).WithGroup("api")
@@ -356,4 +362,5 @@ ROUTES:
 		).Debug("configured route for plugin")
 		s.router.Handle(route.Method, route.Path, forwarder)
 	}
+	return nil
 }

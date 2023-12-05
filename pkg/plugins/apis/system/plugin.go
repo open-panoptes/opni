@@ -2,16 +2,20 @@ package system
 
 import (
 	"context"
+	"errors"
+	"io"
 	"sync"
 	"time"
 
 	"github.com/hashicorp/go-plugin"
+	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
 	"github.com/rancher/opni/pkg/caching"
 	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/plugins"
 	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/util"
+	"github.com/samber/lo"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
@@ -40,11 +44,10 @@ func (UnimplementedSystemPluginClient) UseCachingProvider(caching.CachingProvide
 func (UnimplementedSystemPluginClient) mustEmbedUnimplementedSystemPluginClient()                 {}
 
 type SystemPluginServer interface {
-	ServeConfigAPI(configv1.GatewayConfigServer)
-	ServeManagementAPI(server managementv1.ManagementServer)
-	ServeKeyValueStore(namespace string, backend storage.Backend)
-	ServeAPIExtensions(dialAddress string) error
-	ServeCachingProvider()
+	ServeConfigAPI(configv1.GatewayConfigServer) error
+	ServeManagementAPI(server managementv1.ManagementServer) error
+	ServeKeyValueStore(namespace string, backend storage.Backend) error
+	ServeCachingProvider() error
 }
 
 const (
@@ -80,23 +83,38 @@ func (p *systemPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) err
 }
 
 type systemPluginClientImpl struct {
-	UnsafeSystemServer
 	broker *plugin.GRPCBroker
 	server *grpc.Server
 	client SystemPluginClient
 	cache  caching.GrpcCachingInterceptor
 }
 
-func (c *systemPluginClientImpl) UseConfigAPI(_ context.Context, in *BrokerID) (*emptypb.Empty, error) {
+func (c *systemPluginClientImpl) UseConfigAPI(ctx context.Context, in *BrokerID) (*emptypb.Empty, error) {
 	cc, err := c.broker.Dial(in.Id)
 	if err != nil {
 		return nil, err
 	}
 	defer cc.Close()
 	client := configv1.NewGatewayConfigClient(cc)
-	c.client.UseConfigAPI(client)
-	if err := c.startAPIExtensionClientHandler(client); err != nil {
-		return nil, err
+	ctx, ca := context.WithCancel(ctx)
+	defer ca()
+	clientHandler := lo.Async(func() error {
+		return c.runAPIExtensionClientHandler(ctx, client)
+	})
+	clientRpc := lo.Async0(func() {
+		c.client.UseConfigAPI(client)
+	})
+
+	select {
+	case err := <-clientHandler:
+		// don't wait for clientRpc to finish, the peer will be blocked on
+		// a lower level context
+		if err != nil {
+			return nil, err
+		}
+	case <-clientRpc:
+		ca()
+		<-clientHandler
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -127,51 +145,49 @@ func (c *systemPluginClientImpl) UseKeyValueStore(_ context.Context, in *BrokerI
 	return &emptypb.Empty{}, nil
 }
 
-func (c *systemPluginClientImpl) startAPIExtensionClientHandler(client configv1.GatewayConfigClient) error {
-	ctx := context.TODO()
-	stream, err := client.WatchReactive(ctx, &configv1.ReactiveWatchRequest{
+func (c *systemPluginClientImpl) runAPIExtensionClientHandler(ctx context.Context, client configv1.GatewayConfigClient) error {
+	stream, err := client.WatchReactive(ctx, &corev1.ReactiveWatchRequest{
 		Paths: []string{
-			configv1.ProtoPath().Management().GrpcListenAddress().String(),
+			configv1.ProtoPath().Management().GrpcListenAddress()[1:].String()[1:],
 		},
 	})
 	if err != nil {
 		return err
 	}
-	go func() {
-		for {
-			events, err := stream.Recv()
-			if err != nil {
-				return
+	for {
+		events, err := stream.Recv()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
 			}
-			addr := events.Items[0].Value.ToValue().String()
-
-			dialOpts := []grpc.DialOption{
-				grpc.WithTransportCredentials(insecure.NewCredentials()),
-				grpc.WithBlock(),
-				grpc.WithContextDialer(util.DialProtocol),
-				grpc.WithConnectParams(grpc.ConnectParams{
-					Backoff: backoff.Config{
-						BaseDelay:  1 * time.Millisecond,
-						Multiplier: 2,
-						Jitter:     0.2,
-						MaxDelay:   1 * time.Second,
-					},
-				}),
-				grpc.WithChainUnaryInterceptor(
-					c.cache.UnaryClientInterceptor(),
-				),
-			}
-			cc, err := grpc.DialContext(ctx, addr, dialOpts...)
-			if err == nil {
-				c.client.UseAPIExtensions(&apiExtensionInterfaceImpl{
-					managementClientConn: cc,
-				})
-				cc.Close()
-			}
+			return err
 		}
-	}()
+		addr := events.Items[0].Value.ToValue().String()
 
-	return nil
+		dialOpts := []grpc.DialOption{
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithBlock(),
+			grpc.WithContextDialer(util.DialProtocol),
+			grpc.WithConnectParams(grpc.ConnectParams{
+				Backoff: backoff.Config{
+					BaseDelay:  1 * time.Millisecond,
+					Multiplier: 2,
+					Jitter:     0.2,
+					MaxDelay:   1 * time.Second,
+				},
+			}),
+			grpc.WithChainUnaryInterceptor(
+				c.cache.UnaryClientInterceptor(),
+			),
+		}
+		cc, err := grpc.DialContext(ctx, addr, dialOpts...)
+		if err == nil {
+			c.client.UseAPIExtensions(&apiExtensionInterfaceImpl{
+				managementClientConn: cc,
+			})
+			cc.Close()
+		}
+	}
 }
 
 func (c *systemPluginClientImpl) UseCachingProvider(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
@@ -202,33 +218,37 @@ type systemPluginHandler struct {
 	client SystemClient
 }
 
-func (s *systemPluginHandler) ServeConfigAPI(api configv1.GatewayConfigServer) {
-	s.serveSystemApi(
+var _ SystemPluginServer = (*systemPluginHandler)(nil)
+
+func (s *systemPluginHandler) ServeConfigAPI(api configv1.GatewayConfigServer) error {
+	return s.serveSystemApi(
 		func(srv *grpc.Server) {
 			configv1.RegisterGatewayConfigServer(srv, api)
 		},
-		func(id uint32) {
-			s.client.UseConfigAPI(s.ctx, &BrokerID{
+		func(id uint32) error {
+			_, err := s.client.UseConfigAPI(s.ctx, &BrokerID{
 				Id: id,
 			})
+			return err
 		},
 	)
 }
 
-func (s *systemPluginHandler) ServeManagementAPI(api managementv1.ManagementServer) {
-	s.serveSystemApi(
+func (s *systemPluginHandler) ServeManagementAPI(api managementv1.ManagementServer) error {
+	return s.serveSystemApi(
 		func(srv *grpc.Server) {
 			managementv1.RegisterManagementServer(srv, api)
 		},
-		func(id uint32) {
-			s.client.UseManagementAPI(s.ctx, &BrokerID{
+		func(id uint32) error {
+			_, err := s.client.UseManagementAPI(s.ctx, &BrokerID{
 				Id: id,
 			})
+			return err
 		},
 	)
 }
 
-func (s *systemPluginHandler) ServeKeyValueStore(namespace string, backend storage.Backend) {
+func (s *systemPluginHandler) ServeKeyValueStore(namespace string, backend storage.Backend) error {
 	store := backend.KeyValueStore(namespace)
 	var lockManager storage.LockManager
 	if lmb, ok := backend.(storage.LockManagerBroker); ok {
@@ -236,27 +256,29 @@ func (s *systemPluginHandler) ServeKeyValueStore(namespace string, backend stora
 	}
 
 	kvStoreSrv := NewKVStoreServer(store, lockManager)
-	s.serveSystemApi(
+	return s.serveSystemApi(
 		func(srv *grpc.Server) {
 			RegisterKeyValueStoreServer(srv, kvStoreSrv)
 		},
-		func(id uint32) {
-			s.client.UseKeyValueStore(s.ctx, &BrokerID{
+		func(id uint32) error {
+			_, err := s.client.UseKeyValueStore(s.ctx, &BrokerID{
 				Id: id,
 			})
+			return err
 		},
 	)
 }
 
-func (s *systemPluginHandler) ServeCachingProvider() {
-	s.client.UseCachingProvider(s.ctx, &emptypb.Empty{})
+func (s *systemPluginHandler) ServeCachingProvider() error {
+	_, err := s.client.UseCachingProvider(s.ctx, &emptypb.Empty{})
+	return err
 }
 
 func init() {
 	plugins.GatewayScheme.Add(SystemPluginID, NewPlugin(nil))
 }
 
-func (s *systemPluginHandler) serveSystemApi(regCallback func(*grpc.Server), useCallback func(uint32)) {
+func (s *systemPluginHandler) serveSystemApi(regCallback func(*grpc.Server), useCallback func(uint32) error) error {
 	id := s.broker.NextId()
 	var srv *grpc.Server
 	srvLock := make(chan struct{})
@@ -275,17 +297,19 @@ func (s *systemPluginHandler) serveSystemApi(regCallback func(*grpc.Server), use
 		regCallback(srv)
 		return srv
 	})
-	done := make(chan struct{})
+	done := make(chan error)
 	go func() {
-		defer close(done)
-		useCallback(id)
+		done <- useCallback(id)
 	}()
+	var err error
 	select {
 	case <-s.ctx.Done():
-	case <-done:
+		err = s.ctx.Err()
+	case err = <-done:
 	}
 	<-srvLock
 	if srv != nil {
 		once.Do(srv.Stop)
 	}
+	return err
 }

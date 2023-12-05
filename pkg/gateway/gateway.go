@@ -142,7 +142,14 @@ func NewGateway(
 			).Warn("system plugin module name is invalid")
 			return
 		}
-		go p.ServeKeyValueStore(ns, storageBackend)
+		go func() {
+			if err := p.ServeKeyValueStore(ns, storageBackend); err != nil {
+				lg.With(
+					"plugin", md.Module,
+					logger.Err(err),
+				).Error("failed to serve key-value store to plugin")
+			}
+		}()
 	}))
 
 	// serve caching provider for plugin RPCs
@@ -155,7 +162,14 @@ func NewGateway(
 			).Warn("system plugin module name is invalid")
 			return
 		}
-		go p.ServeCachingProvider()
+		go func() {
+			if err := p.ServeCachingProvider(); err != nil {
+				lg.With(
+					"plugin", md.Module,
+					logger.Err(err),
+				).Error("failed to serve caching provider to plugin")
+			}
+		}()
 	}))
 
 	// set up http server
