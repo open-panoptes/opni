@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -87,7 +88,7 @@ func (h *colorHandler) clone() *colorHandler {
 		colorEnabled: h.colorEnabled,
 		timeFormat:   h.timeFormat,
 		attrsPrefix:  h.attrsPrefix,
-		groups:       h.groups,
+		groups:       slices.Clone(h.groups),
 		groupPrefix:  h.groupPrefix,
 		w:            h.w,
 	}

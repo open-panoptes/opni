@@ -66,8 +66,7 @@ func (r *Reconciler) certs() ([]resources.Resource, error) {
 func (r *Reconciler) selfsignedIssuer() client.Object {
 	return &cmv1.ClusterIssuer{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "opni-gateway-selfsigned-issuer",
-			Namespace: r.gw.Namespace,
+			Name: "opni-gateway-selfsigned-issuer",
 		},
 		Spec: cmv1.IssuerSpec{
 			IssuerConfig: cmv1.IssuerConfig{

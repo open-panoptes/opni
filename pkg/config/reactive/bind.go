@@ -68,7 +68,9 @@ func (b *binder) onUpdate(i int, rev int64, v protoreflect.Value, group <-chan s
 	q.valuesMu.Unlock()
 
 	go func() {
-		<-group
+		if group != nil {
+			<-group
+		}
 		q.resolve.Do(func() {
 			b.doResolve(q)
 		})

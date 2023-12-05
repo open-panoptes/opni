@@ -29,7 +29,7 @@ type FilesystemPluginSyncServer struct {
 	controlv1.UnsafeUpdateSyncServer
 	SyncServerOptions
 	logger           *slog.Logger
-	config           *configv1.FilesystemCacheSpec
+	config           *configv1.PluginsSpec
 	loadMetadataOnce sync.Once
 	manifest         *controlv1.UpdateManifest
 	patchCache       patch.Cache
@@ -62,7 +62,7 @@ func WithFs(fsys afero.Fs) SyncServerOption {
 
 func NewFilesystemPluginSyncServer(
 	ctx context.Context,
-	cacheConfig *configv1.CacheSpec,
+	pluginsConfig *configv1.PluginsSpec,
 	patchEngine patch.BinaryPatcher,
 	lg *slog.Logger,
 	opts ...SyncServerOption,
@@ -73,20 +73,20 @@ func NewFilesystemPluginSyncServer(
 	options.apply(opts...)
 
 	var cache patch.Cache
-	switch cacheConfig.GetBackend() {
+	switch backend := pluginsConfig.GetCache().GetBackend(); backend {
 	case configv1.CacheBackend_Filesystem:
 		var err error
-		cache, err = patch.NewFilesystemCache(options.fsys, cacheConfig.GetFilesystem(), patchEngine, lg.WithGroup("cache"))
+		cache, err = patch.NewFilesystemCache(options.fsys, pluginsConfig.GetCache().GetFilesystem(), patchEngine, lg.WithGroup("cache"))
 		if err != nil {
 			return nil, err
 		}
 	default:
-		return nil, fmt.Errorf("unknown cache backend: %s", cacheConfig.GetBackend().String())
+		return nil, fmt.Errorf("unknown cache backend: %s", backend.String())
 	}
 
 	return &FilesystemPluginSyncServer{
 		SyncServerOptions: options,
-		config:            cacheConfig.GetFilesystem(),
+		config:            pluginsConfig,
 		logger:            lg,
 		patchCache:        cache,
 	}, nil

@@ -214,7 +214,7 @@ func NewGateway(
 		lg.Debug("plugin config received")
 		patchEngine := patch.NewReactivePatchEngine(ctx, lg, mgr.Reactive(configv1.ProtoPath().Upgrades().Plugins().Binary().PatchEngine()))
 
-		binarySyncServer, err := patchserver.NewFilesystemPluginSyncServer(ctx, pluginConfig.Cache, patchEngine, lg,
+		binarySyncServer, err := patchserver.NewFilesystemPluginSyncServer(ctx, pluginConfig, patchEngine, lg,
 			patchserver.WithPluginSyncFilters(func(pm meta.PluginMeta) bool {
 				if pm.ExtendedMetadata != nil {
 					// only sync plugins that have the agent mode set

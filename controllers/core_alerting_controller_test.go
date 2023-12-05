@@ -2,7 +2,6 @@ package controllers_test
 
 import (
 	"context"
-	"os"
 
 	. "github.com/kralicky/kmatch"
 	. "github.com/onsi/ginkgo/v2"
@@ -26,12 +25,6 @@ var _ client.Object = (*corev1beta1.AlertingCluster)(nil)
 
 var _ = Describe("Alerting Controller", Ordered, Label("controller", "slow"), func() {
 	gateway := &types.NamespacedName{}
-	testImage := "alerting-controller-test:latest"
-	BeforeAll(func() {
-		os.Setenv("OPNI_DEBUG_MANAGER_IMAGE", testImage)
-		DeferCleanup(os.Unsetenv, "OPNI_DEBUG_MANAGER_IMAGE")
-	})
-
 	BeforeEach(func() {
 		gw := &apicorev1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{

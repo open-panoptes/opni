@@ -219,16 +219,17 @@ var _ = Describe("CRD Value Store (Gateway Config)", Ordered, Label("integration
 }))
 var _ = Describe("Gateway Config Manager", Ordered, Label("integration", "slow"), func() {
 	It("should set up a gateway config manager using a CRD-backed active store", func(ctx SpecContext) {
+		ns := "crds-conformance-test"
 		if err := k8sClient.Create(context.Background(), &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "test",
+				Name: ns,
 			},
 		}); err != nil {
 			panic(err)
 		}
 		defaultStore := inmemory.NewValueStore[*configv1.GatewayConfigSpec](util.ProtoClone)
 		activeStore := crds.NewCRDValueStore[*opnicorev1.Gateway, *configv1.GatewayConfigSpec](k8stypes.NamespacedName{
-			Namespace: "test",
+			Namespace: ns,
 			Name:      "test",
 		}, opnicorev1.ValueStoreMethods{}, crds.WithClient(k8sClient))
 		mgr := configv1.NewGatewayConfigManager(
@@ -269,7 +270,7 @@ var _ = Describe("Gateway Config Manager", Ordered, Label("integration", "slow")
 		gw := &opnicorev1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
-				Namespace: "test",
+				Namespace: ns,
 			},
 			Spec: opnicorev1.GatewaySpec{
 				Config: conf,

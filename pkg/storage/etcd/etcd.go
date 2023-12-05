@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
+	"github.com/rancher/opni/pkg/config/adapt"
 	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/config/v1beta1"
 	"github.com/rancher/opni/pkg/logger"
@@ -150,15 +151,7 @@ func init() {
 		var conf *configv1.EtcdSpec
 		switch spec := args[1].(type) {
 		case *v1beta1.EtcdStorageSpec:
-			conf = &configv1.EtcdSpec{
-				Endpoints: spec.Endpoints,
-				Certs: &configv1.MTLSSpec{
-					ServerCA:   &spec.Certs.ServerCA,
-					ClientCA:   &spec.Certs.ClientCA,
-					ClientCert: &spec.Certs.ClientCert,
-					ClientKey:  &spec.Certs.ClientKey,
-				},
-			}
+			conf = adapt.V1ConfigOf[*configv1.EtcdSpec](spec)
 		case *configv1.EtcdSpec:
 			conf = spec
 		}

@@ -53,14 +53,17 @@ func FilesystemSyncServerTestSuite(patcher patch.BinaryPatcher) func() {
 		var srvManifestV1 *controlv1.UpdateManifest
 		var srvManifestV2 *controlv1.UpdateManifest
 
-		cacheSpec := &configv1.CacheSpec{
-			Backend: configv1.CacheBackend_Filesystem.Enum(),
-			Filesystem: &configv1.FilesystemCacheSpec{
-				Dir: lo.ToPtr(filepath.Join(tmpDir, "cache")),
+		pluginSpec := &configv1.PluginsSpec{
+			Dir: lo.ToPtr(filepath.Join(tmpDir, patch.PluginsDir)),
+			Cache: &configv1.CacheSpec{
+				Backend: configv1.CacheBackend_Filesystem.Enum(),
+				Filesystem: &configv1.FilesystemCacheSpec{
+					Dir: lo.ToPtr(filepath.Join(tmpDir, "cache")),
+				},
 			},
 		}
 		newServer := func() (*server.FilesystemPluginSyncServer, error) {
-			return server.NewFilesystemPluginSyncServer(context.Background(), cacheSpec, patcher, testlog.Log, server.WithFs(fsys))
+			return server.NewFilesystemPluginSyncServer(context.Background(), pluginSpec, patcher, testlog.Log, server.WithFs(fsys))
 		}
 		newUpdateServer := func(s *server.FilesystemPluginSyncServer) *update.UpdateServer {
 			srv := update.NewUpdateServer(testlog.Log)
@@ -464,18 +467,24 @@ func FilesystemSyncServerTestSuite(patcher patch.BinaryPatcher) func() {
 			When("creating a new server", func() {
 				When("an unknown cache backend is specified", func() {
 					It("should return an error", func() {
-						_, err := server.NewFilesystemPluginSyncServer(context.Background(), &configv1.CacheSpec{
-							Backend: configv1.CacheBackend(2).Enum(),
+						_, err := server.NewFilesystemPluginSyncServer(context.Background(), &configv1.PluginsSpec{
+							Dir: lo.ToPtr(filepath.Join(tmpDir, "cache", patch.PluginsDir)),
+							Cache: &configv1.CacheSpec{
+								Backend: configv1.CacheBackend(2).Enum(),
+							},
 						}, patcher, testlog.Log)
-						Expect(err).To(MatchError("unknown cache backend: unknown"))
+						Expect(err).To(MatchError("unknown cache backend: 2"))
 					})
 				})
 				When("the filesystem cache cannot be created", func() {
 					It("should return an error", func() {
-						_, err := server.NewFilesystemPluginSyncServer(context.Background(), &configv1.CacheSpec{
-							Backend: configv1.CacheBackend_Filesystem.Enum(),
-							Filesystem: &configv1.FilesystemCacheSpec{
-								Dir: lo.ToPtr("/dev/null"),
+						_, err := server.NewFilesystemPluginSyncServer(context.Background(), &configv1.PluginsSpec{
+							Dir: lo.ToPtr(filepath.Join(tmpDir, "cache", patch.PluginsDir)),
+							Cache: &configv1.CacheSpec{
+								Backend: configv1.CacheBackend_Filesystem.Enum(),
+								Filesystem: &configv1.FilesystemCacheSpec{
+									Dir: lo.ToPtr("/dev/null"),
+								},
 							},
 						}, patcher, testlog.Log)
 						Expect(err).To(HaveOccurred())

@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 	"os/exec"
 	"path"
 	"reflect"
@@ -52,7 +53,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/clientcmd/api"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -189,6 +189,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	})
 	return configBytes
 }, func(configBytes []byte) {
+	os.Setenv("OPNI_DEBUG_MANAGER_IMAGE", "opni-test:latest")
+	DeferCleanup(os.Unsetenv, "OPNI_DEBUG_MANAGER_IMAGE")
+
 	By("connecting to the test environment")
 	if k8sClient != nil {
 		return
@@ -488,20 +491,20 @@ func StartControllerManager(ctx context.Context, testEnv *envtest.Environment) {
 	cfg := testEnv.Config
 	controllerMgrBin := path.Join(testEnv.BinaryAssetsDirectory, "kube-controller-manager")
 
-	apiCfg := api.Config{
-		Clusters: map[string]*api.Cluster{
+	apiCfg := clientcmdapi.Config{
+		Clusters: map[string]*clientcmdapi.Cluster{
 			"default": {
 				Server:                   cfg.Host,
 				CertificateAuthorityData: cfg.CAData,
 			},
 		},
-		Contexts: map[string]*api.Context{
+		Contexts: map[string]*clientcmdapi.Context{
 			"default": {
 				Cluster:  "default",
 				AuthInfo: "default",
 			},
 		},
-		AuthInfos: map[string]*api.AuthInfo{
+		AuthInfos: map[string]*clientcmdapi.AuthInfo{
 			"default": {
 				ClientCertificateData: cfg.CertData,
 				ClientKeyData:         cfg.KeyData,

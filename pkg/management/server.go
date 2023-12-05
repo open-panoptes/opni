@@ -232,9 +232,14 @@ func (m *Server) ListenAndServe(ctx context.Context) error {
 
 func (m *Server) listenAndServeGrpc(ctx context.Context) error {
 	grpcListenAddr := m.mgr.Reactive(configv1.ProtoPath().Management().GrpcListenAddress())
-
+	var mu sync.Mutex
+	var serveError error
+	var done chan struct{}
 	var server *grpc.Server
 	grpcListenAddr.WatchFunc(ctx, func(v protoreflect.Value) {
+		mu.Lock()
+		defer mu.Unlock()
+
 		if server != nil {
 			server.Stop()
 		}
@@ -264,20 +269,25 @@ func (m *Server) listenAndServeGrpc(ctx context.Context) error {
 		m.logger.With(
 			"address", listener.Addr().String(),
 		).Info("management gRPC server starting")
+		done = make(chan struct{})
 		go func() {
-			if err := server.Serve(listener); err != nil {
-				if !errors.Is(err, context.Canceled) {
-					m.logger.With(logger.Err(err)).Warn("management gRPC server exited with error")
-				}
-			}
-			m.logger.Info("management gRPC server stopped")
+			err := server.Serve(listener)
+			mu.Lock()
+			serveError = err
+			close(done)
+			mu.Unlock()
 		}()
 	})
 	<-ctx.Done()
+	mu.Lock()
+	defer mu.Unlock()
 	if server != nil {
 		server.Stop()
 	}
-	return ctx.Err()
+	if done != nil {
+		<-done
+	}
+	return serveError
 }
 
 func (m *Server) listenAndServeHttp(ctx context.Context) error {

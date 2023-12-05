@@ -68,11 +68,16 @@ func NewController[T driverutil.ConfigType[T]](tracker *driverutil.DefaultingCon
 	options := ControllerOptions{}
 	options.apply(opts...)
 
+	lg := options.logger
+	if lg != nil {
+		lg = options.logger.WithGroup("value")
+	}
+
 	return &Controller[T]{
 		ControllerOptions: options,
 		tracker:           tracker,
 		reactiveMessages: newPathTrie(util.NewMessage[T]().ProtoReflect().Descriptor(), func() *reactiveValue {
-			return newReactiveValue(options.logger.WithGroup("value"))
+			return newReactiveValue(lg)
 		}),
 	}
 }

@@ -3730,11 +3730,11 @@ type ReactiveWatchRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// If true, uses [reactive.Bind] to watch all paths at once. If false,
-	// each path recieves updates separately.
+	// If true, uses [reactive.Bind] to watch all paths at once.
+	// If false, each path recieves updates separately.
 	Bind bool `protobuf:"varint,1,opt,name=bind,proto3" json:"bind,omitempty"`
-	// List of paths to watch. These must be in full protopath format, e.g.
-	// (pkg.Root).field1.field2.
+	// List of paths to watch. These must be in fieldmask format.
+	// The path '.' refers to the entire object.
 	Paths []string `protobuf:"bytes,2,rep,name=paths,proto3" json:"paths,omitempty"`
 }
 

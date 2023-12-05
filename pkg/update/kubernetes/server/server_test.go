@@ -8,6 +8,7 @@ import (
 	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
 	"github.com/rancher/opni/pkg/config/reactive"
 	"github.com/rancher/opni/pkg/config/reactive/reactivetest"
+	"github.com/rancher/opni/pkg/config/reactive/subtle"
 	configv1 "github.com/rancher/opni/pkg/config/v1"
 	_ "github.com/rancher/opni/pkg/oci/noop"
 	"github.com/rancher/opni/pkg/test/testlog"
@@ -37,7 +38,7 @@ var _ = Describe("Kubernetes sync server", Label("unit"), func() {
 				Upgrades: &configv1.UpgradesSpec{
 					Agents: &configv1.AgentUpgradesSpec{
 						Kubernetes: &configv1.KubernetesAgentUpgradeSpec{
-							ImageResolver: configv1.KubernetesAgentUpgradeSpec_Kubernetes.Enum(),
+							ImageResolver: configv1.KubernetesAgentUpgradeSpec_Noop.Enum(),
 						},
 					},
 				},
@@ -52,6 +53,8 @@ var _ = Describe("Kubernetes sync server", Label("unit"), func() {
 			testlog.Log,
 		)
 		Expect(err).NotTo(HaveOccurred())
+
+		subtle.WaitOne(ctx, ctrl.Reactive(protopath.Path(configv1.ProtoPath().Upgrades().Agents().Kubernetes())))
 	})
 
 	When("unknown package type is provided", func() {

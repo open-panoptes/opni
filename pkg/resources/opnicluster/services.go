@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 
-	"emperror.dev/errors"
 	"github.com/cisco-open/operator-tools/pkg/reconciler"
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -658,7 +657,7 @@ func (r *Reconciler) metricsDeployment() (runtime.Object, reconciler.DesiredStat
 	prometheusEndpoint := r.getPrometheusEndpoint()
 	_, err := url.ParseRequestURI(prometheusEndpoint)
 	if err != nil && (r.opniCluster.Spec.Services.Metrics.Enabled == nil || *r.opniCluster.Spec.Services.Metrics.Enabled) {
-		return deployment, deploymentState(r.opniCluster.Spec.Services.Metrics.Enabled), errors.New("prometheus endpoint is not a valid URL")
+		return deployment, deploymentState(r.opniCluster.Spec.Services.Metrics.Enabled), fmt.Errorf("prometheus endpoint is not a valid URL: %s", prometheusEndpoint)
 	}
 	deployment.Spec.Template.Spec.Containers[0].Env = append(deployment.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
 		Name:  "PROMETHEUS_ENDPOINT",

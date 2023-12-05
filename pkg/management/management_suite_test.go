@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -14,7 +15,6 @@ import (
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/management"
 	"github.com/rancher/opni/pkg/plugins"
-	"github.com/rancher/opni/pkg/plugins/hooks"
 	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/storage/inmemory"
 	"github.com/rancher/opni/pkg/test/freeport"
@@ -27,6 +27,7 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func TestManagement(t *testing.T) {
@@ -74,7 +75,7 @@ func setupManagementServer(vars **testVars, pl plugins.LoaderInterface, opts ...
 		defaultStore := inmemory.NewValueStore[*configv1.GatewayConfigSpec](util.ProtoClone)
 		activeStore := inmemory.NewValueStore[*configv1.GatewayConfigSpec](util.ProtoClone)
 		mgr := configv1.NewGatewayConfigManager(defaultStore, activeStore, flagutil.LoadDefaults)
-		mgr.SetConfiguration(ctx, &configv1.SetRequest{
+		_, err := mgr.SetConfiguration(ctx, &configv1.SetRequest{
 			Spec: &configv1.GatewayConfigSpec{
 				Management: &configv1.ManagementServerSpec{
 					GrpcListenAddress: lo.ToPtr(fmt.Sprintf("tcp://127.0.0.1:%d", ports[0])),
@@ -82,29 +83,32 @@ func setupManagementServer(vars **testVars, pl plugins.LoaderInterface, opts ...
 				},
 			},
 		})
+		Expect(err).NotTo(HaveOccurred())
+
 		Expect(mgr.Start(ctx)).To(Succeed())
 		cert, err := tls.X509KeyPair(testdata.TestData("localhost.crt"), testdata.TestData("localhost.key"))
 		Expect(err).NotTo(HaveOccurred())
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{cert},
+		}
 		cds := &testCoreDataSource{
 			storageBackend: tv.storageBackend,
-			tlsConfig: &tls.Config{
-				Certificates: []tls.Certificate{cert},
-			},
+			tlsConfig:      tlsConfig,
 		}
 		server := management.NewServer(ctx, cds, mgr, pl, opts...)
 		tv.coreDataSource = cds
 		tv.ifaces.collector = server
-		pl.Hook(hooks.OnLoadingCompleted(func(int) {
-			defer GinkgoRecover()
+
+		go func() {
+			time.Sleep(100 * time.Millisecond) // TODO: can't hook into plugin loader here yet
 			if err := server.ListenAndServe(ctx); err != nil {
 				testlog.Log.Error("error", logger.Err(err))
 			}
-		}))
-		tv.client, err = management.NewClient(ctx,
-			management.WithListenAddress(fmt.Sprintf("127.0.0.1:%d", ports[0])),
-			management.WithDialOptions(grpc.WithDefaultCallOptions(grpc.WaitForReady(true))),
-		)
+		}()
+
+		cc, err := grpc.DialContext(ctx, fmt.Sprintf("127.0.0.1:%d", ports[0]), grpc.WithCredentialsBundle(insecure.NewBundle()), grpc.WithDefaultCallOptions(grpc.WaitForReady(true)))
 		Expect(err).NotTo(HaveOccurred())
+		tv.client = managementv1.NewManagementClient(cc)
 		tv.grpcEndpoint = fmt.Sprintf("127.0.0.1:%d", ports[0])
 		tv.httpEndpoint = fmt.Sprintf("http://127.0.0.1:%d", ports[1])
 		*vars = tv
