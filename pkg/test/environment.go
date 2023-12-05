@@ -53,6 +53,7 @@ import (
 	"github.com/rancher/opni/pkg/clients"
 	"github.com/rancher/opni/pkg/config/adapt"
 	"github.com/rancher/opni/pkg/config/meta"
+	"github.com/rancher/opni/pkg/config/reactive"
 	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/config/v1beta1"
 	"github.com/rancher/opni/pkg/gateway"
@@ -67,6 +68,7 @@ import (
 	"github.com/rancher/opni/pkg/plugins/hooks"
 	pluginmeta "github.com/rancher/opni/pkg/plugins/meta"
 	"github.com/rancher/opni/pkg/slo/query"
+	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/test/freeport"
 	mock_ident "github.com/rancher/opni/pkg/test/mock/ident"
 	"github.com/rancher/opni/pkg/test/testdata"
@@ -1928,10 +1930,30 @@ func (e *Environment) startGateway() {
 		kvutil.WithKey(storageBackend.KeyValueStore("gateway"), "config"))
 
 	defaultStore := inmemory.NewValueStore[*configv1.GatewayConfigSpec](util.ProtoClone)
+	defaultStore.Put(e.ctx, cfgv1)
 
-	mgr := configv1.NewGatewayConfigManager(defaultStore, activeStore, flagutil.LoadDefaults)
+	mgr := configv1.NewGatewayConfigManager(
+		defaultStore, activeStore,
+		flagutil.LoadDefaults,
+		configv1.WithControllerOptions(
+			reactive.WithLogger(lg.WithGroup("config")),
+			reactive.WithDiffMode(reactive.DiffFull),
+		),
+	)
 	if err := mgr.Start(e.ctx); err != nil {
 		panic(fmt.Errorf("failed to start config manager: %w", err))
+	}
+
+	if ac, err := mgr.Tracker().ActiveStore().Get(context.Background()); err != nil {
+		if storage.IsNotFound(err) {
+			lg.Info("no previous configuration found, creating from defaults")
+			_, err := mgr.SetConfiguration(context.Background(), &configv1.SetRequest{})
+			if err != nil {
+				panic(fmt.Errorf("failed to set configuration: %w", err))
+			}
+		}
+	} else {
+		lg.Info("loaded existing configuration", "rev", ac.GetRevision().GetRevision())
 	}
 
 	e.gw = gateway.NewGateway(e.ctx, mgr, storageBackend, e.pluginLoader,
