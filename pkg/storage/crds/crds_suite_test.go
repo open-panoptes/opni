@@ -247,7 +247,6 @@ var _ = Describe("Gateway Config Manager", Ordered, Label("integration", "slow")
 		conf.Storage = &configv1.StorageSpec{
 			Backend: configv1.StorageBackend_Etcd.Enum(),
 		}
-		conf.Auth = &configv1.AuthSpec{}
 
 		conf.Server.AdvertiseAddress = lo.ToPtr("${POD_IP}:9090")
 		conf.Management.AdvertiseAddress = lo.ToPtr("${POD_IP}:11090")

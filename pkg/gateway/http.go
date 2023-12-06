@@ -227,14 +227,18 @@ func (s *GatewayHTTPServer) ListenAndServe(ctx context.Context) error {
 				<-done
 			}
 			addr := v[0].String()
-			certs, err := v[1].Message().Interface().(*configv1.CertsSpec).AsTlsConfig(tls.NoClientCert)
+			if !v[1].IsValid() {
+				lg.Error("no certs configured, cannot start gateway HTTP server")
+				return
+			}
+			tlsConfig, err := v[1].Message().Interface().(*configv1.CertsSpec).AsTlsConfig(tls.NoClientCert)
 			if err != nil {
 				lg.With(
 					logger.Err(err),
 				).Error("failed to configure TLS")
 				return
 			}
-			listener, err := tls.Listen("tcp4", addr, certs)
+			listener, err := tls.Listen("tcp4", addr, tlsConfig)
 			if err != nil {
 				lg.With(
 					"address", addr,

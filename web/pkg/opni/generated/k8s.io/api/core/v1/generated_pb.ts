@@ -1179,15 +1179,9 @@ export class ClaimSource extends Message<ClaimSource> {
    *
    * The template will be used to create a new ResourceClaim, which will
    * be bound to this pod. When this pod is deleted, the ResourceClaim
-   * will also be deleted. The name of the ResourceClaim will be <pod
-   * name>-<resource name>, where <resource name> is the
-   * PodResourceClaim.Name. Pod validation will reject the pod if the
-   * concatenated name is not valid for a ResourceClaim (e.g. too long).
-   *
-   * An existing ResourceClaim with that name that is not owned by the
-   * pod will not be used for the pod to avoid using an unrelated
-   * resource by mistake. Scheduling and pod startup are then blocked
-   * until the unrelated ResourceClaim is removed.
+   * will also be deleted. The pod name and resource name, along with a
+   * generated component, will be used to form a unique name for the
+   * ResourceClaim, which will be recorded in pod.status.resourceClaimStatuses.
    *
    * This field is immutable and no changes will be made to the
    * corresponding ResourceClaim by the control plane after creating the
@@ -2058,6 +2052,29 @@ export class Container extends Message<Container> {
   resizePolicy: ContainerResizePolicy[] = [];
 
   /**
+   * RestartPolicy defines the restart behavior of individual containers in a pod.
+   * This field may only be set for init containers, and the only allowed value is "Always".
+   * For non-init containers or when this field is not specified,
+   * the restart behavior is defined by the Pod's restart policy and the container type.
+   * Setting the RestartPolicy as "Always" for the init container will have the following effect:
+   * this init container will be continually restarted on
+   * exit until all regular containers have terminated. Once all regular
+   * containers have completed, all init containers with restartPolicy "Always"
+   * will be shut down. This lifecycle differs from normal init containers and
+   * is often referred to as a "sidecar" container. Although this init
+   * container still starts in the init container sequence, it does not wait
+   * for the container to complete before proceeding to the next init
+   * container. Instead, the next init container starts immediately after this
+   * init container is started, or after any startupProbe has successfully
+   * completed.
+   * +featureGate=SidecarContainers
+   * +optional
+   *
+   * @generated from field: optional string restartPolicy = 24;
+   */
+  restartPolicy?: string;
+
+  /**
    * Pod volumes to mount into the container's filesystem.
    * Cannot be updated.
    * +optional
@@ -2224,6 +2241,7 @@ export class Container extends Message<Container> {
     { no: 7, name: "env", kind: "message", T: EnvVar, repeated: true },
     { no: 8, name: "resources", kind: "message", T: ResourceRequirements, opt: true },
     { no: 23, name: "resizePolicy", kind: "message", T: ContainerResizePolicy, repeated: true },
+    { no: 24, name: "restartPolicy", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 9, name: "volumeMounts", kind: "message", T: VolumeMount, repeated: true },
     { no: 21, name: "volumeDevices", kind: "message", T: VolumeDevice, repeated: true },
     { no: 10, name: "livenessProbe", kind: "message", T: Probe, opt: true },
@@ -3248,6 +3266,8 @@ export class EndpointPort extends Message<EndpointPort> {
    *
    * * Kubernetes-defined prefixed names:
    *   * 'kubernetes.io/h2c' - HTTP/2 over cleartext as described in https://www.rfc-editor.org/rfc/rfc7540
+   *   * 'kubernetes.io/ws'  - WebSocket over cleartext as described in https://www.rfc-editor.org/rfc/rfc6455
+   *   * 'kubernetes.io/wss' - WebSocket over TLS as described in https://www.rfc-editor.org/rfc/rfc6455
    *
    * * Other protocols should use implementation-defined prefixed names such as
    * mycompany.com/my-custom-protocol.
@@ -3870,6 +3890,18 @@ export class EphemeralContainerCommon extends Message<EphemeralContainerCommon> 
   resizePolicy: ContainerResizePolicy[] = [];
 
   /**
+   * Restart policy for the container to manage the restart behavior of each
+   * container within a pod.
+   * This may only be set for init containers. You cannot set this field on
+   * ephemeral containers.
+   * +featureGate=SidecarContainers
+   * +optional
+   *
+   * @generated from field: optional string restartPolicy = 24;
+   */
+  restartPolicy?: string;
+
+  /**
    * Pod volumes to mount into the container's filesystem. Subpath mounts are not allowed for ephemeral containers.
    * Cannot be updated.
    * +optional
@@ -4022,6 +4054,7 @@ export class EphemeralContainerCommon extends Message<EphemeralContainerCommon> 
     { no: 7, name: "env", kind: "message", T: EnvVar, repeated: true },
     { no: 8, name: "resources", kind: "message", T: ResourceRequirements, opt: true },
     { no: 23, name: "resizePolicy", kind: "message", T: ContainerResizePolicy, repeated: true },
+    { no: 24, name: "restartPolicy", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 9, name: "volumeMounts", kind: "message", T: VolumeMount, repeated: true },
     { no: 21, name: "volumeDevices", kind: "message", T: VolumeDevice, repeated: true },
     { no: 10, name: "livenessProbe", kind: "message", T: Probe, opt: true },
@@ -5316,6 +5349,47 @@ export class HostAlias extends Message<HostAlias> {
 
   static equals(a: HostAlias | PlainMessage<HostAlias> | undefined, b: HostAlias | PlainMessage<HostAlias> | undefined): boolean {
     return proto2.util.equals(HostAlias, a, b);
+  }
+}
+
+/**
+ * HostIP represents a single IP address allocated to the host.
+ *
+ * @generated from message k8s.io.api.core.v1.HostIP
+ */
+export class HostIP extends Message<HostIP> {
+  /**
+   * IP is the IP address assigned to the host
+   *
+   * @generated from field: optional string ip = 1;
+   */
+  ip?: string;
+
+  constructor(data?: PartialMessage<HostIP>) {
+    super();
+    proto2.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto2 = proto2;
+  static readonly typeName = "k8s.io.api.core.v1.HostIP";
+  static readonly fields: FieldList = proto2.util.newFieldList(() => [
+    { no: 1, name: "ip", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): HostIP {
+    return new HostIP().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): HostIP {
+    return new HostIP().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): HostIP {
+    return new HostIP().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: HostIP | PlainMessage<HostIP> | undefined, b: HostIP | PlainMessage<HostIP> | undefined): boolean {
+    return proto2.util.equals(HostIP, a, b);
   }
 }
 
@@ -8430,13 +8504,27 @@ export class PersistentVolumeClaimStatus extends Message<PersistentVolumeClaimSt
   conditions: PersistentVolumeClaimCondition[] = [];
 
   /**
-   * allocatedResources is the storage resource within AllocatedResources tracks the capacity allocated to a PVC. It may
-   * be larger than the actual capacity when a volume expansion operation is requested.
+   * allocatedResources tracks the resources allocated to a PVC including its capacity.
+   * Key names follow standard Kubernetes label syntax. Valid values are either:
+   * 	* Un-prefixed keys:
+   * 		- storage - the capacity of the volume.
+   * 	* Custom resources must use implementation-defined prefixed names such as "example.com/my-custom-resource"
+   * Apart from above values - keys that are unprefixed or have kubernetes.io prefix are considered
+   * reserved and hence may not be used.
+   *
+   * Capacity reported here may be larger than the actual capacity when a volume expansion operation
+   * is requested.
    * For storage quota, the larger value from allocatedResources and PVC.spec.resources is used.
    * If allocatedResources is not set, PVC.spec.resources alone is used for quota calculation.
    * If a volume expansion capacity request is lowered, allocatedResources is only
    * lowered if there are no expansion operations in progress and if the actual volume capacity
    * is equal or lower than the requested capacity.
+   *
+   * A controller that receives PVC update with previously unknown resourceName
+   * should ignore the update for the purpose it was designed. For example - a controller that
+   * only is responsible for resizing capacity of the volume, should ignore PVC updates that change other valid
+   * resources associated with PVC.
+   *
    * This is an alpha field and requires enabling RecoverVolumeExpansionFailure feature.
    * +featureGate=RecoverVolumeExpansionFailure
    * +optional
@@ -8446,16 +8534,48 @@ export class PersistentVolumeClaimStatus extends Message<PersistentVolumeClaimSt
   allocatedResources: { [key: string]: Quantity } = {};
 
   /**
-   * resizeStatus stores status of resize operation.
-   * ResizeStatus is not set by default but when expansion is complete resizeStatus is set to empty
-   * string by resize controller or kubelet.
+   * allocatedResourceStatuses stores status of resource being resized for the given PVC.
+   * Key names follow standard Kubernetes label syntax. Valid values are either:
+   * 	* Un-prefixed keys:
+   * 		- storage - the capacity of the volume.
+   * 	* Custom resources must use implementation-defined prefixed names such as "example.com/my-custom-resource"
+   * Apart from above values - keys that are unprefixed or have kubernetes.io prefix are considered
+   * reserved and hence may not be used.
+   *
+   * ClaimResourceStatus can be in any of following states:
+   * 	- ControllerResizeInProgress:
+   * 		State set when resize controller starts resizing the volume in control-plane.
+   * 	- ControllerResizeFailed:
+   * 		State set when resize has failed in resize controller with a terminal error.
+   * 	- NodeResizePending:
+   * 		State set when resize controller has finished resizing the volume but further resizing of
+   * 		volume is needed on the node.
+   * 	- NodeResizeInProgress:
+   * 		State set when kubelet starts resizing the volume.
+   * 	- NodeResizeFailed:
+   * 		State set when resizing has failed in kubelet with a terminal error. Transient errors don't set
+   * 		NodeResizeFailed.
+   * For example: if expanding a PVC for more capacity - this field can be one of the following states:
+   * 	- pvc.status.allocatedResourceStatus['storage'] = "ControllerResizeInProgress"
+   *      - pvc.status.allocatedResourceStatus['storage'] = "ControllerResizeFailed"
+   *      - pvc.status.allocatedResourceStatus['storage'] = "NodeResizePending"
+   *      - pvc.status.allocatedResourceStatus['storage'] = "NodeResizeInProgress"
+   *      - pvc.status.allocatedResourceStatus['storage'] = "NodeResizeFailed"
+   * When this field is not set, it means that no resize operation is in progress for the given PVC.
+   *
+   * A controller that receives PVC update with previously unknown resourceName or ClaimResourceStatus
+   * should ignore the update for the purpose it was designed. For example - a controller that
+   * only is responsible for resizing capacity of the volume, should ignore PVC updates that change other valid
+   * resources associated with PVC.
+   *
    * This is an alpha field and requires enabling RecoverVolumeExpansionFailure feature.
    * +featureGate=RecoverVolumeExpansionFailure
+   * +mapType=granular
    * +optional
    *
-   * @generated from field: optional string resizeStatus = 6;
+   * @generated from field: map<string, string> allocatedResourceStatuses = 7;
    */
-  resizeStatus?: string;
+  allocatedResourceStatuses: { [key: string]: string } = {};
 
   constructor(data?: PartialMessage<PersistentVolumeClaimStatus>) {
     super();
@@ -8470,7 +8590,7 @@ export class PersistentVolumeClaimStatus extends Message<PersistentVolumeClaimSt
     { no: 3, name: "capacity", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "message", T: Quantity} },
     { no: 4, name: "conditions", kind: "message", T: PersistentVolumeClaimCondition, repeated: true },
     { no: 5, name: "allocatedResources", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "message", T: Quantity} },
-    { no: 6, name: "resizeStatus", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 7, name: "allocatedResourceStatuses", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 9 /* ScalarType.STRING */} },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PersistentVolumeClaimStatus {
@@ -9061,6 +9181,17 @@ export class PersistentVolumeStatus extends Message<PersistentVolumeStatus> {
    */
   reason?: string;
 
+  /**
+   * lastPhaseTransitionTime is the time the phase transitioned from one to another
+   * and automatically resets to current time everytime a volume phase transitions.
+   * This is an alpha field and requires enabling PersistentVolumeLastPhaseTransitionTime feature.
+   * +featureGate=PersistentVolumeLastPhaseTransitionTime
+   * +optional
+   *
+   * @generated from field: optional k8s.io.apimachinery.pkg.apis.meta.v1.Time lastPhaseTransitionTime = 4;
+   */
+  lastPhaseTransitionTime?: Time;
+
   constructor(data?: PartialMessage<PersistentVolumeStatus>) {
     super();
     proto2.util.initPartial(data, this);
@@ -9072,6 +9203,7 @@ export class PersistentVolumeStatus extends Message<PersistentVolumeStatus> {
     { no: 1, name: "phase", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 2, name: "message", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 3, name: "reason", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 4, name: "lastPhaseTransitionTime", kind: "message", T: Time, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PersistentVolumeStatus {
@@ -9809,16 +9941,13 @@ export class PodExecOptions extends Message<PodExecOptions> {
 }
 
 /**
- * IP address information for entries in the (plural) PodIPs field.
- * Each entry includes:
- *
- * 	IP: An IP address allocated to the pod. Routable at least within the cluster.
+ * PodIP represents a single IP address allocated to the pod.
  *
  * @generated from message k8s.io.api.core.v1.PodIP
  */
 export class PodIP extends Message<PodIP> {
   /**
-   * ip is an IP address (IPv4 or IPv6) assigned to the pod
+   * IP is the IP address assigned to the pod
    *
    * @generated from field: optional string ip = 1;
    */
@@ -10257,6 +10386,64 @@ export class PodResourceClaim extends Message<PodResourceClaim> {
 
   static equals(a: PodResourceClaim | PlainMessage<PodResourceClaim> | undefined, b: PodResourceClaim | PlainMessage<PodResourceClaim> | undefined): boolean {
     return proto2.util.equals(PodResourceClaim, a, b);
+  }
+}
+
+/**
+ * PodResourceClaimStatus is stored in the PodStatus for each PodResourceClaim
+ * which references a ResourceClaimTemplate. It stores the generated name for
+ * the corresponding ResourceClaim.
+ *
+ * @generated from message k8s.io.api.core.v1.PodResourceClaimStatus
+ */
+export class PodResourceClaimStatus extends Message<PodResourceClaimStatus> {
+  /**
+   * Name uniquely identifies this resource claim inside the pod.
+   * This must match the name of an entry in pod.spec.resourceClaims,
+   * which implies that the string must be a DNS_LABEL.
+   *
+   * @generated from field: optional string name = 1;
+   */
+  name?: string;
+
+  /**
+   * ResourceClaimName is the name of the ResourceClaim that was
+   * generated for the Pod in the namespace of the Pod. It this is
+   * unset, then generating a ResourceClaim was not necessary. The
+   * pod.spec.resourceClaims entry can be ignored in this case.
+   *
+   * +optional
+   *
+   * @generated from field: optional string resourceClaimName = 2;
+   */
+  resourceClaimName?: string;
+
+  constructor(data?: PartialMessage<PodResourceClaimStatus>) {
+    super();
+    proto2.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto2 = proto2;
+  static readonly typeName = "k8s.io.api.core.v1.PodResourceClaimStatus";
+  static readonly fields: FieldList = proto2.util.newFieldList(() => [
+    { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 2, name: "resourceClaimName", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PodResourceClaimStatus {
+    return new PodResourceClaimStatus().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): PodResourceClaimStatus {
+    return new PodResourceClaimStatus().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): PodResourceClaimStatus {
+    return new PodResourceClaimStatus().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: PodResourceClaimStatus | PlainMessage<PodResourceClaimStatus> | undefined, b: PodResourceClaimStatus | PlainMessage<PodResourceClaimStatus> | undefined): boolean {
+    return proto2.util.equals(PodResourceClaimStatus, a, b);
   }
 }
 
@@ -11151,7 +11338,9 @@ export class PodStatus extends Message<PodStatus> {
   nominatedNodeName?: string;
 
   /**
-   * IP address of the host to which the pod is assigned. Empty if not yet scheduled.
+   * hostIP holds the IP address of the host to which the pod is assigned. Empty if the pod has not started yet.
+   * A pod can be assigned to a node that has a problem in kubelet which in turns mean that HostIP will
+   * not be updated even if there is a node is assigned to pod
    * +optional
    *
    * @generated from field: optional string hostIP = 5;
@@ -11159,7 +11348,21 @@ export class PodStatus extends Message<PodStatus> {
   hostIP?: string;
 
   /**
-   * IP address allocated to the pod. Routable at least within the cluster.
+   * hostIPs holds the IP addresses allocated to the host. If this field is specified, the first entry must
+   * match the hostIP field. This list is empty if the pod has not started yet.
+   * A pod can be assigned to a node that has a problem in kubelet which in turns means that HostIPs will
+   * not be updated even if there is a node is assigned to this pod.
+   * +optional
+   * +patchStrategy=merge
+   * +patchMergeKey=ip
+   * +listType=atomic
+   *
+   * @generated from field: repeated k8s.io.api.core.v1.HostIP hostIPs = 16;
+   */
+  hostIPs: HostIP[] = [];
+
+  /**
+   * podIP address allocated to the pod. Routable at least within the cluster.
    * Empty if not yet allocated.
    * +optional
    *
@@ -11236,6 +11439,19 @@ export class PodStatus extends Message<PodStatus> {
    */
   resize?: string;
 
+  /**
+   * Status of resource claims.
+   * +patchMergeKey=name
+   * +patchStrategy=merge,retainKeys
+   * +listType=map
+   * +listMapKey=name
+   * +featureGate=DynamicResourceAllocation
+   * +optional
+   *
+   * @generated from field: repeated k8s.io.api.core.v1.PodResourceClaimStatus resourceClaimStatuses = 15;
+   */
+  resourceClaimStatuses: PodResourceClaimStatus[] = [];
+
   constructor(data?: PartialMessage<PodStatus>) {
     super();
     proto2.util.initPartial(data, this);
@@ -11250,6 +11466,7 @@ export class PodStatus extends Message<PodStatus> {
     { no: 4, name: "reason", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 11, name: "nominatedNodeName", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 5, name: "hostIP", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 16, name: "hostIPs", kind: "message", T: HostIP, repeated: true },
     { no: 6, name: "podIP", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 12, name: "podIPs", kind: "message", T: PodIP, repeated: true },
     { no: 7, name: "startTime", kind: "message", T: Time, opt: true },
@@ -11258,6 +11475,7 @@ export class PodStatus extends Message<PodStatus> {
     { no: 9, name: "qosClass", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 13, name: "ephemeralContainerStatuses", kind: "message", T: ContainerStatus, repeated: true },
     { no: 14, name: "resize", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 15, name: "resourceClaimStatuses", kind: "message", T: PodResourceClaimStatus, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PodStatus {
@@ -13637,7 +13855,7 @@ export class SeccompProfile extends Message<SeccompProfile> {
    * localhostProfile indicates a profile defined in a file on the node should be used.
    * The profile must be preconfigured on the node to work.
    * Must be a descending path, relative to the kubelet's configured seccomp profile location.
-   * Must only be set if type is "Localhost".
+   * Must be set if type is "Localhost". Must NOT be set for any other type.
    * +optional
    *
    * @generated from field: optional string localhostProfile = 2;
@@ -14706,10 +14924,19 @@ export class ServicePort extends Message<ServicePort> {
 
   /**
    * The application protocol for this port.
+   * This is used as a hint for implementations to offer richer behavior for protocols that they understand.
    * This field follows standard Kubernetes label syntax.
-   * Un-prefixed names are reserved for IANA standard service names (as per
+   * Valid values are either:
+   *
+   * * Un-prefixed protocol names - reserved for IANA standard service names (as per
    * RFC-6335 and https://www.iana.org/assignments/service-names).
-   * Non-standard protocols should use prefixed names such as
+   *
+   * * Kubernetes-defined prefixed names:
+   *   * 'kubernetes.io/h2c' - HTTP/2 over cleartext as described in https://www.rfc-editor.org/rfc/rfc7540
+   *   * 'kubernetes.io/ws'  - WebSocket over cleartext as described in https://www.rfc-editor.org/rfc/rfc6455
+   *   * 'kubernetes.io/wss' - WebSocket over TLS as described in https://www.rfc-editor.org/rfc/rfc6455
+   *
+   * * Other protocols should use implementation-defined prefixed names such as
    * mycompany.com/my-custom-protocol.
    * +optional
    *
@@ -14972,10 +15199,9 @@ export class ServiceSpec extends Message<ServiceSpec> {
    * This feature depends on whether the underlying cloud-provider supports specifying
    * the loadBalancerIP when a load balancer is created.
    * This field will be ignored if the cloud-provider does not support the feature.
-   * Deprecated: This field was under-specified and its meaning varies across implementations,
-   * and it cannot support dual-stack.
-   * As of Kubernetes v1.24, users are encouraged to use implementation-specific annotations when available.
-   * This field may be removed in a future API version.
+   * Deprecated: This field was under-specified and its meaning varies across implementations.
+   * Using it is non-portable and it may not support dual-stack.
+   * Users are encouraged to use implementation-specific annotations when available.
    * +optional
    *
    * @generated from field: optional string loadBalancerIP = 8;
@@ -16958,12 +17184,9 @@ export class WindowsSecurityContextOptions extends Message<WindowsSecurityContex
 
   /**
    * HostProcess determines if a container should be run as a 'Host Process' container.
-   * This field is alpha-level and will only be honored by components that enable the
-   * WindowsHostProcessContainers feature flag. Setting this field without the feature
-   * flag will result in errors when validating the Pod. All of a Pod's containers must
-   * have the same effective HostProcess value (it is not allowed to have a mix of HostProcess
-   * containers and non-HostProcess containers).  In addition, if HostProcess is true
-   * then HostNetwork must also be set to true.
+   * All of a Pod's containers must have the same effective HostProcess value
+   * (it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).
+   * In addition, if HostProcess is true then HostNetwork must also be set to true.
    * +optional
    *
    * @generated from field: optional bool hostProcess = 4;

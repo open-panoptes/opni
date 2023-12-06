@@ -58,6 +58,10 @@ func (in *GatewayConfigSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 		in.RateLimiting = &RateLimitingSpec{}
 	}
 	fs.AddFlagSet(in.RateLimiting.FlagSet(append(prefix, "rate-limiting")...))
+	if in.Auth == nil {
+		in.Auth = &AuthSpec{}
+	}
+	fs.AddFlagSet(in.Auth.FlagSet(append(prefix, "auth")...))
 	return fs
 }
 
@@ -65,7 +69,10 @@ func (in *GatewayConfigSpec) RedactSecrets() {
 	if in == nil {
 		return
 	}
+	in.Dashboard.RedactSecrets()
+	in.Storage.RedactSecrets()
 	in.Certs.RedactSecrets()
+	in.Auth.RedactSecrets()
 }
 
 func (in *GatewayConfigSpec) UnredactSecrets(unredacted *GatewayConfigSpec) error {
@@ -73,10 +80,34 @@ func (in *GatewayConfigSpec) UnredactSecrets(unredacted *GatewayConfigSpec) erro
 		return nil
 	}
 	var details []protoiface.MessageV1
+	if err := in.Dashboard.UnredactSecrets(unredacted.GetDashboard()); storage.IsDiscontinuity(err) {
+		for _, sd := range status.Convert(err).Details() {
+			if info, ok := sd.(*errdetails.ErrorInfo); ok {
+				info.Metadata["field"] = "dashboard." + info.Metadata["field"]
+				details = append(details, info)
+			}
+		}
+	}
+	if err := in.Storage.UnredactSecrets(unredacted.GetStorage()); storage.IsDiscontinuity(err) {
+		for _, sd := range status.Convert(err).Details() {
+			if info, ok := sd.(*errdetails.ErrorInfo); ok {
+				info.Metadata["field"] = "storage." + info.Metadata["field"]
+				details = append(details, info)
+			}
+		}
+	}
 	if err := in.Certs.UnredactSecrets(unredacted.GetCerts()); storage.IsDiscontinuity(err) {
 		for _, sd := range status.Convert(err).Details() {
 			if info, ok := sd.(*errdetails.ErrorInfo); ok {
 				info.Metadata["field"] = "certs." + info.Metadata["field"]
+				details = append(details, info)
+			}
+		}
+	}
+	if err := in.Auth.UnredactSecrets(unredacted.GetAuth()); storage.IsDiscontinuity(err) {
+		for _, sd := range status.Convert(err).Details() {
+			if info, ok := sd.(*errdetails.ErrorInfo); ok {
+				info.Metadata["field"] = "auth." + info.Metadata["field"]
 				details = append(details, info)
 			}
 		}
@@ -126,7 +157,37 @@ func (in *DashboardServerSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs.Var(flagutil.StringPtrValue(nil, &in.AdvertiseAddress), strings.Join(append(prefix, "advertise-address"), "."), "The advertise address for the dashboard server.")
 	fs.Var(flagutil.StringPtrValue(nil, &in.Hostname), strings.Join(append(prefix, "hostname"), "."), "The hostname at which the dashboard is expected to be reachable.")
 	fs.StringSliceVar(&in.TrustedProxies, strings.Join(append(prefix, "trusted-proxies"), "."), nil, "List of trusted proxies for the dashboard's http server.")
+	if in.WebCerts == nil {
+		in.WebCerts = &CertsSpec{}
+	}
+	fs.AddFlagSet(in.WebCerts.FlagSet(append(prefix, "web-certs")...))
 	return fs
+}
+
+func (in *DashboardServerSpec) RedactSecrets() {
+	if in == nil {
+		return
+	}
+	in.WebCerts.RedactSecrets()
+}
+
+func (in *DashboardServerSpec) UnredactSecrets(unredacted *DashboardServerSpec) error {
+	if in == nil {
+		return nil
+	}
+	var details []protoiface.MessageV1
+	if err := in.WebCerts.UnredactSecrets(unredacted.GetWebCerts()); storage.IsDiscontinuity(err) {
+		for _, sd := range status.Convert(err).Details() {
+			if info, ok := sd.(*errdetails.ErrorInfo); ok {
+				info.Metadata["field"] = "webCerts." + info.Metadata["field"]
+				details = append(details, info)
+			}
+		}
+	}
+	if len(details) == 0 {
+		return nil
+	}
+	return lo.Must(status.New(codes.InvalidArgument, "cannot unredact: missing values for secret fields").WithDetails(details...)).Err()
 }
 
 func (in *CertsSpec) FlagSet(prefix ...string) *pflag.FlagSet {
@@ -195,109 +256,6 @@ func (in *CertsSpec) UnredactSecrets(unredacted *CertsSpec) error {
 		return nil
 	}
 	return lo.Must(status.New(codes.InvalidArgument, "cannot unredact: missing values for secret fields").WithDetails(details...)).Err()
-}
-
-func (in *PluginsSpec) FlagSet(prefix ...string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("PluginsSpec", pflag.ExitOnError)
-	fs.SortFlags = true
-	fs.Var(flagutil.StringPtrValue(flagutil.Ptr("/var/lib/opni/plugins"), &in.Dir), strings.Join(append(prefix, "dir"), "."), "Directory to search for plugin binaries.")
-	if in.Filters == nil {
-		in.Filters = &PluginFilters{}
-	}
-	fs.AddFlagSet(in.Filters.FlagSet(append(prefix, "filters")...))
-	if in.Cache == nil {
-		in.Cache = &CacheSpec{}
-	}
-	fs.AddFlagSet(in.Cache.FlagSet(append(prefix, "cache")...))
-	return fs
-}
-
-func (in *PluginFilters) FlagSet(prefix ...string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("PluginFilters", pflag.ExitOnError)
-	fs.SortFlags = true
-	fs.StringSliceVar(&in.Exclude, strings.Join(append(prefix, "exclude"), "."), nil, "List of plugin go module paths not to load.")
-	return fs
-}
-
-func (in *CacheSpec) FlagSet(prefix ...string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("CacheSpec", pflag.ExitOnError)
-	fs.SortFlags = true
-	fs.Var(flagutil.EnumPtrValue(flagutil.Ptr(CacheBackend_Filesystem), &in.Backend), strings.Join(append(prefix, "backend"), "."), "Cache backend to use for storing plugin binaries and patches.")
-	if in.Filesystem == nil {
-		in.Filesystem = &FilesystemCacheSpec{}
-	}
-	fs.AddFlagSet(in.Filesystem.FlagSet(append(prefix, "filesystem")...))
-	return fs
-}
-
-func (in *FilesystemCacheSpec) FlagSet(prefix ...string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("FilesystemCacheSpec", pflag.ExitOnError)
-	fs.SortFlags = true
-	fs.Var(flagutil.StringPtrValue(flagutil.Ptr("/var/lib/opni/plugin-cache"), &in.Dir), strings.Join(append(prefix, "dir"), "."), "Directory to store plugin binaries and patches in.")
-	return fs
-}
-
-func (in *KeyringSpec) FlagSet(prefix ...string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("KeyringSpec", pflag.ExitOnError)
-	fs.SortFlags = true
-	fs.StringSliceVar(&in.RuntimeKeyDirs, strings.Join(append(prefix, "runtime-key-dirs"), "."), nil, "Directories to search for files containing runtime keys.")
-	return fs
-}
-
-func (in *UpgradesSpec) FlagSet(prefix ...string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("UpgradesSpec", pflag.ExitOnError)
-	fs.SortFlags = true
-	if in.Agents == nil {
-		in.Agents = &AgentUpgradesSpec{}
-	}
-	fs.AddFlagSet(in.Agents.FlagSet(append(prefix, "agents")...))
-	if in.Plugins == nil {
-		in.Plugins = &PluginUpgradesSpec{}
-	}
-	fs.AddFlagSet(in.Plugins.FlagSet(append(prefix, "plugins")...))
-	return fs
-}
-
-func (in *AgentUpgradesSpec) FlagSet(prefix ...string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("AgentUpgradesSpec", pflag.ExitOnError)
-	fs.SortFlags = true
-	if in.Kubernetes == nil {
-		in.Kubernetes = &KubernetesAgentUpgradeSpec{}
-	}
-	fs.AddFlagSet(in.Kubernetes.FlagSet(append(prefix, "kubernetes")...))
-	return fs
-}
-
-func (in *KubernetesAgentUpgradeSpec) FlagSet(prefix ...string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("KubernetesAgentUpgradeSpec", pflag.ExitOnError)
-	fs.SortFlags = true
-	fs.Var(flagutil.EnumPtrValue(flagutil.Ptr(KubernetesAgentUpgradeSpec_Kubernetes), &in.ImageResolver), strings.Join(append(prefix, "image-resolver"), "."), "Agent image resolver to use.")
-	return fs
-}
-
-func (in *PluginUpgradesSpec) FlagSet(prefix ...string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("PluginUpgradesSpec", pflag.ExitOnError)
-	fs.SortFlags = true
-	if in.Binary == nil {
-		in.Binary = &BinaryPluginUpgradeSpec{}
-	}
-	fs.AddFlagSet(in.Binary.FlagSet(append(prefix, "binary")...))
-	return fs
-}
-
-func (in *BinaryPluginUpgradeSpec) FlagSet(prefix ...string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("BinaryPluginUpgradeSpec", pflag.ExitOnError)
-	fs.SortFlags = true
-	fs.Var(flagutil.EnumPtrValue(flagutil.Ptr(PatchEngine_Zstd), &in.PatchEngine), strings.Join(append(prefix, "patch-engine"), "."), "Patch engine to use for calculating plugin patches.")
-	return fs
-}
-
-func (in *RateLimitingSpec) FlagSet(prefix ...string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("RateLimitingSpec", pflag.ExitOnError)
-	fs.SortFlags = true
-	fs.Var(flagutil.FloatPtrValue(flagutil.Ptr[float64](10.0), &in.Rate), strings.Join(append(prefix, "rate"), "."), "Base event rate used for rate limiting agent connection attempts.")
-	fs.Var(flagutil.IntPtrValue(flagutil.Ptr[int32](50), &in.Burst), strings.Join(append(prefix, "burst"), "."), "Burst event rate.")
-	return fs
 }
 
 func (in *StorageSpec) FlagSet(prefix ...string) *pflag.FlagSet {
@@ -466,6 +424,109 @@ func (in *JetStreamSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs.SortFlags = true
 	fs.Var(flagutil.StringPtrValue(nil, &in.Endpoint), strings.Join(append(prefix, "endpoint"), "."), "Jetstream server endpoint.")
 	fs.Var(flagutil.StringPtrValue(nil, &in.NkeySeedPath), strings.Join(append(prefix, "nkey-seed-path"), "."), "Path to the Jetstream nkey seed.")
+	return fs
+}
+
+func (in *PluginsSpec) FlagSet(prefix ...string) *pflag.FlagSet {
+	fs := pflag.NewFlagSet("PluginsSpec", pflag.ExitOnError)
+	fs.SortFlags = true
+	fs.Var(flagutil.StringPtrValue(flagutil.Ptr("/var/lib/opni/plugins"), &in.Dir), strings.Join(append(prefix, "dir"), "."), "Directory to search for plugin binaries.")
+	if in.Filters == nil {
+		in.Filters = &PluginFilters{}
+	}
+	fs.AddFlagSet(in.Filters.FlagSet(append(prefix, "filters")...))
+	if in.Cache == nil {
+		in.Cache = &CacheSpec{}
+	}
+	fs.AddFlagSet(in.Cache.FlagSet(append(prefix, "cache")...))
+	return fs
+}
+
+func (in *PluginFilters) FlagSet(prefix ...string) *pflag.FlagSet {
+	fs := pflag.NewFlagSet("PluginFilters", pflag.ExitOnError)
+	fs.SortFlags = true
+	fs.StringSliceVar(&in.Exclude, strings.Join(append(prefix, "exclude"), "."), nil, "List of plugin go module paths not to load.")
+	return fs
+}
+
+func (in *CacheSpec) FlagSet(prefix ...string) *pflag.FlagSet {
+	fs := pflag.NewFlagSet("CacheSpec", pflag.ExitOnError)
+	fs.SortFlags = true
+	fs.Var(flagutil.EnumPtrValue(flagutil.Ptr(CacheBackend_Filesystem), &in.Backend), strings.Join(append(prefix, "backend"), "."), "Cache backend to use for storing plugin binaries and patches.")
+	if in.Filesystem == nil {
+		in.Filesystem = &FilesystemCacheSpec{}
+	}
+	fs.AddFlagSet(in.Filesystem.FlagSet(append(prefix, "filesystem")...))
+	return fs
+}
+
+func (in *FilesystemCacheSpec) FlagSet(prefix ...string) *pflag.FlagSet {
+	fs := pflag.NewFlagSet("FilesystemCacheSpec", pflag.ExitOnError)
+	fs.SortFlags = true
+	fs.Var(flagutil.StringPtrValue(flagutil.Ptr("/var/lib/opni/plugin-cache"), &in.Dir), strings.Join(append(prefix, "dir"), "."), "Directory to store plugin binaries and patches in.")
+	return fs
+}
+
+func (in *KeyringSpec) FlagSet(prefix ...string) *pflag.FlagSet {
+	fs := pflag.NewFlagSet("KeyringSpec", pflag.ExitOnError)
+	fs.SortFlags = true
+	fs.StringSliceVar(&in.RuntimeKeyDirs, strings.Join(append(prefix, "runtime-key-dirs"), "."), nil, "Directories to search for files containing runtime keys.")
+	return fs
+}
+
+func (in *UpgradesSpec) FlagSet(prefix ...string) *pflag.FlagSet {
+	fs := pflag.NewFlagSet("UpgradesSpec", pflag.ExitOnError)
+	fs.SortFlags = true
+	if in.Agents == nil {
+		in.Agents = &AgentUpgradesSpec{}
+	}
+	fs.AddFlagSet(in.Agents.FlagSet(append(prefix, "agents")...))
+	if in.Plugins == nil {
+		in.Plugins = &PluginUpgradesSpec{}
+	}
+	fs.AddFlagSet(in.Plugins.FlagSet(append(prefix, "plugins")...))
+	return fs
+}
+
+func (in *AgentUpgradesSpec) FlagSet(prefix ...string) *pflag.FlagSet {
+	fs := pflag.NewFlagSet("AgentUpgradesSpec", pflag.ExitOnError)
+	fs.SortFlags = true
+	if in.Kubernetes == nil {
+		in.Kubernetes = &KubernetesAgentUpgradeSpec{}
+	}
+	fs.AddFlagSet(in.Kubernetes.FlagSet(append(prefix, "kubernetes")...))
+	return fs
+}
+
+func (in *KubernetesAgentUpgradeSpec) FlagSet(prefix ...string) *pflag.FlagSet {
+	fs := pflag.NewFlagSet("KubernetesAgentUpgradeSpec", pflag.ExitOnError)
+	fs.SortFlags = true
+	fs.Var(flagutil.EnumPtrValue(flagutil.Ptr(KubernetesAgentUpgradeSpec_Kubernetes), &in.ImageResolver), strings.Join(append(prefix, "image-resolver"), "."), "Agent image resolver to use.")
+	return fs
+}
+
+func (in *PluginUpgradesSpec) FlagSet(prefix ...string) *pflag.FlagSet {
+	fs := pflag.NewFlagSet("PluginUpgradesSpec", pflag.ExitOnError)
+	fs.SortFlags = true
+	if in.Binary == nil {
+		in.Binary = &BinaryPluginUpgradeSpec{}
+	}
+	fs.AddFlagSet(in.Binary.FlagSet(append(prefix, "binary")...))
+	return fs
+}
+
+func (in *BinaryPluginUpgradeSpec) FlagSet(prefix ...string) *pflag.FlagSet {
+	fs := pflag.NewFlagSet("BinaryPluginUpgradeSpec", pflag.ExitOnError)
+	fs.SortFlags = true
+	fs.Var(flagutil.EnumPtrValue(flagutil.Ptr(PatchEngine_Zstd), &in.PatchEngine), strings.Join(append(prefix, "patch-engine"), "."), "Patch engine to use for calculating plugin patches.")
+	return fs
+}
+
+func (in *RateLimitingSpec) FlagSet(prefix ...string) *pflag.FlagSet {
+	fs := pflag.NewFlagSet("RateLimitingSpec", pflag.ExitOnError)
+	fs.SortFlags = true
+	fs.Var(flagutil.FloatPtrValue(flagutil.Ptr[float64](10.0), &in.Rate), strings.Join(append(prefix, "rate"), "."), "Base event rate used for rate limiting agent connection attempts.")
+	fs.Var(flagutil.IntPtrValue(flagutil.Ptr[int32](50), &in.Burst), strings.Join(append(prefix, "burst"), "."), "Burst event rate.")
 	return fs
 }
 

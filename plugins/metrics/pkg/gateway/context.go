@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/auth"
 	configv1 "github.com/rancher/opni/pkg/config/v1"
 	managementext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/management"
 	streamext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/stream"
@@ -60,9 +59,9 @@ type pluginContextData struct {
 	storageBackend      field[storage.Backend]
 	gatewayConfigClient field[configv1.GatewayConfigClient]
 	delegate            field[streamext.StreamDelegate[types.MetricsAgentClientSet]]
-	authMiddlewares     field[map[string]auth.Middleware]
-	serviceCtrl         field[managementext.ServiceController]
-	extensionClient     field[system.ExtensionClientInterface]
+	// authMiddlewares     field[map[string]auth.Middleware]
+	serviceCtrl     field[managementext.ServiceController]
+	extensionClient field[system.ExtensionClientInterface]
 }
 
 type pluginContext struct {
@@ -114,9 +113,9 @@ func (c *pluginContext) Delegate() streamext.StreamDelegate[types.MetricsAgentCl
 	return c.d.delegate.F()
 }
 
-func (c *pluginContext) AuthMiddlewares() map[string]auth.Middleware {
-	return c.d.authMiddlewares.F()
-}
+// func (c *pluginContext) AuthMiddlewares() map[string]auth.Middleware {
+// 	return c.d.authMiddlewares.F()
+// }
 
 func (c *pluginContext) ExtensionClient() system.ExtensionClientInterface {
 	return c.d.extensionClient.F()

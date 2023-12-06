@@ -747,3 +747,40 @@ export class DashboardGlobalSettings extends Message<DashboardGlobalSettings> {
   }
 }
 
+/**
+ * @generated from message management.LocalPasswordResponse
+ */
+export class LocalPasswordResponse extends Message<LocalPasswordResponse> {
+  /**
+   * @generated from field: string password = 1;
+   */
+  password = "";
+
+  constructor(data?: PartialMessage<LocalPasswordResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "management.LocalPasswordResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "password", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LocalPasswordResponse {
+    return new LocalPasswordResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LocalPasswordResponse {
+    return new LocalPasswordResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LocalPasswordResponse {
+    return new LocalPasswordResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: LocalPasswordResponse | PlainMessage<LocalPasswordResponse> | undefined, b: LocalPasswordResponse | PlainMessage<LocalPasswordResponse> | undefined): boolean {
+    return proto3.util.equals(LocalPasswordResponse, a, b);
+  }
+}
+

@@ -874,6 +874,32 @@ func (in *SampleResetRequest) FlagSet(prefix ...string) *pflag.FlagSet {
 	return fs
 }
 
+func (in *SampleResetRequest) RedactSecrets() {
+	if in == nil {
+		return
+	}
+	in.Patch.RedactSecrets()
+}
+
+func (in *SampleResetRequest) UnredactSecrets(unredacted *SampleResetRequest) error {
+	if in == nil {
+		return nil
+	}
+	var details []protoiface.MessageV1
+	if err := in.Patch.UnredactSecrets(unredacted.GetPatch()); storage.IsDiscontinuity(err) {
+		for _, sd := range status.Convert(err).Details() {
+			if info, ok := sd.(*errdetails.ErrorInfo); ok {
+				info.Metadata["field"] = "patch." + info.Metadata["field"]
+				details = append(details, info)
+			}
+		}
+	}
+	if len(details) == 0 {
+		return nil
+	}
+	return lo.Must(status.New(codes.InvalidArgument, "cannot unredact: missing values for secret fields").WithDetails(details...)).Err()
+}
+
 func (in *SampleHistoryRequest) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("SampleHistoryRequest", pflag.ExitOnError)
 	fs.SortFlags = true
@@ -925,6 +951,7 @@ func (in *SampleDryRunRequest) RedactSecrets() {
 		return
 	}
 	in.Spec.RedactSecrets()
+	in.Patch.RedactSecrets()
 }
 
 func (in *SampleDryRunRequest) UnredactSecrets(unredacted *SampleDryRunRequest) error {
@@ -936,6 +963,14 @@ func (in *SampleDryRunRequest) UnredactSecrets(unredacted *SampleDryRunRequest) 
 		for _, sd := range status.Convert(err).Details() {
 			if info, ok := sd.(*errdetails.ErrorInfo); ok {
 				info.Metadata["field"] = "spec." + info.Metadata["field"]
+				details = append(details, info)
+			}
+		}
+	}
+	if err := in.Patch.UnredactSecrets(unredacted.GetPatch()); storage.IsDiscontinuity(err) {
+		for _, sd := range status.Convert(err).Details() {
+			if info, ok := sd.(*errdetails.ErrorInfo); ok {
+				info.Metadata["field"] = "patch." + info.Metadata["field"]
 				details = append(details, info)
 			}
 		}

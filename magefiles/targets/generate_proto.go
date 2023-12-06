@@ -101,9 +101,11 @@ func (Generate) ProtobufTypescript() error {
 	destDir := "web/pkg/opni/generated"
 
 	searchDirs := []string{
+		"pkg/config/v1",
 		"pkg/config/v1beta1",
 		"pkg/apis/capability/v1",
 		"pkg/apis/management/v1",
+		"pkg/validation",
 		"plugins/metrics/apis/cortexadmin",
 		"plugins/metrics/apis/cortexops",
 		"plugins/metrics/apis/node",
@@ -118,7 +120,7 @@ func (Generate) ProtobufTypescript() error {
 		external.NewGenerator([]string{"./web/service-generator/generate"}, external.GeneratorOptions{
 			Opt: "target=ts,import_extension=none,ts_nocheck=false",
 		}),
-	}, searchDirs)
+	}, searchDirs, ragu.WithGenerateStrategy(ragu.AllDescriptorsExceptGoogleProtobuf))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error generating typescript code: %v\n", err)
 		return err

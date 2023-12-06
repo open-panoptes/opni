@@ -61,7 +61,7 @@ require (
 	github.com/kralicky/gpkg v0.0.0-20231114180450-2f4bff8c5588
 	github.com/kralicky/kmatch v0.0.0-20230301203314-20f658a0e56c
 	github.com/kralicky/protols v0.0.0-20231127004555-d87290c46672
-	github.com/kralicky/ragu v1.0.11-0.20231206011625-b39c245f6be0
+	github.com/kralicky/ragu v1.0.11-0.20231206204722-a12a1b1ac338
 	github.com/kralicky/totem v1.2.2-0.20231014025935-6e4657314606
 	github.com/kralicky/yaml/v3 v3.0.0-20220520012407-b0e7050bd81d
 	github.com/lestrrat-go/backoff/v2 v2.0.8
@@ -637,6 +637,7 @@ replace (
 replace (
 	github.com/samber/lo => github.com/samber/lo v1.36.1-0.20230320154156-56ef8fe8a306
 	github.com/sercand/kuberesolver => github.com/sercand/kuberesolver/v5 v5.1.1
+	google.golang.org/protobuf => github.com/kralicky/protobuf-go v0.0.0-20231206232713-f1de255d7c35
 )
 
 // Keep in sync with ragu go.mod

@@ -1258,8 +1258,6 @@ export class LabelSelector extends Message<LabelSelector> {
 export class LabelSelectorRequirement extends Message<LabelSelectorRequirement> {
   /**
    * key is the label key that the selector applies to.
-   * +patchMergeKey=key
-   * +patchStrategy=merge
    *
    * @generated from field: optional string key = 1;
    */

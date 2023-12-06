@@ -2,15 +2,12 @@ package services
 
 import (
 	"context"
-	"os"
 
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/tools/pkg/memoize"
 
-	"github.com/rancher/opni/pkg/auth"
 	"github.com/rancher/opni/pkg/capabilities/wellknown"
-	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/logger"
 	httpext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/http"
 	"github.com/rancher/opni/pkg/plugins/driverutil"
@@ -30,7 +27,6 @@ type forwarders struct {
 
 type middlewares struct {
 	RBAC gin.HandlerFunc
-	Auth gin.HandlerFunc
 }
 
 type CortexApiService struct {
@@ -57,11 +53,6 @@ func (s *CortexApiService) ConfigureRoutes(router *gin.Engine) {
 	lg.Info("configuring http api server")
 
 	router.Use(logger.GinLogger(lg), gin.Recovery())
-	config, err := s.Context.GatewayConfigClient().GetConfiguration(s.Context, &driverutil.GetRequest{})
-	if err != nil {
-		lg.With(logger.Err(err)).Error("failed to get gateway configuration")
-		return
-	}
 
 	provider := NewRBACProvider(s.Context)
 	rbacMiddleware := rbac.NewMiddleware(rbac.MiddlewareConfig{
@@ -71,33 +62,6 @@ func (s *CortexApiService) ConfigureRoutes(router *gin.Engine) {
 		Logger:     s.Context.Logger().WithGroup("middleware"),
 		Capability: wellknown.CapabilityMetrics,
 	})
-
-	var authMiddleware auth.Middleware
-	switch config.GetAuth().GetBackend() {
-	case configv1.AuthSpec_Basic:
-		var ok bool
-		authMiddleware, ok = s.Context.AuthMiddlewares()[string(auth.AuthTypeBasic)]
-		if !ok {
-			lg.With(
-				"name", auth.AuthTypeBasic,
-			).Error("auth backend not found")
-			os.Exit(1)
-		}
-	case configv1.AuthSpec_OpenID:
-		var ok bool
-		authMiddleware, ok = s.Context.AuthMiddlewares()[string(auth.AuthTypeOIDC)]
-		if !ok {
-			lg.With(
-				"name", auth.AuthTypeOIDC,
-			).Error("auth backend not found")
-			os.Exit(1)
-		}
-	default:
-		lg.With(
-			"name", config.GetAuth().GetBackend().String(),
-		).Error("unknown auth backend")
-		os.Exit(1)
-	}
 
 	<-s.cortexClientSetMu
 	clientSet, err := cortex.AcquireClientSet(s.Context, s.cortexClientSet)
@@ -115,7 +79,6 @@ func (s *CortexApiService) ConfigureRoutes(router *gin.Engine) {
 
 	mws := &middlewares{
 		RBAC: rbacMiddleware,
-		Auth: authMiddleware.(auth.HTTPMiddleware).Handle,
 	}
 
 	router.GET("/ready", fwds.QueryFrontend)
@@ -138,32 +101,31 @@ func (s *CortexApiService) configureAlertmanager(router *gin.Engine, f *forwarde
 			).Debug("multiple org ids found, limiting to first")
 			c.Header(cortex.OrgIDCodec.Key(), cortex.OrgIDCodec.Encode(ids[:1]))
 		}
-		return
 	}
-	router.Any("/api/prom/alertmanager", m.Auth, m.RBAC, orgIdLimiter, f.Alertmanager)
-	router.Any("/api/v1/alerts", m.Auth, m.RBAC, orgIdLimiter, f.Alertmanager)
-	router.Any("/multitenant_alertmanager", m.Auth, m.RBAC, orgIdLimiter, f.Alertmanager)
+	router.Any("/api/prom/alertmanager", m.RBAC, orgIdLimiter, f.Alertmanager)
+	router.Any("/api/v1/alerts", m.RBAC, orgIdLimiter, f.Alertmanager)
+	router.Any("/multitenant_alertmanager", m.RBAC, orgIdLimiter, f.Alertmanager)
 }
 
 func (s *CortexApiService) configureRuler(router *gin.Engine, f *forwarders, m *middlewares, clientSet cortex.ClientSet) {
 	jsonAggregator := cortex.NewMultiTenantRuleAggregator(
 		s.Context.ManagementClient(), clientSet.HTTP(), cortex.OrgIDCodec, cortex.PrometheusRuleGroupsJSON)
-	router.GET("/prometheus/api/v1/rules", m.Auth, m.RBAC, jsonAggregator.Handle)
-	router.GET("/api/prom/api/v1/rules", m.Auth, m.RBAC, jsonAggregator.Handle)
+	router.GET("/prometheus/api/v1/rules", m.RBAC, jsonAggregator.Handle)
+	router.GET("/api/prom/api/v1/rules", m.RBAC, jsonAggregator.Handle)
 
-	router.GET("/prometheus/api/v1/alerts", m.Auth, m.RBAC, f.Ruler)
-	router.GET("/api/prom/api/v1/alerts", m.Auth, m.RBAC, f.Ruler)
+	router.GET("/prometheus/api/v1/alerts", m.RBAC, f.Ruler)
+	router.GET("/api/prom/api/v1/alerts", m.RBAC, f.Ruler)
 
 	yamlAggregator := cortex.NewMultiTenantRuleAggregator(
 		s.Context.ManagementClient(), clientSet.HTTP(), cortex.OrgIDCodec, cortex.NamespaceKeyedYAML)
-	router.Any("/api/v1/rules", m.Auth, m.RBAC, yamlAggregator.Handle)
-	router.Any("/api/prom/rules", m.Auth, m.RBAC, yamlAggregator.Handle)
+	router.Any("/api/v1/rules", m.RBAC, yamlAggregator.Handle)
+	router.Any("/api/prom/rules", m.RBAC, yamlAggregator.Handle)
 }
 
 func (s *CortexApiService) configureQueryFrontend(router *gin.Engine, f *forwarders, m *middlewares) {
 	for _, group := range []*gin.RouterGroup{
-		router.Group("/prometheus/api/v1", m.Auth, m.RBAC),
-		router.Group("/api/prom/api/v1", m.Auth, m.RBAC),
+		router.Group("/prometheus/api/v1", m.RBAC),
+		router.Group("/api/prom/api/v1", m.RBAC),
 	} {
 		group.POST("/read", f.QueryFrontend)
 		group.GET("/query", f.QueryFrontend)

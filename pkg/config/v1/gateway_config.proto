@@ -41,7 +41,7 @@ message GatewayConfigSpec {
   KeyringSpec          keyring      = 10;
   UpgradesSpec         upgrades     = 11;
   RateLimitingSpec     rateLimiting = 12;
-  AuthSpec             auth         = 13 [(cli.flag).skip = true];
+  AuthSpec             auth         = 13;
 }
 
 message ServerSpec {
@@ -201,6 +201,9 @@ message DashboardServerSpec {
       }
     }
   ];
+  // Optional certificate configuration. If not set, the dashboard will use
+  // the same certificates as the gateway's internal http server.
+  optional CertsSpec webCerts = 5;
 }
 
 enum StorageBackend {

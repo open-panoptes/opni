@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"sync"
 	"time"
 
 	"log/slog"
@@ -21,7 +22,8 @@ import (
 	"github.com/rancher/opni/pkg/auth/local"
 	"github.com/rancher/opni/pkg/auth/middleware"
 	authutil "github.com/rancher/opni/pkg/auth/util"
-	"github.com/rancher/opni/pkg/config/v1beta1"
+	"github.com/rancher/opni/pkg/config/reactive"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/plugins"
 	"github.com/rancher/opni/pkg/plugins/hooks"
@@ -34,11 +36,13 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel"
 	"golang.org/x/oauth2"
+	"google.golang.org/protobuf/reflect/protopath"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type Server struct {
 	ServerOptions
-	config      *v1beta1.ManagementSpec
+	mgr         *configv1.GatewayConfigManager
 	logger      *slog.Logger
 	pl          plugins.LoaderInterface
 	oauthConfig *oauth2.Config
@@ -88,7 +92,8 @@ func WithLocalAuthenticator(authenticator local.LocalAuthenticator) ServerOption
 }
 
 func NewServer(
-	config *v1beta1.ManagementSpec,
+	ctx context.Context,
+	mgr *configv1.GatewayConfigManager,
 	pl plugins.LoaderInterface,
 	ds AuthDataSource,
 	opts ...ServerOption,
@@ -103,12 +108,9 @@ func NewServer(
 		return nil, errors.New("web assets not available")
 	}
 
-	if config.WebListenAddress == "" {
-		return nil, errors.New("management.webListenAddress not set in config")
-	}
 	return &Server{
 		ServerOptions: options,
-		config:        config,
+		mgr:           mgr,
 		logger:        logger.New().WithGroup("dashboard"),
 		pl:            pl,
 		ds:            ds,
@@ -117,99 +119,155 @@ func NewServer(
 
 func (ws *Server) ListenAndServe(ctx context.Context) error {
 	lg := ws.logger
-	var listener net.Listener
-	if ws.config.WebCerts != nil {
-		certs, caPool, err := util.LoadServingCertBundle(*ws.config.WebCerts)
-		if err != nil {
-			return err
+
+	var mu sync.Mutex
+	var cancel context.CancelFunc
+	var done chan struct{}
+	reactive.Bind(ctx, func(v []protoreflect.Value) {
+		mu.Lock()
+		defer mu.Unlock()
+
+		if cancel != nil {
+			cancel()
+			<-done
 		}
-		listener, err = tls.Listen("tcp4", ws.config.WebListenAddress, &tls.Config{
-			Certificates: []tls.Certificate{*certs},
-			ClientCAs:    caPool,
-		})
-		if err != nil {
-			return err
-		}
-	} else {
+
+		httpListenAddr := v[0].String()
+		var tlsConfig *tls.Config
 		var err error
-		listener, err = net.Listen("tcp4", ws.config.WebListenAddress)
+		if !v[1].IsValid() {
+			err = configv1.ErrInsecure
+		} else {
+			tlsConfig, err = v[1].Message().Interface().(*configv1.CertsSpec).AsTlsConfig(tls.NoClientCert)
+		}
 		if err != nil {
-			return err
+			if errors.Is(err, configv1.ErrInsecure) {
+				lg.With(
+					logger.Err(err),
+				).Warn("dashboard serving in insecure mode")
+			} else {
+				lg.With(
+					logger.Err(err),
+				).Error("failed to configure TLS")
+				return
+			}
 		}
-	}
-	lg.With(
-		"address", listener.Addr(),
-	).Info("ui server starting")
-	webFsTracer := otel.Tracer("webfs")
-	router := gin.New()
-	router.Use(
-		gin.Recovery(),
-		logger.GinLogger(ws.logger),
-		otelgin.Middleware("opni-ui"),
-	)
-	middleware := ws.configureAuth(ctx, router)
-
-	// Static assets
-	sub, err := fs.Sub(ws.assetsFS, "dist")
-	if err != nil {
-		return err
-	}
-
-	webfs := http.FS(sub)
-
-	router.NoRoute(func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-		defer cancel()
-		_, span := webFsTracer.Start(ctx, c.Request.URL.Path)
-		defer span.End()
-		path := c.Request.URL.Path
-		if path[0] == '/' {
-			path = path[1:]
+		hostname := v[2].String()
+		mgmtHttpAddr := v[3].String()
+		var listener net.Listener
+		if tlsConfig == nil {
+			listener, err = net.Listen("tcp4", httpListenAddr)
+		} else {
+			listener, err = tls.Listen("tcp4", httpListenAddr, tlsConfig)
 		}
-		if _, err := fs.Stat(sub, path); err == nil {
-			c.FileFromFS(path, webfs)
-			return
-		}
-
-		c.FileFromFS("/", webfs) // serve index.html
-	})
-
-	opniApiAddr := ws.config.HTTPListenAddress
-	mgmtUrl, err := url.Parse("http://" + opniApiAddr)
-	if err != nil {
-		lg.With(
-			"url", opniApiAddr,
-			"error", err,
-		).Error("failed to parse management API URL")
-		panic("failed to parse management API URL")
-	}
-	apiGroup := router.Group("/opni-api")
-	apiGroup.Use(middleware.Handler(ws.checkAdminAccess))
-	apiGroup.Any("/*any", gin.WrapH(http.StripPrefix("/opni-api", httputil.NewSingleHostReverseProxy(mgmtUrl))))
-
-	proxy := router.Group("/proxy")
-	proxy.Use(middleware.Handler())
-	ws.pl.Hook(hooks.OnLoad(func(p types.ProxyPlugin) {
-		log := lg.WithGroup("proxy")
-		pluginRouter, err := proxyrouter.NewRouter(proxyrouter.RouterConfig{
-			Store:  ws.ds.StorageBackend(),
-			Logger: log,
-			Client: p,
-		})
 		if err != nil {
-			log.With(
+			lg.With(
+				"address", httpListenAddr,
 				logger.Err(err),
-			).Error("failed to create plugin router")
+			).Error("failed to start dashboard server")
 			return
 		}
-		pluginRouter.SetRoutes(proxy)
-	}))
+		lg.With(
+			"address", listener.Addr(),
+			"hostname", hostname,
+		).Info("dashboard server starting")
+		webFsTracer := otel.Tracer("webfs")
+		router := gin.New()
+		router.Use(
+			gin.Recovery(),
+			logger.GinLogger(ws.logger),
+			otelgin.Middleware("opni-ui"),
+		)
+		middleware := ws.configureAuth(ctx, router)
+		// Static assets
+		sub, err := fs.Sub(ws.assetsFS, "dist")
+		if err != nil {
+			lg.With(
+				logger.Err(err),
+			).Error("assets filesystem missing dist directory")
+			return
+		}
 
-	for _, h := range ws.extraHandlers {
-		router.Handle(h.method, h.prefix, h.handler...)
+		webfs := http.FS(sub)
+
+		router.NoRoute(func(c *gin.Context) {
+			ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+			defer cancel()
+			_, span := webFsTracer.Start(ctx, c.Request.URL.Path)
+			defer span.End()
+			path := c.Request.URL.Path
+			if path[0] == '/' {
+				path = path[1:]
+			}
+			if _, err := fs.Stat(sub, path); err == nil {
+				c.FileFromFS(path, webfs)
+				return
+			}
+
+			c.FileFromFS("/", webfs) // serve index.html
+		})
+
+		mgmtUrl, err := url.Parse("http://" + mgmtHttpAddr)
+		if err != nil {
+			lg.With(
+				"url", mgmtHttpAddr,
+				"error", err,
+			).Error("failed to parse management API URL")
+			return
+		}
+		apiGroup := router.Group("/opni-api")
+		apiGroup.Use(middleware.Handler(ws.checkAdminAccess))
+		apiGroup.Any("/*any", gin.WrapH(http.StripPrefix("/opni-api", httputil.NewSingleHostReverseProxy(mgmtUrl))))
+
+		proxy := router.Group("/proxy")
+		proxy.Use(middleware.Handler())
+		ws.pl.Hook(hooks.OnLoad(func(p types.ProxyPlugin) {
+			log := lg.WithGroup("proxy")
+			pluginRouter, err := proxyrouter.NewRouter(proxyrouter.RouterConfig{
+				Store:  ws.ds.StorageBackend(),
+				Logger: log,
+				Client: p,
+			})
+			if err != nil {
+				log.With(
+					logger.Err(err),
+				).Error("failed to create plugin router")
+				return
+			}
+			pluginRouter.SetRoutes(proxy)
+		}))
+
+		for _, h := range ws.extraHandlers {
+			router.Handle(h.method, h.prefix, h.handler...)
+		}
+
+		var serveContext context.Context
+		serveContext, cancel = context.WithCancel(ctx)
+		done = make(chan struct{})
+		go func() {
+			defer close(done)
+			if err := util.ServeHandler(serveContext, router, listener); err != nil {
+				if !errors.Is(err, context.Canceled) {
+					lg.With(logger.Err(err)).Warn("dashboard server exited with error")
+					return
+				}
+			}
+			lg.Info("dashboard server stopped")
+		}()
+	},
+		ws.mgr.Reactive(configv1.ProtoPath().Dashboard().HttpListenAddress()),
+		ws.mgr.Reactive(protopath.Path(configv1.ProtoPath().Dashboard().WebCerts())),
+		ws.mgr.Reactive(configv1.ProtoPath().Dashboard().Hostname()),
+		ws.mgr.Reactive(configv1.ProtoPath().Management().HttpListenAddress()),
+	)
+	<-ctx.Done()
+	mu.Lock()
+	if cancel != nil {
+		cancel()
+		<-done
 	}
-
-	return util.ServeHandler(ctx, router, listener)
+	mu.Unlock()
+	return ctx.Err()
 }
 
 func (ws *Server) configureAuth(ctx context.Context, router *gin.Engine) *middleware.MultiMiddleware {

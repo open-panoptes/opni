@@ -125,7 +125,6 @@ func (r *Reconciler) initDefaultActiveConfig(certs *configv1.CertsSpec) k8sutil.
 	conf.Storage = &configv1.StorageSpec{
 		Backend: r.gw.Spec.Config.GetStorage().GetBackend().Enum(),
 	}
-	conf.Auth = &configv1.AuthSpec{}
 
 	conf.Server.AdvertiseAddress = lo.ToPtr("${POD_IP}:9090")
 	conf.Management.AdvertiseAddress = lo.ToPtr("${POD_IP}:11090")

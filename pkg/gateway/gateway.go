@@ -416,6 +416,10 @@ func (g *Gateway) StorageBackend() storage.Backend {
 	return g.storageBackend
 }
 
+func (g *Gateway) ConfigManager() *configv1.GatewayConfigManager {
+	return g.mgr
+}
+
 // Implements management.CoreDataSource
 func (g *Gateway) TLSConfig() *tls.Config {
 	tc, err := g.certs.Value().AsTlsConfig(tls.NoClientCert)

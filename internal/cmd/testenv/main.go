@@ -259,7 +259,8 @@ func main() {
 				opts = append(opts, dashboard.WithAssetsFS(fs))
 			}
 			dashboardSrv, err := dashboard.NewServer(
-				&environment.GatewayConfig().Spec.Management,
+				environment.Context(),
+				environment.GatewayObject().ConfigManager(),
 				environment.PluginLoader(),
 				environment.GatewayObject(),
 				opts...)
