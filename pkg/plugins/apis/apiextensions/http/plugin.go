@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"net"
 
 	"github.com/gin-gonic/gin"
@@ -51,21 +52,24 @@ func (p *httpApiExtensionPlugin) Configure(
 ) (*apiextensions.HTTPAPIExtensionConfig, error) {
 	var listener net.Listener
 	var err error
-	if certCfg == nil {
+
+	tlsCfg, err := certCfg.AsTlsConfig(tls.NoClientCert)
+	if err != nil {
+		if !errors.Is(err, configv1.ErrInsecure) {
+			return nil, err
+		}
+
 		listener, err = net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		tlsCfg, err := certCfg.AsTlsConfig(tls.NoClientCert)
-		if err != nil {
-			return nil, err
-		}
 		listener, err = tls.Listen("tcp4", "127.0.0.1:0", tlsCfg)
 		if err != nil {
 			return nil, err
 		}
 	}
+
 	p.router.Use(otelgin.Middleware("http-api"))
 	p.impl.ConfigureRoutes(p.router)
 
