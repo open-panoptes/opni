@@ -648,6 +648,21 @@ func (cg *Generator) generateFlagSet(g *protogen.GeneratedFile, message *protoge
 			flagOpts := FlagOptions{}
 			applyOptions(field.Desc, &flagOpts)
 			if flagOpts.Skip {
+				isMsg := field.Desc.Kind() == protoreflect.MessageKind && !field.Desc.IsList() && !field.Desc.IsMap()
+				if isMsg {
+					_, isCustom := customFieldGenerators[string(field.Message.Desc.FullName())]
+					shouldGenerateFlagSet := (field.Message.Desc.ParentFile() == field.Parent.Desc.ParentFile() && field.Message != message) || cg.generatedFiles[field.Message.Desc.ParentFile().Path()] != nil
+					if !isCustom && shouldGenerateFlagSet {
+						// ensure skipped fields are still redacted if they need to be
+						depFs, err := cg.generateFlagSet(g.g, field.Message)
+						if err != nil {
+							return nil, err
+						}
+						if len(depFs.secretFields) > 0 || len(depFs.depsWithSecretFields) > 0 {
+							fs.depsWithSecretFields = append(fs.depsWithSecretFields, field)
+						}
+					}
+				}
 				continue
 			}
 			fs.flagCount++
