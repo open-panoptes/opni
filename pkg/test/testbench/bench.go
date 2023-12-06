@@ -96,5 +96,5 @@ func (b *BenchRunner) sendBatch(ctx context.Context, batch []prompb.TimeSeries) 
 
 	compressed := snappy.Encode(nil, data)
 
-	return b.client.Store(ctx, compressed)
+	return b.client.Store(ctx, compressed, 0)
 }

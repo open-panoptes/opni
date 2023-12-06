@@ -21,7 +21,6 @@ import (
 	"github.com/rancher/opni/internal/codegen/descriptors"
 	"github.com/samber/lo"
 	"golang.org/x/tools/gopls/pkg/lsp/protocol"
-	"golang.org/x/tools/gopls/pkg/span"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -84,7 +83,7 @@ func GenCortexConfig() error {
 	if len(existingFiles) > 0 {
 		wd, _ := os.Getwd()
 		cache := lsp.NewCache(protocol.WorkspaceFolder{
-			URI: string(span.URIFromPath(wd)),
+			URI: string(protocol.URIFromPath(wd)),
 		})
 		cache.LoadFiles(existingFiles)
 		for path, fd := range newProtos {
