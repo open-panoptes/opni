@@ -47,6 +47,8 @@ spec:
                 x-kubernetes-map-type: atomic
               opensearch:
                 properties:
+                  authProxyIPRegex:
+                    type: string
                   dashboards:
                     properties:
                       additionalConfig:
@@ -124,6 +126,8 @@ spec:
                                 secretName:
                                   type: string
                               type: object
+                            subPath:
+                              type: string
                           required:
                           - name
                           - path

@@ -2,12 +2,17 @@ package router
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
@@ -39,27 +44,38 @@ func NewRouter(config RouterConfig) (Router, error) {
 		return nil, err
 	}
 
-	endpoint, err := config.Client.Endpoint(context.TODO(), &emptypb.Empty{})
+	proxyPath, err := config.Client.Path(context.TODO(), &emptypb.Empty{})
 	if err != nil {
 		return nil, err
 	}
-	path := endpoint.GetPath()
+	path := proxyPath.GetPath()
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
+
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DialContext = (&net.Dialer{
+		Timeout: 5 * time.Second,
+	}).DialContext
+	transport.TLSHandshakeTimeout = 5 * time.Second
+
 	return &implRouter{
-		backend: backend,
-		store:   config.Store,
-		path:    path,
-		logger:  config.Logger,
+		backend:   backend,
+		store:     config.Store,
+		path:      path,
+		logger:    config.Logger,
+		transport: transport,
+		client:    config.Client,
 	}, nil
 }
 
 type implRouter struct {
-	backend backend.Backend
-	store   storage.RoleBindingStore
-	path    string
-	logger  *slog.Logger
+	backend   backend.Backend
+	store     storage.RoleBindingStore
+	path      string
+	logger    *slog.Logger
+	transport *http.Transport
+	client    proxyv1.RegisterProxyClient
 }
 
 func (r *implRouter) handle(c *gin.Context) {
@@ -80,17 +96,44 @@ func (r *implRouter) handle(c *gin.Context) {
 			return
 		}
 	}
+
 	path, ok := c.Params.Get(pathParam)
 	if !ok {
 		path = ""
 	}
-	rewrite, err := r.backend.RewriteProxyRequest(path, roleList)
+
+	backendInfo, err := r.client.Backend(c, &emptypb.Empty{})
+	if err != nil {
+		r.logger.With(logger.Err(err)).Error("failed to get backend info function")
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+
+	target, err := url.Parse(backendInfo.GetBackend())
+	if err != nil {
+		r.logger.With(logger.Err(err)).Error("failed to get parse backend url")
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+
+	if backendInfo.BackendCAData != nil {
+		pool := x509.NewCertPool()
+		ok := pool.AppendCertsFromPEM([]byte(backendInfo.GetBackendCAData()))
+		if !ok {
+			r.logger.Warn("no certs added from pem data")
+		}
+		r.transport.TLSClientConfig = &tls.Config{
+			RootCAs: pool,
+		}
+	}
+
+	userID, _ := subject.(string)
+	rewrite, err := r.backend.RewriteProxyRequest(c, path, target, roleList, userID)
 	if err != nil {
 		r.logger.With(logger.Err(err)).Error("failed to get rewrite function")
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 	proxy := httputil.ReverseProxy{
-		Rewrite: rewrite,
+		Rewrite:   rewrite,
+		Transport: r.transport,
 	}
 	proxy.ServeHTTP(c.Writer, c.Request)
 }

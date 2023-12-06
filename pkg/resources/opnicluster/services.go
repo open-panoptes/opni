@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/Opster/opensearch-k8s-operator/opensearch-operator/pkg/helpers"
+	opensearchk8s "github.com/Opster/opensearch-k8s-operator/opensearch-operator/pkg/reconcilers/k8s"
 	"github.com/cisco-open/operator-tools/pkg/reconciler"
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -23,7 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/util/retry"
-	"opensearch.opster.io/pkg/helpers"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -447,9 +448,9 @@ func (r *Reconciler) genericEnvAndVolumes() (
 	}, corev1.EnvVar{
 		Name: "ES_USERNAME",
 		Value: func() string {
+			opensearchClient := opensearchk8s.NewK8sClient(r.client, r.ctx)
 			user, _, _ := helpers.UsernameAndPassword(
-				r.ctx,
-				r.client,
+				opensearchClient,
 				r.opensearchCluster,
 			)
 			return user

@@ -58,7 +58,7 @@ var _ = Describe("Opensearch", Ordered, Label("unit"), func() {
 
 		dashboardsClient, err := dashboards.NewClient(
 			dashboards.Config{
-				URL:      dashboardsURL,
+				Host:     dashboardsURL,
 				Username: dashboardsUser,
 				Password: dashboardsPassword,
 			},
