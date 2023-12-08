@@ -10,14 +10,14 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/test/testruntime"
+	"github.com/open-panoptes/opni/pkg/test/testruntime"
 	"github.com/samber/lo"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/keyring"
-	"github.com/rancher/opni/pkg/pkp"
-	"github.com/rancher/opni/pkg/storage"
-	"github.com/rancher/opni/pkg/util/future"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/keyring"
+	"github.com/open-panoptes/opni/pkg/pkp"
+	"github.com/open-panoptes/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/util/future"
 )
 
 func pkpKey(pinCount int) *keyring.PKPKey {

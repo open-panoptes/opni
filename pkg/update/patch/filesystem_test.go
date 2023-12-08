@@ -6,12 +6,12 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/test/memfs"
-	"github.com/rancher/opni/pkg/test/testlog"
+	"github.com/open-panoptes/opni/pkg/test/memfs"
+	"github.com/open-panoptes/opni/pkg/test/testlog"
 	"github.com/spf13/afero"
 
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/update/patch"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/update/patch"
 )
 
 func init() {

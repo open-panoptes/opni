@@ -3,9 +3,9 @@ package opnicluster
 import (
 	"fmt"
 
-	opnierrs "github.com/rancher/opni/pkg/errors"
-	"github.com/rancher/opni/pkg/resources"
-	"github.com/rancher/opni/pkg/util"
+	opnierrs "github.com/open-panoptes/opni/pkg/errors"
+	"github.com/open-panoptes/opni/pkg/resources"
+	"github.com/open-panoptes/opni/pkg/util"
 	"github.com/samber/lo"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

@@ -1,11 +1,11 @@
 package gateway
 
 import (
-	"github.com/rancher/opni/pkg/agent"
-	"github.com/rancher/opni/pkg/capabilities/wellknown"
-	streamext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/stream"
-	"github.com/rancher/opni/plugins/topology/apis/node"
-	"github.com/rancher/opni/plugins/topology/apis/stream"
+	"github.com/open-panoptes/opni/pkg/agent"
+	"github.com/open-panoptes/opni/pkg/capabilities/wellknown"
+	streamext "github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions/stream"
+	"github.com/open-panoptes/opni/plugins/topology/apis/node"
+	"github.com/open-panoptes/opni/plugins/topology/apis/stream"
 	"google.golang.org/grpc"
 )
 

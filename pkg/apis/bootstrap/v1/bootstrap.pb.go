@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/pkg/apis/bootstrap/v1/bootstrap.proto
+// source: github.com/open-panoptes/opni/pkg/apis/bootstrap/v1/bootstrap.proto
 
 package v1
 

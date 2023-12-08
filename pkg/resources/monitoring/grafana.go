@@ -11,9 +11,9 @@ import (
 
 	grafanav1beta1 "github.com/grafana-operator/grafana-operator/v5/api/v1beta1"
 	"github.com/imdario/mergo"
-	"github.com/rancher/opni/pkg/auth/openid"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/resources"
+	"github.com/open-panoptes/opni/pkg/auth/openid"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/resources"
 	"github.com/samber/lo"
 	"github.com/ttacon/chalk"
 	corev1 "k8s.io/api/core/v1"

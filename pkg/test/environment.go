@@ -37,43 +37,43 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
 	"github.com/onsi/ginkgo/v2"
+	"github.com/open-panoptes/opni/pkg/agent"
+	agentv2 "github.com/open-panoptes/opni/pkg/agent/v2"
+	"github.com/open-panoptes/opni/pkg/alerting/metrics/naming"
+	"github.com/open-panoptes/opni/pkg/alerting/shared"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	streamv1 "github.com/open-panoptes/opni/pkg/apis/stream/v1"
+	"github.com/open-panoptes/opni/pkg/auth/session"
+	"github.com/open-panoptes/opni/pkg/bootstrap"
+	"github.com/open-panoptes/opni/pkg/caching"
+	"github.com/open-panoptes/opni/pkg/clients"
+	"github.com/open-panoptes/opni/pkg/config"
+	"github.com/open-panoptes/opni/pkg/config/meta"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/gateway"
+	"github.com/open-panoptes/opni/pkg/ident"
+	"github.com/open-panoptes/opni/pkg/keyring/ephemeral"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/management"
+	"github.com/open-panoptes/opni/pkg/otel"
+	"github.com/open-panoptes/opni/pkg/pkp"
+	"github.com/open-panoptes/opni/pkg/plugins"
+	"github.com/open-panoptes/opni/pkg/plugins/hooks"
+	pluginmeta "github.com/open-panoptes/opni/pkg/plugins/meta"
+	"github.com/open-panoptes/opni/pkg/slo/query"
+	"github.com/open-panoptes/opni/pkg/test/freeport"
+	mock_ident "github.com/open-panoptes/opni/pkg/test/mock/ident"
+	"github.com/open-panoptes/opni/pkg/test/testdata"
+	"github.com/open-panoptes/opni/pkg/test/testlog"
+	"github.com/open-panoptes/opni/pkg/test/testutil"
+	"github.com/open-panoptes/opni/pkg/tokens"
+	"github.com/open-panoptes/opni/pkg/trust"
+	"github.com/open-panoptes/opni/pkg/util"
+	"github.com/open-panoptes/opni/plugins/metrics/pkg/cortex/configutil"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rancher/opni/pkg/agent"
-	agentv2 "github.com/rancher/opni/pkg/agent/v2"
-	"github.com/rancher/opni/pkg/alerting/metrics/naming"
-	"github.com/rancher/opni/pkg/alerting/shared"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	streamv1 "github.com/rancher/opni/pkg/apis/stream/v1"
-	"github.com/rancher/opni/pkg/auth/session"
-	"github.com/rancher/opni/pkg/bootstrap"
-	"github.com/rancher/opni/pkg/caching"
-	"github.com/rancher/opni/pkg/clients"
-	"github.com/rancher/opni/pkg/config"
-	"github.com/rancher/opni/pkg/config/meta"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/gateway"
-	"github.com/rancher/opni/pkg/ident"
-	"github.com/rancher/opni/pkg/keyring/ephemeral"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/management"
-	"github.com/rancher/opni/pkg/otel"
-	"github.com/rancher/opni/pkg/pkp"
-	"github.com/rancher/opni/pkg/plugins"
-	"github.com/rancher/opni/pkg/plugins/hooks"
-	pluginmeta "github.com/rancher/opni/pkg/plugins/meta"
-	"github.com/rancher/opni/pkg/slo/query"
-	"github.com/rancher/opni/pkg/test/freeport"
-	mock_ident "github.com/rancher/opni/pkg/test/mock/ident"
-	"github.com/rancher/opni/pkg/test/testdata"
-	"github.com/rancher/opni/pkg/test/testlog"
-	"github.com/rancher/opni/pkg/test/testutil"
-	"github.com/rancher/opni/pkg/tokens"
-	"github.com/rancher/opni/pkg/trust"
-	"github.com/rancher/opni/pkg/util"
-	"github.com/rancher/opni/plugins/metrics/pkg/cortex/configutil"
 	"github.com/samber/lo"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -85,11 +85,11 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	_ "github.com/rancher/opni/pkg/oci/noop"
-	_ "github.com/rancher/opni/pkg/storage/etcd"
-	_ "github.com/rancher/opni/pkg/storage/jetstream"
-	"github.com/rancher/opni/pkg/update/noop"
-	_ "github.com/rancher/opni/pkg/update/noop"
+	_ "github.com/open-panoptes/opni/pkg/oci/noop"
+	_ "github.com/open-panoptes/opni/pkg/storage/etcd"
+	_ "github.com/open-panoptes/opni/pkg/storage/jetstream"
+	"github.com/open-panoptes/opni/pkg/update/noop"
+	_ "github.com/open-panoptes/opni/pkg/update/noop"
 )
 
 var (
@@ -267,7 +267,7 @@ func FindTestBin() (string, error) {
 WALK:
 	for {
 		if wd == "/" {
-			return "", errors.New("could not find go.mod for github.com/rancher/opni")
+			return "", errors.New("could not find go.mod for github.com/open-panoptes/opni")
 		}
 		if _, err := os.Stat(filepath.Join(wd, "go.mod")); err == nil {
 			// check to make sure it's the right one
@@ -279,7 +279,7 @@ WALK:
 			for scanner.Scan() {
 				line := scanner.Text()
 				if strings.HasPrefix(line, "module") {
-					if line == "module github.com/rancher/opni" {
+					if line == "module github.com/open-panoptes/opni" {
 						f.Close()
 						break WALK
 					}

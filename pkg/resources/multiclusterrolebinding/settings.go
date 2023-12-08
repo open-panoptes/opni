@@ -5,8 +5,8 @@ import (
 
 	_ "embed" // embed should be a blank import
 
-	opensearchtypes "github.com/rancher/opni/pkg/opensearch/opensearch/types"
-	"github.com/rancher/opni/pkg/resources/opnicluster/elastic/indices"
+	opensearchtypes "github.com/open-panoptes/opni/pkg/opensearch/opensearch/types"
+	"github.com/open-panoptes/opni/pkg/resources/opnicluster/elastic/indices"
 	"github.com/samber/lo"
 )
 

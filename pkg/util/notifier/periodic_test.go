@@ -6,9 +6,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	mock_notifier "github.com/open-panoptes/opni/pkg/test/mock/notifier"
+	"github.com/open-panoptes/opni/pkg/util/notifier"
 	"github.com/prometheus/prometheus/model/rulefmt"
-	mock_notifier "github.com/rancher/opni/pkg/test/mock/notifier"
-	"github.com/rancher/opni/pkg/util/notifier"
 	"go.uber.org/mock/gomock"
 )
 

@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	corev1beta1 "github.com/rancher/opni/apis/core/v1beta1"
+	corev1beta1 "github.com/open-panoptes/opni/apis/core/v1beta1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"

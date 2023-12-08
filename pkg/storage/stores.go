@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/keyring"
-	"github.com/rancher/opni/pkg/storage/lock"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/keyring"
+	"github.com/open-panoptes/opni/pkg/storage/lock"
 )
 
 type Backend interface {

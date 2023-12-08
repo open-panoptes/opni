@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rancher/opni/apis"
-	"github.com/rancher/opni/pkg/alerting/drivers/config"
-	"github.com/rancher/opni/pkg/alerting/shared"
+	"github.com/open-panoptes/opni/apis"
+	"github.com/open-panoptes/opni/pkg/alerting/drivers/config"
+	"github.com/open-panoptes/opni/pkg/alerting/shared"
 	"github.com/samber/lo"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

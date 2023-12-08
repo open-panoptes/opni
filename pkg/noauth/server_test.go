@@ -13,13 +13,13 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/test/freeport"
-	"github.com/rancher/opni/pkg/test/testlog"
+	"github.com/open-panoptes/opni/pkg/test/freeport"
+	"github.com/open-panoptes/opni/pkg/test/testlog"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	openidauth "github.com/rancher/opni/pkg/auth/openid"
-	"github.com/rancher/opni/pkg/noauth"
-	"github.com/rancher/opni/pkg/test"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	openidauth "github.com/open-panoptes/opni/pkg/auth/openid"
+	"github.com/open-panoptes/opni/pkg/noauth"
+	"github.com/open-panoptes/opni/pkg/test"
 )
 
 var _ = Describe("Server", Ordered, Label("integration", "slow"), func() {

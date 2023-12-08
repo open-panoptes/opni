@@ -11,9 +11,9 @@ import (
 
 	"emperror.dev/errors"
 	glob "github.com/bmatcuk/doublestar/v4"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/logger"
 	"github.com/prometheus/prometheus/model/rulefmt"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/logger"
 )
 
 type FilesystemRuleFinder struct {

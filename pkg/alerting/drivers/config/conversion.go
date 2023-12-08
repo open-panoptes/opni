@@ -3,9 +3,9 @@ package config
 import (
 	"net/url"
 
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
 	amCfg "github.com/prometheus/alertmanager/config"
 	commoncfg "github.com/prometheus/common/config"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
 )
 
 func ToWebhook(endp *alertingv1.WebhookEndpoint) *WebhookConfig {

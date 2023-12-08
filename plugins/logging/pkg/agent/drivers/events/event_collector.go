@@ -10,11 +10,11 @@ import (
 
 	"log/slog"
 
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/util"
+	"github.com/open-panoptes/opni/plugins/logging/apis/node"
+	"github.com/open-panoptes/opni/plugins/logging/pkg/agent/drivers"
 	"github.com/opensearch-project/opensearch-go/opensearchutil"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/util"
-	"github.com/rancher/opni/plugins/logging/apis/node"
-	"github.com/rancher/opni/plugins/logging/pkg/agent/drivers"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"

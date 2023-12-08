@@ -2,8 +2,8 @@ package jetstream
 
 import (
 	"github.com/nats-io/nats.go"
-	"github.com/rancher/opni/pkg/alerting/shared"
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/alerting/shared"
+	"github.com/open-panoptes/opni/pkg/util"
 )
 
 func NewRouterObjectStore(js nats.JetStreamContext) nats.ObjectStore {

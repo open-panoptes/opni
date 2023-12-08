@@ -3,9 +3,9 @@ package backend
 import (
 	"context"
 
-	capabilityv1 "github.com/rancher/opni/pkg/apis/capability/v1"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/plugins/driverutil"
+	capabilityv1 "github.com/open-panoptes/opni/pkg/apis/capability/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/plugins/driverutil"
 )
 
 type InstallState int

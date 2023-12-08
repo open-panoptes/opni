@@ -7,7 +7,7 @@ import (
 	. "github.com/kralicky/kmatch"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	opnicorev1beta1 "github.com/rancher/opni/apis/core/v1beta1"
+	opnicorev1beta1 "github.com/open-panoptes/opni/apis/core/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

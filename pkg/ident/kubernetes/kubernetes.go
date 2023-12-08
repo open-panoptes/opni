@@ -3,8 +3,8 @@ package kubernetes
 import (
 	"context"
 
-	"github.com/rancher/opni/pkg/ident"
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/ident"
+	"github.com/open-panoptes/opni/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"

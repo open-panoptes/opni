@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/cisco-open/operator-tools/pkg/reconciler"
-	loggingv1beta1 "github.com/rancher/opni/apis/logging/v1beta1"
-	"github.com/rancher/opni/pkg/opensearch/certs"
+	loggingv1beta1 "github.com/open-panoptes/opni/apis/logging/v1beta1"
+	"github.com/open-panoptes/opni/pkg/opensearch/certs"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"

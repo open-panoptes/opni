@@ -3,8 +3,8 @@ package noop
 import (
 	"context"
 
+	"github.com/open-panoptes/opni/pkg/oci"
 	"github.com/opencontainers/go-digest"
-	"github.com/rancher/opni/pkg/oci"
 )
 
 const (

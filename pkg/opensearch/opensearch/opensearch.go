@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/open-panoptes/opni/pkg/opensearch/certs"
+	"github.com/open-panoptes/opni/pkg/opensearch/opensearch/api"
+	"github.com/open-panoptes/opni/pkg/opensearch/opensearch/errors"
 	"github.com/opensearch-project/opensearch-go/v2/opensearchtransport"
-	"github.com/rancher/opni/pkg/opensearch/certs"
-	"github.com/rancher/opni/pkg/opensearch/opensearch/api"
-	"github.com/rancher/opni/pkg/opensearch/opensearch/errors"
 )
 
 type Client struct {

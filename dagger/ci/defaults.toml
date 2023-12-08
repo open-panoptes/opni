@@ -2,12 +2,12 @@ lint = true
 test = true
 
 [releaser]
-	repo = "github.com/rancher/opni"
+	repo = "github.com/open-panoptes/opni"
 	os = ["darwin", "linux"]
 	arch = ["amd64"]
 
 [charts.git]
-	repo = "github.com/rancher/opni"
+	repo = "github.com/open-panoptes/opni"
 	branch = "charts-repo"
 [charts.git.auth]
 	email = "rancherbot@rancher.com"

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	authnoauth "github.com/rancher/opni/pkg/auth/noauth"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/noauth"
+	authnoauth "github.com/open-panoptes/opni/pkg/auth/noauth"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/noauth"
 )
 
 func NewNoauthServer(

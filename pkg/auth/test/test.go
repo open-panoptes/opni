@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rancher/opni/pkg/auth"
-	"github.com/rancher/opni/pkg/rbac"
-	"github.com/rancher/opni/pkg/util/streams"
+	"github.com/open-panoptes/opni/pkg/auth"
+	"github.com/open-panoptes/opni/pkg/rbac"
+	"github.com/open-panoptes/opni/pkg/util/streams"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"

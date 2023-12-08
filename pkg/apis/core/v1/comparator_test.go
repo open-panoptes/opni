@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	v1 "github.com/rancher/opni/pkg/apis/core/v1"
+	v1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 )
 
 func tc(t string, id ...string) *v1.TokenCapability {

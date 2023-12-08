@@ -1,10 +1,10 @@
 package gateway
 
 import (
-	"github.com/rancher/opni/pkg/agent"
-	"github.com/rancher/opni/pkg/capabilities/wellknown"
-	streamext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/stream"
-	"github.com/rancher/opni/plugins/logging/apis/node"
+	"github.com/open-panoptes/opni/pkg/agent"
+	"github.com/open-panoptes/opni/pkg/capabilities/wellknown"
+	streamext "github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions/stream"
+	"github.com/open-panoptes/opni/plugins/logging/apis/node"
 	collogspb "go.opentelemetry.io/proto/otlp/collector/logs/v1"
 	coltracepb "go.opentelemetry.io/proto/otlp/collector/trace/v1"
 	"google.golang.org/grpc"

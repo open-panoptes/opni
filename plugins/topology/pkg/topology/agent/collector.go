@@ -10,12 +10,12 @@ import (
 
 	"log/slog"
 
-	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
-	"github.com/rancher/opni/pkg/health"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/topology/graph"
-	"github.com/rancher/opni/plugins/topology/apis/node"
-	"github.com/rancher/opni/plugins/topology/apis/stream"
+	controlv1 "github.com/open-panoptes/opni/pkg/apis/control/v1"
+	"github.com/open-panoptes/opni/pkg/health"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/topology/graph"
+	"github.com/open-panoptes/opni/plugins/topology/apis/node"
+	"github.com/open-panoptes/opni/plugins/topology/apis/stream"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"

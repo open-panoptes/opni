@@ -2,12 +2,12 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/pkg/apis/storage/v1/storage.proto
+// source: github.com/open-panoptes/opni/pkg/apis/storage/v1/storage.proto
 
 package v1
 
 import (
-	storage "github.com/rancher/opni/internal/cortex/config/storage"
+	storage "github.com/open-panoptes/opni/internal/cortex/config/storage"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Symbols defined in public import of github.com/rancher/opni/internal/cortex/config/storage/storage.proto.
+// Symbols defined in public import of github.com/open-panoptes/opni/internal/cortex/config/storage/storage.proto.
 
 type AzureConfig = storage.AzureConfig
 type Config = storage.Config

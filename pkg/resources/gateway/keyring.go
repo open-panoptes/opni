@@ -3,9 +3,9 @@ package gateway
 import (
 	"encoding/json"
 
-	"github.com/rancher/opni/pkg/auth/session"
-	"github.com/rancher/opni/pkg/keyring/ephemeral"
-	"github.com/rancher/opni/pkg/resources"
+	"github.com/open-panoptes/opni/pkg/auth/session"
+	"github.com/open-panoptes/opni/pkg/keyring/ephemeral"
+	"github.com/open-panoptes/opni/pkg/resources"
 	"github.com/samber/lo"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

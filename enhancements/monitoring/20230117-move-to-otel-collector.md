@@ -11,7 +11,7 @@ Currently Opni Metrics uses Prometheus running in agent mode to scrape metrics w
 
 ### Related Issues
 
-[#956 Prometheus memory utilization in downstream cluster](https://github.com/rancher/opni/issues/956)
+[#956 Prometheus memory utilization in downstream cluster](https://github.com/open-panoptes/opni/issues/956)
 
 ## Use case
 Opni Monitoring should be able to run in a wide array of setups, including edge configurations.  To enable this the footprint needs to be as small as possible.  Currently Prometheus uses > 1GB of RAM, even when running in agent mode.  This coupled with the ~500mb of RAM the agent uses, along with the Prometheus operator results in a larger than desired footprint.

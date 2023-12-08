@@ -4,8 +4,8 @@ import (
 	"time"
 
 	ccache "github.com/karlseguin/ccache/v3"
-	"github.com/rancher/opni/pkg/storage"
-	"github.com/rancher/opni/pkg/util/future"
+	"github.com/open-panoptes/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/util/future"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 

@@ -3,9 +3,9 @@ package slo
 import (
 	"time"
 
+	"github.com/open-panoptes/opni/pkg/slo/shared"
+	"github.com/open-panoptes/opni/pkg/validation"
 	prommodel "github.com/prometheus/common/model"
-	"github.com/rancher/opni/pkg/slo/shared"
-	"github.com/rancher/opni/pkg/validation"
 )
 
 var (

@@ -14,11 +14,11 @@ import (
 	jwtopenid "github.com/lestrrat-go/jwx/jwt/openid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/test/freeport"
-	"github.com/rancher/opni/pkg/test/testruntime"
+	"github.com/open-panoptes/opni/pkg/test/freeport"
+	"github.com/open-panoptes/opni/pkg/test/testruntime"
 
-	"github.com/rancher/opni/pkg/auth/openid"
-	"github.com/rancher/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/auth/openid"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
 )
 
 var _ = Describe("OpenID Middleware", Ordered, testruntime.EnableIfCI[FlakeAttempts](5), Label("temporal"), func() {

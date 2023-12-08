@@ -8,7 +8,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	ext "github.com/rancher/opni/pkg/test/testdata/plugins/ext"
+	ext "github.com/open-panoptes/opni/pkg/test/testdata/plugins/ext"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
 	metadata "google.golang.org/grpc/metadata"

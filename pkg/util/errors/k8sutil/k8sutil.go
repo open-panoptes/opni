@@ -1,7 +1,7 @@
 package k8sutil
 
 import (
-	"github.com/rancher/opni/pkg/util/errors"
+	"github.com/open-panoptes/opni/pkg/util/errors"
 	"google.golang.org/grpc/codes"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

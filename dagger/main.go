@@ -16,9 +16,9 @@ import (
 	"github.com/knadh/koanf/providers/structs"
 	"github.com/knadh/koanf/v2"
 	"github.com/mitchellh/mapstructure"
-	"github.com/rancher/opni/dagger/config"
-	"github.com/rancher/opni/dagger/helm"
-	"github.com/rancher/opni/dagger/x/cmds"
+	"github.com/open-panoptes/opni/dagger/config"
+	"github.com/open-panoptes/opni/dagger/helm"
+	"github.com/open-panoptes/opni/dagger/x/cmds"
 	"github.com/spf13/pflag"
 	"golang.org/x/sync/errgroup"
 )
@@ -469,14 +469,14 @@ func (b *Builder) runOutOfTreeBuilds(ctx context.Context) error {
 		Pipeline("Opensearch Dashboards Image").
 		From(fmt.Sprintf("opensearchproject/opensearch-dashboards:%s", b.Images.Opensearch.Build.DashboardsVersion)).
 		WithExec([]string{"opensearch-dashboards-plugin", "install",
-			fmt.Sprintf("https://github.com/rancher/opni-ui/releases/download/plugin-%[1]s/opni-dashboards-plugin-%[1]s.zip", b.Images.Opensearch.Build.PluginVersion),
+			fmt.Sprintf("https://github.com/open-panoptes/opni-ui/releases/download/plugin-%[1]s/opni-dashboards-plugin-%[1]s.zip", b.Images.Opensearch.Build.PluginVersion),
 		})
 
 	opensearch := b.client.Container().
 		Pipeline("Opensearch Image").
 		From(fmt.Sprintf("opensearchproject/opensearch:%s", b.Images.Opensearch.Build.OpensearchVersion)).
 		WithExec([]string{"opensearch-plugin", "-s", "install", "-b",
-			fmt.Sprintf("https://github.com/rancher/opni-ingest-plugin/releases/download/v%s/opnipreprocessing.zip", b.Images.Opensearch.Build.PluginVersion),
+			fmt.Sprintf("https://github.com/open-panoptes/opni-ingest-plugin/releases/download/v%s/opnipreprocessing.zip", b.Images.Opensearch.Build.PluginVersion),
 		}).
 		WithDirectory("/usr/share/opensearch/extensions", b.client.Directory(), dagger.ContainerWithDirectoryOpts{Owner: "1000:1000"})
 

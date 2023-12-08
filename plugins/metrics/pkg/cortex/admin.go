@@ -19,7 +19,7 @@ import (
 
 	"github.com/cortexproject/cortex/pkg/cortexpb"
 	"github.com/cortexproject/cortex/pkg/distributor"
-	"github.com/rancher/opni/plugins/metrics/apis/cortexadmin"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/cortexadmin"
 	"github.com/samber/lo"
 	"github.com/tidwall/gjson"
 	"golang.org/x/sync/errgroup"
@@ -29,10 +29,10 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/util"
-	metricsutil "github.com/rancher/opni/plugins/metrics/pkg/util"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/util"
+	metricsutil "github.com/open-panoptes/opni/plugins/metrics/pkg/util"
 )
 
 type CortexAdminServer struct {

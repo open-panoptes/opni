@@ -1,13 +1,13 @@
 package commands
 
 // import (
-// 	// "github.com/rancher/opni/plugins/logging/pkg/apis/alerting"
+// 	// "github.com/open-panoptes/opni/plugins/logging/pkg/apis/alerting"
 // 	"bytes"
 // 	"encoding/json"
 // 	"fmt"
 
-// 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-// 	"github.com/rancher/opni/pkg/opensearch/opensearch/types"
+// 	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+// 	"github.com/open-panoptes/opni/pkg/opensearch/opensearch/types"
 // 	"github.com/spf13/cobra"
 // 	"google.golang.org/protobuf/types/known/emptypb"
 // )

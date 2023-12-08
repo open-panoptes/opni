@@ -2,13 +2,13 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/pkg/apis/stream/v1/stream.proto
+// source: github.com/open-panoptes/opni/pkg/apis/stream/v1/stream.proto
 
 package v1
 
 import (
 	totem "github.com/kralicky/totem"
-	v1 "github.com/rancher/opni/pkg/apis/core/v1"
+	v1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 	status "google.golang.org/genproto/googleapis/rpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"

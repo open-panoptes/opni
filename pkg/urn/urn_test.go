@@ -3,7 +3,7 @@ package urn_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/urn"
+	"github.com/open-panoptes/opni/pkg/urn"
 )
 
 var _ = Describe("URN", Label("unit"), func() {

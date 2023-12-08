@@ -1,10 +1,10 @@
 package multiclusteruser
 
 import (
-	"github.com/rancher/opni/pkg/opensearch/certs"
-	osapiext "github.com/rancher/opni/pkg/opensearch/opensearch/types"
-	opensearch "github.com/rancher/opni/pkg/opensearch/reconciler"
-	"github.com/rancher/opni/pkg/util/meta"
+	"github.com/open-panoptes/opni/pkg/opensearch/certs"
+	osapiext "github.com/open-panoptes/opni/pkg/opensearch/opensearch/types"
+	opensearch "github.com/open-panoptes/opni/pkg/opensearch/reconciler"
+	"github.com/open-panoptes/opni/pkg/util/meta"
 	"k8s.io/client-go/util/retry"
 	opensearchv1 "opensearch.opster.io/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"

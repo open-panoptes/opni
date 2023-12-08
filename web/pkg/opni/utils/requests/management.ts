@@ -3,7 +3,7 @@ import { HandleClusterHealthStatusEvent, HandleClusterWatchEvent } from '@pkg/op
 import { Empty } from '@bufbuild/protobuf';
 import { NodeCapabilityStatus } from '../../models/Capability';
 import { Management } from '../../api/opni';
-import { WatchClustersRequest } from '../../generated/github.com/rancher/opni/pkg/apis/management/v1/management_pb';
+import { WatchClustersRequest } from '../../generated/github.com/open-panoptes/opni/pkg/apis/management/v1/management_pb';
 import { TokensResponse, Token } from '../../models/Token';
 import { CapabilityStatusResponse } from '../../models/Cluster';
 import { MatchLabel, Role, RolesResponse } from '../../models/Role';

@@ -7,10 +7,10 @@ Functions to help proxy a cortex alert paylaod
 import (
 	"fmt"
 
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 	"github.com/prometheus/alertmanager/notify/webhook"
 	"github.com/prometheus/alertmanager/template"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	"github.com/tidwall/gjson"
 )
 

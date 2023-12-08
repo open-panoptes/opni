@@ -5,7 +5,7 @@
 package v1beta1
 
 import (
-	"github.com/rancher/opni/pkg/util/meta"
+	"github.com/open-panoptes/opni/pkg/util/meta"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"

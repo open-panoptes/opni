@@ -9,9 +9,9 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	v1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/opni/cliutil"
-	"github.com/rancher/opni/plugins/metrics/apis/remoteread"
+	v1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/opni/cliutil"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/remoteread"
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )

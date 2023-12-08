@@ -3,12 +3,12 @@ package loggingclusterbinding
 import (
 	"errors"
 
-	corev1beta1 "github.com/rancher/opni/apis/core/v1beta1"
-	loggingv1beta1 "github.com/rancher/opni/apis/logging/v1beta1"
-	"github.com/rancher/opni/pkg/opensearch/certs"
-	opensearch "github.com/rancher/opni/pkg/opensearch/reconciler"
-	"github.com/rancher/opni/pkg/resources"
-	"github.com/rancher/opni/pkg/util/meta"
+	corev1beta1 "github.com/open-panoptes/opni/apis/core/v1beta1"
+	loggingv1beta1 "github.com/open-panoptes/opni/apis/logging/v1beta1"
+	"github.com/open-panoptes/opni/pkg/opensearch/certs"
+	opensearch "github.com/open-panoptes/opni/pkg/opensearch/reconciler"
+	"github.com/open-panoptes/opni/pkg/resources"
+	"github.com/open-panoptes/opni/pkg/util/meta"
 	"k8s.io/client-go/util/retry"
 	opensearchv1 "opensearch.opster.io/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"

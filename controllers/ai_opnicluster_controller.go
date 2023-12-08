@@ -21,7 +21,7 @@ package controllers
 import (
 	"context"
 
-	"github.com/rancher/opni/pkg/util/k8sutil"
+	"github.com/open-panoptes/opni/pkg/util/k8sutil"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,9 +30,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/cisco-open/operator-tools/pkg/reconciler"
-	aiv1beta1 "github.com/rancher/opni/apis/ai/v1beta1"
-	"github.com/rancher/opni/pkg/resources"
-	"github.com/rancher/opni/pkg/resources/opnicluster"
+	aiv1beta1 "github.com/open-panoptes/opni/apis/ai/v1beta1"
+	"github.com/open-panoptes/opni/pkg/resources"
+	"github.com/open-panoptes/opni/pkg/resources/opnicluster"
 	opsterv1 "opensearch.opster.io/api/v1"
 )
 

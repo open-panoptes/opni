@@ -3,9 +3,9 @@ package identserver
 import (
 	"context"
 
-	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/ident"
+	controlv1 "github.com/open-panoptes/opni/pkg/apis/control/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/ident"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 

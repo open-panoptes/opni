@@ -18,7 +18,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/rancher/opni/pkg/metrics/collector"
+	"github.com/open-panoptes/opni/pkg/metrics/collector"
 )
 
 var _ = Describe("Remote Collector", Label("unit"), func() {

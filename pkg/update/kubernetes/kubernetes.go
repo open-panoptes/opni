@@ -1,7 +1,7 @@
 package kubernetes
 
 import (
-	"github.com/rancher/opni/pkg/oci"
+	"github.com/open-panoptes/opni/pkg/oci"
 )
 
 const (

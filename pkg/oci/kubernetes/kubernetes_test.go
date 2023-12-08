@@ -7,10 +7,10 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	corev1beta1 "github.com/rancher/opni/apis/core/v1beta1"
-	"github.com/rancher/opni/pkg/oci"
-	"github.com/rancher/opni/pkg/oci/kubernetes"
-	"github.com/rancher/opni/pkg/versions"
+	corev1beta1 "github.com/open-panoptes/opni/apis/core/v1beta1"
+	"github.com/open-panoptes/opni/pkg/oci"
+	"github.com/open-panoptes/opni/pkg/oci/kubernetes"
+	"github.com/open-panoptes/opni/pkg/versions"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

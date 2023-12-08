@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/hashicorp/go-plugin"
-	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
-	"github.com/rancher/opni/pkg/plugins"
+	controlv1 "github.com/open-panoptes/opni/pkg/apis/control/v1"
+	"github.com/open-panoptes/opni/pkg/plugins"
 	"google.golang.org/grpc"
 )
 

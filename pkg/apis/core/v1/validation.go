@@ -3,7 +3,7 @@ package v1
 import (
 	"fmt"
 
-	"github.com/rancher/opni/pkg/validation"
+	"github.com/open-panoptes/opni/pkg/validation"
 	"github.com/samber/lo"
 )
 

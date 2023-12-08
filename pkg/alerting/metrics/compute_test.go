@@ -5,9 +5,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/alerting/metrics"
-	"github.com/rancher/opni/pkg/alerting/shared"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
+	"github.com/open-panoptes/opni/pkg/alerting/metrics"
+	"github.com/open-panoptes/opni/pkg/alerting/shared"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 

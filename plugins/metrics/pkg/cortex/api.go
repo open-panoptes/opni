@@ -5,20 +5,21 @@ import (
 	"crypto/tls"
 	"os"
 
-	"github.com/gin-contrib/pprof"
-	"github.com/gin-gonic/gin"
 	"log/slog"
 
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/auth"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/logger"
-	httpext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/http"
-	"github.com/rancher/opni/pkg/rbac"
-	"github.com/rancher/opni/pkg/storage"
-	"github.com/rancher/opni/pkg/util"
-	"github.com/rancher/opni/pkg/util/fwd"
-	metricsutil "github.com/rancher/opni/plugins/metrics/pkg/util"
+	"github.com/gin-contrib/pprof"
+	"github.com/gin-gonic/gin"
+
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/auth"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/logger"
+	httpext "github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions/http"
+	"github.com/open-panoptes/opni/pkg/rbac"
+	"github.com/open-panoptes/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/util/fwd"
+	metricsutil "github.com/open-panoptes/opni/plugins/metrics/pkg/util"
 )
 
 type forwarders struct {

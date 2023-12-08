@@ -3,7 +3,7 @@ package setup
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/onsi/ginkgo/v2"
-	"github.com/rancher/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/logger"
 )
 
 func init() {

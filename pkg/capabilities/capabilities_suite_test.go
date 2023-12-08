@@ -5,10 +5,10 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	_ "github.com/rancher/opni/pkg/test/setup"
+	_ "github.com/open-panoptes/opni/pkg/test/setup"
 	"go.uber.org/mock/gomock"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 )
 
 var ctrl *gomock.Controller

@@ -7,12 +7,12 @@ import (
 	"github.com/alecthomas/jsonschema"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/config"
-	"github.com/rancher/opni/pkg/config/meta"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/management"
-	"github.com/rancher/opni/pkg/plugins"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/config"
+	"github.com/open-panoptes/opni/pkg/config/meta"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/management"
+	"github.com/open-panoptes/opni/pkg/plugins"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 

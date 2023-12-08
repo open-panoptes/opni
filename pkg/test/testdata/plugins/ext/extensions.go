@@ -1,7 +1,7 @@
 package ext
 
 import (
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 )
 
 func (c *SampleConfiguration) WithRevision(rev int64) *SampleConfiguration {

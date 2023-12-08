@@ -6,9 +6,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/pkp"
-	"github.com/rancher/opni/pkg/test/testdata"
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/pkp"
+	"github.com/open-panoptes/opni/pkg/test/testdata"
+	"github.com/open-panoptes/opni/pkg/util"
 )
 
 // Fingerprints computed using:

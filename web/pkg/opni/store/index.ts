@@ -1,7 +1,7 @@
 import { CoreStoreSpecifics, CoreStoreConfig } from '@shell/core/types';
 import { Cluster as ClusterModel } from '@pkg/opni/models/Cluster';
-import * as core from '@pkg/opni/generated/github.com/rancher/opni/pkg/apis/core/v1/core_pb';
-import * as management from '@pkg/opni/generated/github.com/rancher/opni/pkg/apis/management/v1/management_pb';
+import * as core from '@pkg/opni/generated/github.com/open-panoptes/opni/pkg/apis/core/v1/core_pb';
+import * as management from '@pkg/opni/generated/github.com/open-panoptes/opni/pkg/apis/management/v1/management_pb';
 
 const config: CoreStoreConfig = { namespace: 'opni' };
 

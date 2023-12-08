@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/rancher/opni/plugins/topology/apis/node"
+	"github.com/open-panoptes/opni/plugins/topology/apis/node"
 )
 
 type TopologyNodeDriver interface {

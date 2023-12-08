@@ -4,8 +4,8 @@ import (
 	"strconv"
 
 	grafanav1beta1 "github.com/grafana-operator/grafana-operator/v5/api/v1beta1"
-	opnimeta "github.com/rancher/opni/pkg/util/meta"
-	"github.com/rancher/opni/plugins/metrics/apis/cortexops"
+	opnimeta "github.com/open-panoptes/opni/pkg/util/meta"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/cortexops"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

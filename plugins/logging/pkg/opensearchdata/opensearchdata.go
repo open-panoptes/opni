@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/rancher/opni/pkg/plugins/apis/system"
-	"github.com/rancher/opni/pkg/util/future"
-	loggingutil "github.com/rancher/opni/plugins/logging/pkg/util"
 	"log/slog"
+
+	"github.com/open-panoptes/opni/pkg/plugins/apis/system"
+	"github.com/open-panoptes/opni/pkg/util/future"
+	loggingutil "github.com/open-panoptes/opni/plugins/logging/pkg/util"
 )
 
 const (

@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/open-panoptes/opni/pkg/alerting/metrics"
+	sloapi "github.com/open-panoptes/opni/plugins/slo/apis/slo"
 	prommodel "github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/rulefmt"
 	"github.com/prometheus/prometheus/promql/parser"
-	"github.com/rancher/opni/pkg/alerting/metrics"
-	sloapi "github.com/rancher/opni/plugins/slo/apis/slo"
 	"github.com/samber/lo"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.in/yaml.v3"

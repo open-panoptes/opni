@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/plugins/driverutil"
-	"github.com/rancher/opni/pkg/rules"
-	"github.com/rancher/opni/pkg/util/notifier"
-	"github.com/rancher/opni/plugins/metrics/apis/node"
-	"github.com/rancher/opni/plugins/metrics/apis/remoteread"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/plugins/driverutil"
+	"github.com/open-panoptes/opni/pkg/rules"
+	"github.com/open-panoptes/opni/pkg/util/notifier"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/node"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/remoteread"
 )
 
 type MetricsNodeConfigurator interface {

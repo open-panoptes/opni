@@ -2,20 +2,20 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/plugins/metrics/apis/cortexops/cortexops.proto
+// source: github.com/open-panoptes/opni/plugins/metrics/apis/cortexops/cortexops.proto
 
 package cortexops
 
 import (
-	_ "github.com/rancher/opni/internal/codegen/cli"
-	compactor "github.com/rancher/opni/internal/cortex/config/compactor"
-	querier "github.com/rancher/opni/internal/cortex/config/querier"
-	runtimeconfig "github.com/rancher/opni/internal/cortex/config/runtimeconfig"
-	storage "github.com/rancher/opni/internal/cortex/config/storage"
-	validation "github.com/rancher/opni/internal/cortex/config/validation"
-	v1 "github.com/rancher/opni/pkg/apis/core/v1"
-	_ "github.com/rancher/opni/pkg/apis/storage/v1"
-	driverutil "github.com/rancher/opni/pkg/plugins/driverutil"
+	_ "github.com/open-panoptes/opni/internal/codegen/cli"
+	compactor "github.com/open-panoptes/opni/internal/cortex/config/compactor"
+	querier "github.com/open-panoptes/opni/internal/cortex/config/querier"
+	runtimeconfig "github.com/open-panoptes/opni/internal/cortex/config/runtimeconfig"
+	storage "github.com/open-panoptes/opni/internal/cortex/config/storage"
+	validation "github.com/open-panoptes/opni/internal/cortex/config/validation"
+	v1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	_ "github.com/open-panoptes/opni/pkg/apis/storage/v1"
+	driverutil "github.com/open-panoptes/opni/pkg/plugins/driverutil"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"

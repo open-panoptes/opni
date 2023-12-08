@@ -7,9 +7,9 @@ import (
 	"github.com/go-kit/log"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	v1 "github.com/rancher/opni/pkg/apis/storage/v1"
-	"github.com/rancher/opni/plugins/metrics/apis/cortexops"
-	"github.com/rancher/opni/plugins/metrics/pkg/cortex/configutil"
+	v1 "github.com/open-panoptes/opni/pkg/apis/storage/v1"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/cortexops"
+	"github.com/open-panoptes/opni/plugins/metrics/pkg/cortex/configutil"
 	"github.com/samber/lo"
 	"gopkg.in/yaml.v2"
 )

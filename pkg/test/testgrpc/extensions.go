@@ -1,7 +1,7 @@
 package testgrpc
 
 import (
-	storagev1 "github.com/rancher/opni/pkg/apis/storage/v1"
+	storagev1 "github.com/open-panoptes/opni/pkg/apis/storage/v1"
 )
 
 func (t *TestSecret) RedactSecrets() {

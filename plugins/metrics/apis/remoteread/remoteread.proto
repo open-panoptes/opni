@@ -2,14 +2,14 @@ syntax = "proto3";
 
 package remoteread;
 
-import "github.com/rancher/opni/pkg/apis/core/v1/core.proto";
+import "github.com/open-panoptes/opni/pkg/apis/core/v1/core.proto";
 import "google/api/annotations.proto";
 import "google/api/http.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/rancher/opni/plugins/metrics/apis/remoteread";
+option go_package = "github.com/open-panoptes/opni/plugins/metrics/apis/remoteread";
 
 service RemoteReadGateway {
   rpc AddTarget(TargetAddRequest) returns (google.protobuf.Empty) {

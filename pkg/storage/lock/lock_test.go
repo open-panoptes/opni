@@ -6,7 +6,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/storage/lock"
+	"github.com/open-panoptes/opni/pkg/storage/lock"
 )
 
 var _ = Describe("Lock", Label("unit"), func() {

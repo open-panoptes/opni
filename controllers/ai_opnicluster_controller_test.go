@@ -10,8 +10,8 @@ import (
 	. "github.com/kralicky/kmatch"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	opnimeta "github.com/open-panoptes/opni/pkg/util/meta"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	opnimeta "github.com/rancher/opni/pkg/util/meta"
 	"github.com/samber/lo"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -23,9 +23,9 @@ import (
 	opsterv1 "opensearch.opster.io/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	aiv1beta1 "github.com/rancher/opni/apis/ai/v1beta1"
-	opnicorev1beta1 "github.com/rancher/opni/apis/core/v1beta1"
-	"github.com/rancher/opni/pkg/resources"
+	aiv1beta1 "github.com/open-panoptes/opni/apis/ai/v1beta1"
+	opnicorev1beta1 "github.com/open-panoptes/opni/apis/core/v1beta1"
+	"github.com/open-panoptes/opni/pkg/resources"
 )
 
 var _ = Describe("AI OpniCluster Controller", Ordered, Label("controller"), func() {

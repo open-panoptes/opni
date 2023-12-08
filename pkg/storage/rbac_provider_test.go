@@ -5,9 +5,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/storage"
-	mock_storage "github.com/rancher/opni/pkg/test/mock/storage"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/storage"
+	mock_storage "github.com/open-panoptes/opni/pkg/test/mock/storage"
 	"go.uber.org/mock/gomock"
 )
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rancher/opni/pkg/plugins/driverutil"
+	"github.com/open-panoptes/opni/pkg/plugins/driverutil"
 	"github.com/spf13/cobra"
 )
 

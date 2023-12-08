@@ -27,8 +27,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/open-panoptes/opni/pkg/slo/shared"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/rancher/opni/pkg/slo/shared"
 )
 
 var (

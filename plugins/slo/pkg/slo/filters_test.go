@@ -3,9 +3,9 @@ package slo_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/plugins/metrics/apis/cortexadmin"
-	"github.com/rancher/opni/plugins/slo/pkg/slo"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/cortexadmin"
+	"github.com/open-panoptes/opni/plugins/slo/pkg/slo"
 )
 
 var _ = Describe("SLO Filter tests", Ordered, Label("unit", "slow"), func() {

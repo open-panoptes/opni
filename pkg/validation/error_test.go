@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/rancher/opni/pkg/validation"
+	"github.com/open-panoptes/opni/pkg/validation"
 )
 
 var _ = Describe("Error", Label("unit"), func() {

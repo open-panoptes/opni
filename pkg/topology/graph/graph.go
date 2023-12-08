@@ -6,8 +6,8 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/util"
 	"github.com/steveteuber/kubectl-graph/pkg/graph"
 	kgraph "github.com/steveteuber/kubectl-graph/pkg/graph"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

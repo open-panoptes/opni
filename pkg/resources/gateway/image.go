@@ -1,8 +1,8 @@
 package gateway
 
 import (
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/resources"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/resources"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"

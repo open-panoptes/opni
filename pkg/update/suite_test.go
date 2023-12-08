@@ -5,9 +5,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	_ "github.com/rancher/opni/pkg/test/setup"
-	"github.com/rancher/opni/pkg/update"
-	"github.com/rancher/opni/pkg/update/noop"
+	_ "github.com/open-panoptes/opni/pkg/test/setup"
+	"github.com/open-panoptes/opni/pkg/update"
+	"github.com/open-panoptes/opni/pkg/update/noop"
 	"google.golang.org/grpc"
 )
 

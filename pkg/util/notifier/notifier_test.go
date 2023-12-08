@@ -8,12 +8,12 @@ import (
 	"github.com/kralicky/gpkg/sync/atomic"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	mock_rules "github.com/open-panoptes/opni/pkg/test/mock/rules"
 	"github.com/prometheus/prometheus/model/rulefmt"
-	mock_rules "github.com/rancher/opni/pkg/test/mock/rules"
 	"github.com/samber/lo"
 
-	"github.com/rancher/opni/pkg/rules"
-	"github.com/rancher/opni/pkg/util/notifier"
+	"github.com/open-panoptes/opni/pkg/rules"
+	"github.com/open-panoptes/opni/pkg/util/notifier"
 )
 
 var _ = Describe("Update Notifier", Label("unit"), func() {

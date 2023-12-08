@@ -10,8 +10,8 @@ import (
 	"runtime"
 	"time"
 
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	"github.com/rancher/opni/pkg/clients"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	"github.com/open-panoptes/opni/pkg/clients"
 	"github.com/samber/lo"
 
 	"google.golang.org/grpc"

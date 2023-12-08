@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/pkp"
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/pkp"
+	"github.com/open-panoptes/opni/pkg/util"
 	"github.com/spf13/pflag"
 )
 

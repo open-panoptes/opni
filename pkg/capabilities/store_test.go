@@ -6,14 +6,14 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	v1 "github.com/rancher/opni/pkg/apis/capability/v1"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/capabilities"
-	"github.com/rancher/opni/pkg/storage"
-	"github.com/rancher/opni/pkg/task"
-	mock_v1 "github.com/rancher/opni/pkg/test/mock/capability"
-	mock_storage "github.com/rancher/opni/pkg/test/mock/storage"
-	"github.com/rancher/opni/pkg/test/testlog"
+	v1 "github.com/open-panoptes/opni/pkg/apis/capability/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/capabilities"
+	"github.com/open-panoptes/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/task"
+	mock_v1 "github.com/open-panoptes/opni/pkg/test/mock/capability"
+	mock_storage "github.com/open-panoptes/opni/pkg/test/mock/storage"
+	"github.com/open-panoptes/opni/pkg/test/testlog"
 	"go.uber.org/mock/gomock"
 )
 

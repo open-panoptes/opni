@@ -3,7 +3,7 @@ package v1beta1
 import (
 	"fmt"
 
-	"github.com/rancher/opni/pkg/config/meta"
+	"github.com/open-panoptes/opni/pkg/config/meta"
 	"sigs.k8s.io/yaml"
 )
 

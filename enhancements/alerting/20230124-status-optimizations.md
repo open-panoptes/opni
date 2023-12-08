@@ -62,7 +62,7 @@ Caching will be implemented using interceptors over the protocols Opni uses
 
 ## Supporting documents
 
-Addresses https://github.com/rancher/opni/wiki/Alerting-Condition-Server#performance-issues
+Addresses https://github.com/open-panoptes/opni/wiki/Alerting-Condition-Server#performance-issues
 
 ## Dependencies
 

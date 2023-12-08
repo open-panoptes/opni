@@ -1,10 +1,10 @@
 package v1beta1
 
 import (
-	"github.com/rancher/opni/pkg/auth/openid"
-	cfgv1beta1 "github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/noauth"
-	opnimeta "github.com/rancher/opni/pkg/util/meta"
+	"github.com/open-panoptes/opni/pkg/auth/openid"
+	cfgv1beta1 "github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/noauth"
+	opnimeta "github.com/open-panoptes/opni/pkg/util/meta"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

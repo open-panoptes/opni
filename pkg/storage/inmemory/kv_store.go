@@ -7,8 +7,8 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/open-panoptes/opni/pkg/storage"
 	art "github.com/plar/go-adaptive-radix-tree"
-	"github.com/rancher/opni/pkg/storage"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

@@ -1,4 +1,4 @@
-module github.com/rancher/opni/dagger
+module github.com/open-panoptes/opni/dagger
 
 go 1.21
 

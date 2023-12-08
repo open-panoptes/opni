@@ -4,13 +4,13 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/internal/cortex/config/runtimeconfig/runtimeconfig.proto
+// source: github.com/open-panoptes/opni/internal/cortex/config/runtimeconfig/runtimeconfig.proto
 
 package runtimeconfig
 
 import (
-	_ "github.com/rancher/opni/internal/codegen/cli"
-	validation "github.com/rancher/opni/internal/cortex/config/validation"
+	_ "github.com/open-panoptes/opni/internal/codegen/cli"
+	validation "github.com/open-panoptes/opni/internal/cortex/config/validation"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

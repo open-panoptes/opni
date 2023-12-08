@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rancher/opni/infra/pkg/resources"
+	"github.com/open-panoptes/opni/infra/pkg/resources"
 
 	. "github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 

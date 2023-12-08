@@ -1,7 +1,7 @@
 package challenges
 
 import (
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 	"golang.org/x/crypto/blake2b"
 )
 

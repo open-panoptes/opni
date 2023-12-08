@@ -2,7 +2,7 @@ package main
 
 import (
 	//mage:import
-	"github.com/rancher/opni/magefiles/targets"
+	"github.com/open-panoptes/opni/magefiles/targets"
 )
 
 var Default = targets.Default

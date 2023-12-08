@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/internal/codegen/cli/cli.proto
+// source: github.com/open-panoptes/opni/internal/codegen/cli/cli.proto
 
 package cli
 
@@ -481,7 +481,7 @@ var file_github_com_rancher_opni_internal_codegen_cli_cli_proto_extTypes = []pro
 		Field:         25600,
 		Name:          "cli.generator",
 		Tag:           "bytes,25600,opt,name=generator",
-		Filename:      "github.com/rancher/opni/internal/codegen/cli/cli.proto",
+		Filename:      "github.com/open-panoptes/opni/internal/codegen/cli/cli.proto",
 	},
 	{
 		ExtendedType:  (*descriptorpb.FieldOptions)(nil),
@@ -489,7 +489,7 @@ var file_github_com_rancher_opni_internal_codegen_cli_cli_proto_extTypes = []pro
 		Field:         25601,
 		Name:          "cli.flag",
 		Tag:           "bytes,25601,opt,name=flag",
-		Filename:      "github.com/rancher/opni/internal/codegen/cli/cli.proto",
+		Filename:      "github.com/open-panoptes/opni/internal/codegen/cli/cli.proto",
 	},
 	{
 		ExtendedType:  (*descriptorpb.FieldOptions)(nil),
@@ -497,7 +497,7 @@ var file_github_com_rancher_opni_internal_codegen_cli_cli_proto_extTypes = []pro
 		Field:         25602,
 		Name:          "cli.flag_set",
 		Tag:           "bytes,25602,opt,name=flag_set",
-		Filename:      "github.com/rancher/opni/internal/codegen/cli/cli.proto",
+		Filename:      "github.com/open-panoptes/opni/internal/codegen/cli/cli.proto",
 	},
 	{
 		ExtendedType:  (*descriptorpb.ServiceOptions)(nil),
@@ -505,7 +505,7 @@ var file_github_com_rancher_opni_internal_codegen_cli_cli_proto_extTypes = []pro
 		Field:         25600,
 		Name:          "cli.command_group",
 		Tag:           "bytes,25600,opt,name=command_group",
-		Filename:      "github.com/rancher/opni/internal/codegen/cli/cli.proto",
+		Filename:      "github.com/open-panoptes/opni/internal/codegen/cli/cli.proto",
 	},
 	{
 		ExtendedType:  (*descriptorpb.MethodOptions)(nil),
@@ -513,7 +513,7 @@ var file_github_com_rancher_opni_internal_codegen_cli_cli_proto_extTypes = []pro
 		Field:         25600,
 		Name:          "cli.command",
 		Tag:           "bytes,25600,opt,name=command",
-		Filename:      "github.com/rancher/opni/internal/codegen/cli/cli.proto",
+		Filename:      "github.com/open-panoptes/opni/internal/codegen/cli/cli.proto",
 	},
 }
 

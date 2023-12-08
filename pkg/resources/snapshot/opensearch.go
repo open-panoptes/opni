@@ -3,10 +3,10 @@ package snapshot
 import (
 	"strings"
 
-	loggingv1beta1 "github.com/rancher/opni/apis/logging/v1beta1"
-	"github.com/rancher/opni/pkg/opensearch/certs"
-	osapi "github.com/rancher/opni/pkg/opensearch/opensearch/types"
-	opensearch "github.com/rancher/opni/pkg/opensearch/reconciler"
+	loggingv1beta1 "github.com/open-panoptes/opni/apis/logging/v1beta1"
+	"github.com/open-panoptes/opni/pkg/opensearch/certs"
+	osapi "github.com/open-panoptes/opni/pkg/opensearch/opensearch/types"
+	opensearch "github.com/open-panoptes/opni/pkg/opensearch/reconciler"
 	"k8s.io/client-go/util/retry"
 	opensearchv1 "opensearch.opster.io/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"

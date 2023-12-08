@@ -5,11 +5,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/alerting/client"
-	"github.com/rancher/opni/pkg/alerting/shared"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/plugins/driverutil"
-	"github.com/rancher/opni/plugins/alerting/pkg/alerting/drivers/alerting_manager"
+	"github.com/open-panoptes/opni/pkg/alerting/client"
+	"github.com/open-panoptes/opni/pkg/alerting/shared"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/plugins/driverutil"
+	"github.com/open-panoptes/opni/plugins/alerting/pkg/alerting/drivers/alerting_manager"
 )
 
 var _ = Describe("", Label("unit"), func() {

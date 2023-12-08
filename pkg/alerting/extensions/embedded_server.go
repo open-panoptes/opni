@@ -11,11 +11,11 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/rancher/opni/pkg/alerting/cache"
-	"github.com/rancher/opni/pkg/alerting/extensions/destination"
-	"github.com/rancher/opni/pkg/alerting/shared"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	"github.com/rancher/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/alerting/cache"
+	"github.com/open-panoptes/opni/pkg/alerting/extensions/destination"
+	"github.com/open-panoptes/opni/pkg/alerting/shared"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	"github.com/open-panoptes/opni/pkg/logger"
 	"log/slog"
 
 	// add profiles

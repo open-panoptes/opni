@@ -6,11 +6,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	mock_auth "github.com/rancher/opni/pkg/test/mock/auth"
-	mock_health "github.com/rancher/opni/pkg/test/mock/health"
+	mock_auth "github.com/open-panoptes/opni/pkg/test/mock/auth"
+	mock_health "github.com/open-panoptes/opni/pkg/test/mock/health"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/health"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/health"
 )
 
 var _ = Describe("Monitor", Label("unit"), func() {

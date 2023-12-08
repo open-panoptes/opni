@@ -7,9 +7,9 @@ import (
 	"github.com/jhump/protoreflect/desc"
 	"google.golang.org/grpc"
 
-	streamv1 "github.com/rancher/opni/pkg/apis/stream/v1"
-	"github.com/rancher/opni/pkg/plugins"
-	"github.com/rancher/opni/pkg/plugins/apis/apiextensions"
+	streamv1 "github.com/open-panoptes/opni/pkg/apis/stream/v1"
+	"github.com/open-panoptes/opni/pkg/plugins"
+	"github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions"
 )
 
 const (

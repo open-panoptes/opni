@@ -1,7 +1,7 @@
 import Vue, { reactive } from 'vue';
 import GlobalEventBus from '@pkg/opni/utils/GlobalEventBus';
 import { deleteCluster } from '@pkg/opni/utils/requests/management';
-import * as Core from '@pkg/opni/generated/github.com/rancher/opni/pkg/apis/core/v1/core_pb';
+import * as Core from '@pkg/opni/generated/github.com/open-panoptes/opni/pkg/apis/core/v1/core_pb';
 import { LABEL_KEYS } from './shared';
 import { Resource } from './Resource';
 import { TaskState, Capability } from './Capability';

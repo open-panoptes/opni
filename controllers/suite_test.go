@@ -35,16 +35,16 @@ import (
 	"github.com/kralicky/kmatch"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/apis"
-	"github.com/rancher/opni/controllers"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/resources/opnicluster"
-	"github.com/rancher/opni/pkg/resources/opniopensearch"
-	"github.com/rancher/opni/pkg/resources/preprocessor"
-	"github.com/rancher/opni/pkg/test/freeport"
-	_ "github.com/rancher/opni/pkg/test/setup"
-	"github.com/rancher/opni/pkg/test/testk8s"
-	opnimeta "github.com/rancher/opni/pkg/util/meta"
+	"github.com/open-panoptes/opni/apis"
+	"github.com/open-panoptes/opni/controllers"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/resources/opnicluster"
+	"github.com/open-panoptes/opni/pkg/resources/opniopensearch"
+	"github.com/open-panoptes/opni/pkg/resources/preprocessor"
+	"github.com/open-panoptes/opni/pkg/test/freeport"
+	_ "github.com/open-panoptes/opni/pkg/test/setup"
+	"github.com/open-panoptes/opni/pkg/test/testk8s"
+	opnimeta "github.com/open-panoptes/opni/pkg/util/meta"
 	"github.com/samber/lo"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -62,7 +62,7 @@ import (
 
 	"github.com/go-logr/logr"
 
-	aiv1beta1 "github.com/rancher/opni/apis/ai/v1beta1"
+	aiv1beta1 "github.com/open-panoptes/opni/apis/ai/v1beta1"
 	// +kubebuilder:scaffold:imports
 )
 

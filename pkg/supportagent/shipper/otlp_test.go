@@ -9,8 +9,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/supportagent/shipper"
-	"github.com/rancher/opni/pkg/test/testlog"
+	"github.com/open-panoptes/opni/pkg/supportagent/shipper"
+	"github.com/open-panoptes/opni/pkg/test/testlog"
 	collogspb "go.opentelemetry.io/proto/otlp/collector/logs/v1"
 	otlpcommonv1 "go.opentelemetry.io/proto/otlp/common/v1"
 	"google.golang.org/grpc"

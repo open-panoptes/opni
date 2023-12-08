@@ -2,13 +2,13 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/pkg/plugins/driverutil/types.proto
+// source: github.com/open-panoptes/opni/pkg/plugins/driverutil/types.proto
 
 package driverutil
 
 import (
-	_ "github.com/rancher/opni/internal/codegen/cli"
-	v1 "github.com/rancher/opni/pkg/apis/core/v1"
+	_ "github.com/open-panoptes/opni/internal/codegen/cli"
+	v1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

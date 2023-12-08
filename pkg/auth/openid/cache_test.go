@@ -7,11 +7,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/test/freeport"
-	"github.com/rancher/opni/pkg/test/testlog"
+	"github.com/open-panoptes/opni/pkg/test/freeport"
+	"github.com/open-panoptes/opni/pkg/test/testlog"
 	"go.uber.org/atomic"
 
-	"github.com/rancher/opni/pkg/auth/openid"
+	"github.com/open-panoptes/opni/pkg/auth/openid"
 )
 
 var _ = Describe("User Info Cache", Ordered, Label("unit"), func() {

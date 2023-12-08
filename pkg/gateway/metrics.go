@@ -3,10 +3,10 @@ package gateway
 import (
 	"net/http"
 
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rancher/opni/pkg/config/v1beta1"
 )
 
 type MetricsEndpointHandler struct {

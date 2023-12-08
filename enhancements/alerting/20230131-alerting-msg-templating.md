@@ -64,8 +64,8 @@ The templating system address the need to embed runtime or alarm specific inform
 
 ## Dependencies:
 
-- Improved management broadcast event watcher : https://github.com/rancher/opni/pull/969
-- Alerting Cluster as a messaging system : https://github.com/rancher/opni/pull/973
+- Improved management broadcast event watcher : https://github.com/open-panoptes/opni/pull/969
+- Alerting Cluster as a messaging system : https://github.com/open-panoptes/opni/pull/973
 
 ## Risks and contingencies:
 

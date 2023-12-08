@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/rancher/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/storage"
 	"github.com/samber/lo"
 	"github.com/ttacon/chalk"
 	"google.golang.org/grpc/codes"

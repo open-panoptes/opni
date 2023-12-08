@@ -2,19 +2,19 @@ syntax = "proto3";
 
 package cortexops;
 
-import "github.com/rancher/opni/internal/codegen/cli/cli.proto";
-import "github.com/rancher/opni/internal/cortex/config/compactor/compactor.proto";
-import "github.com/rancher/opni/internal/cortex/config/querier/querier.proto";
-import "github.com/rancher/opni/internal/cortex/config/runtimeconfig/runtimeconfig.proto";
-import "github.com/rancher/opni/internal/cortex/config/validation/limits.proto";
-import "github.com/rancher/opni/pkg/apis/core/v1/core.proto";
-import "github.com/rancher/opni/pkg/apis/storage/v1/storage.proto";
-import "github.com/rancher/opni/pkg/plugins/driverutil/types.proto";
+import "github.com/open-panoptes/opni/internal/codegen/cli/cli.proto";
+import "github.com/open-panoptes/opni/internal/cortex/config/compactor/compactor.proto";
+import "github.com/open-panoptes/opni/internal/cortex/config/querier/querier.proto";
+import "github.com/open-panoptes/opni/internal/cortex/config/runtimeconfig/runtimeconfig.proto";
+import "github.com/open-panoptes/opni/internal/cortex/config/validation/limits.proto";
+import "github.com/open-panoptes/opni/pkg/apis/core/v1/core.proto";
+import "github.com/open-panoptes/opni/pkg/apis/storage/v1/storage.proto";
+import "github.com/open-panoptes/opni/pkg/plugins/driverutil/types.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 
-option go_package = "github.com/rancher/opni/plugins/metrics/apis/cortexops";
+option go_package      = "github.com/open-panoptes/opni/plugins/metrics/apis/cortexops";
 option (cli.generator) = {
   generate:          true
   generate_deepcopy: true
@@ -160,7 +160,7 @@ service CortexOps {
   // contents are strictly informational.
   rpc Status(google.protobuf.Empty) returns (driverutil.InstallStatus) {
     option (cli.command) = {
-      use: "status";
+      use: "status"
     };
     option (google.api.http) = {
       get: "/status"
@@ -172,7 +172,7 @@ service CortexOps {
   // default configuration if none is explicitly set.
   rpc Install(google.protobuf.Empty) returns (google.protobuf.Empty) {
     option (cli.command) = {
-      use: "install";
+      use: "install"
     };
     option (google.api.http) = {
       post: "/install"
@@ -185,7 +185,7 @@ service CortexOps {
   // the state of the cluster after the call completes (regardless of success).
   rpc Uninstall(google.protobuf.Empty) returns (google.protobuf.Empty) {
     option (cli.command) = {
-      use: "uninstall";
+      use: "uninstall"
     };
     option (google.api.http) = {
       post: "/uninstall"
@@ -273,8 +273,8 @@ message CortexApplicationConfig {
       [type.googleapis.com/validation.Limits]: {
         // these are static overrides to the upstream defaults
         compactor_blocks_retention_period: {seconds: 2592000} /* 30 days */
-        ingestion_rate: 600000
-        ingestion_burst_size: 1000000
+        ingestion_rate:                    600000
+        ingestion_burst_size:              1000000
       }
     }
   }];

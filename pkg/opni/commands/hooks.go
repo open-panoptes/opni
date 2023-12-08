@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/rancher/opni/apis"
-	"github.com/rancher/opni/pkg/util/k8sutil"
+	"github.com/open-panoptes/opni/apis"
+	"github.com/open-panoptes/opni/pkg/util/k8sutil"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"

@@ -101,7 +101,7 @@ service PushNotificationService {
 message AgentNotification{
   // opaque id
   string id = 1;
-  // same format as the gateway notification from OEP https://github.com/rancher/opni/blob/main/enhancements/alerting/20230131-alerting-msg-templating.md
+  // same format as the gateway notification from OEP https://github.com/open-panoptes/opni/blob/main/enhancements/alerting/20230131-alerting-msg-templating.md
   Notification message = 2;
 }
 ```
@@ -138,7 +138,7 @@ N/A
 
 ## Dependencies:
 
-Implementation of [messaging system](https://github.com/rancher/opni/blob/main/enhancements/alerting/20230124-messaging-system.md)
+Implementation of [messaging system](https://github.com/open-panoptes/opni/blob/main/enhancements/alerting/20230124-messaging-system.md)
 
 ## Risks and contingencies:
 

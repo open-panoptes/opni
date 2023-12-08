@@ -4,7 +4,7 @@ import (
 	context "context"
 	"fmt"
 
-	driverutil "github.com/rancher/opni/pkg/plugins/driverutil"
+	driverutil "github.com/open-panoptes/opni/pkg/plugins/driverutil"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 

@@ -2,12 +2,12 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/pkg/plugins/apis/system/system.proto
+// source: github.com/open-panoptes/opni/pkg/plugins/apis/system/system.proto
 
 package system
 
 import (
-	_ "github.com/rancher/opni/pkg/apis/management/v1"
+	_ "github.com/open-panoptes/opni/pkg/apis/management/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"

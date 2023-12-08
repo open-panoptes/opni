@@ -10,7 +10,7 @@ import (
 	"text/template"
 
 	"github.com/lithammer/shortuuid"
-	"github.com/rancher/opni/pkg/validation"
+	"github.com/open-panoptes/opni/pkg/validation"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

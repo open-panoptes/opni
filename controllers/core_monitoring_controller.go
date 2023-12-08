@@ -14,9 +14,9 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/huandu/xstrings"
-	corev1beta1 "github.com/rancher/opni/apis/core/v1beta1"
-	"github.com/rancher/opni/pkg/resources/monitoring"
-	"github.com/rancher/opni/pkg/util/k8sutil"
+	corev1beta1 "github.com/open-panoptes/opni/apis/core/v1beta1"
+	"github.com/open-panoptes/opni/pkg/resources/monitoring"
+	"github.com/open-panoptes/opni/pkg/util/k8sutil"
 	"github.com/samber/lo"
 	"github.com/ttacon/chalk"
 	appsv1 "k8s.io/api/apps/v1"

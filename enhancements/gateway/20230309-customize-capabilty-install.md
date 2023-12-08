@@ -20,9 +20,9 @@ For example, to enable the user to choose from several node drivers when install
 
 ```protobuf
 syntax = "proto3";
-option go_package = "github.com/rancher/opni/plugins/metrics/pkg/apis/remoteread";
+option go_package = "github.com/open-panoptes/opni/plugins/metrics/pkg/apis/remoteread";
 
-import "github.com/rancher/opni/plugins/metrics/pkg/apis/node.proto";
+import "github.com/open-panoptes/opni/plugins/metrics/pkg/apis/node.proto";
 import "google/protobuf/empty.proto";
 
 service NodeConfiguration {

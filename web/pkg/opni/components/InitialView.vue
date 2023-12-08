@@ -4,7 +4,7 @@ import AsyncButton from '@shell/components/AsyncButton';
 import Loading from '@shell/components/Loading';
 import Wizard from '@shell/components/Wizard';
 
-const REPO = 'https://github.com/rancher/opni.git';
+const REPO = 'https://github.com/open-panoptes/opni.git';
 const REPO_ANNOTATION = 'catalog.cattle.io/ui-source-repo';
 const REPO_NAME = 'opni-repo';
 const CHART_NAME = 'opni';
@@ -37,23 +37,23 @@ export default {
   data() {
     const installSteps = [
       {
-        name:  'repo',
+        name: 'repo',
         label: 'Install Opni Repository',
         ready: false,
       },
       {
-        name:  'install',
+        name: 'install',
         label: 'Install Opni Chart',
         ready: false,
       },
     ];
 
     return {
-      allRepos:        null,
+      allRepos: null,
       controllerChart: null,
-      kubewardenRepo:  null,
-      install:         false,
-      apps:            null,
+      kubewardenRepo: null,
+      install: false,
+      apps: null,
 
       initStepIndex: 0,
       installSteps,
@@ -82,9 +82,9 @@ export default {
     async addRepository(btnCb) {
       try {
         const repoObj = await this.$store.dispatch('management/create', {
-          type:     CATALOG.CLUSTER_REPO,
+          type: CATALOG.CLUSTER_REPO,
           metadata: { name: REPO_NAME },
-          spec:     { gitBranch: 'charts-repo', gitRepo: REPO },
+          spec: { gitBranch: 'charts-repo', gitRepo: REPO },
         });
 
         await repoObj.save();
@@ -118,7 +118,7 @@ export default {
 
     async loadControllerChart() {
       await this.loadRepo();
-      if ( !this.repo ) {
+      if (!this.repo) {
         return;
       }
 
@@ -134,7 +134,7 @@ export default {
     },
 
     async chartRoute() {
-      if ( !this.controllerChart ) {
+      if (!this.controllerChart) {
         try {
           await this.loadControllerChart();
         } catch (e) {
@@ -149,7 +149,7 @@ export default {
 
     goToApps() {
       this.$router.replace({
-        name:   'c-cluster-product-resource',
+        name: 'c-cluster-product-resource',
         params: {
           cluster: 'local', product: 'apps', resource: 'catalog.cattle.io.app'
         }
@@ -164,10 +164,7 @@ export default {
   <div v-else class="container">
     <div v-if="!repo && !controllerChart && !install" class="title p-10 center">
       <h1 class="mb-20">
-        <img
-          src="../assets/images/opni-icon.svg"
-          height="64"
-        />
+        <img src="../assets/images/opni-icon.svg" height="64" />
         {{ t("opni.title") }}
       </h1>
       <div class="description">
@@ -178,19 +175,10 @@ export default {
       </button>
     </div>
 
-    <Wizard
-      v-else
-      ref="wizard"
-      :init-step-index="initStepIndex"
-      :steps="installSteps"
-      banner-title="Opni"
-      banner-title-subtext="Install"
-    >
+    <Wizard v-else ref="wizard" :init-step-index="initStepIndex" :steps="installSteps" banner-title="Opni"
+      banner-title-subtext="Install">
       <template #bannerTitleImage>
-        <img
-          src="../assets/images/opni-icon.svg"
-          height="64"
-        />
+        <img src="../assets/images/opni-icon.svg" height="64" />
       </template>
       <template #repo>
         <div class="mt-20 mb-20 center">
@@ -200,15 +188,8 @@ export default {
           <p>
             Install the Opni Repository by clicking the button below.
           </p>
-          <AsyncButton
-            class="mt-40"
-            mode="edit"
-            action-label="Install Repository"
-            waiting-label="Installing"
-            success-label="Installed"
-            error-label="Installation Failed"
-            @click="addRepository"
-          />
+          <AsyncButton class="mt-40" mode="edit" action-label="Install Repository" waiting-label="Installing"
+            success-label="Installed" error-label="Installation Failed" @click="addRepository" />
         </div>
       </template>
       <template #controlsContainer>
@@ -225,14 +206,8 @@ export default {
                 {{ t("opni.description") }}
               </p>
 
-              <AsyncButton
-                class="mt-40"
-                mode="edit"
-                action-label="Install Repository"
-                waiting-label="Installing"
-                success-label="Installed"
-                @click="addRepository"
-              />
+              <AsyncButton class="mt-40" mode="edit" action-label="Install Repository" waiting-label="Installing"
+                success-label="Installed" @click="addRepository" />
             </div>
           </div>
         </template>
@@ -244,17 +219,15 @@ export default {
             </h2>
             <div v-if="isChartPartlyInstalled">
               <p>
-                It looks like the Opni chart installation has already begun but hasn't finished yet.<br />You can take a look at the status of the installation <a href="#" @click.prevent="goToApps">here</a>.
+                It looks like the Opni chart installation has already begun but hasn't finished yet.<br />You can take a
+                look at the status of the installation <a href="#" @click.prevent="goToApps">here</a>.
               </p>
             </div>
             <div v-else>
               <p>
                 Install the Opni chart by clicking the button below.
               </p>
-              <button
-                class="btn role-primary mt-40"
-                @click.prevent="chartRoute"
-              >
+              <button class="btn role-primary mt-40" @click.prevent="chartRoute">
                 {{ t("opni.installChart") }}
               </button>
             </div>

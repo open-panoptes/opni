@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rancher/opni/apis"
-	"github.com/rancher/opni/pkg/oci"
-	"github.com/rancher/opni/pkg/versions"
+	"github.com/open-panoptes/opni/apis"
+	"github.com/open-panoptes/opni/pkg/oci"
+	"github.com/open-panoptes/opni/pkg/versions"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

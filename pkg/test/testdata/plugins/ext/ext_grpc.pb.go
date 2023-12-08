@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - ragu               v1.0.0
-// source: github.com/rancher/opni/pkg/test/testdata/plugins/ext/ext.proto
+// source: github.com/open-panoptes/opni/pkg/test/testdata/plugins/ext/ext.proto
 
 package ext
 
@@ -421,7 +421,7 @@ var Ext_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "github.com/rancher/opni/pkg/test/testdata/plugins/ext/ext.proto",
+	Metadata: "github.com/open-panoptes/opni/pkg/test/testdata/plugins/ext/ext.proto",
 }
 
 const (
@@ -511,5 +511,5 @@ var Ext2_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/rancher/opni/pkg/test/testdata/plugins/ext/ext.proto",
+	Metadata: "github.com/open-panoptes/opni/pkg/test/testdata/plugins/ext/ext.proto",
 }

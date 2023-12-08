@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gregjones/httpcache"
-	"github.com/rancher/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/storage"
 )
 
 // HttpCachingTransport

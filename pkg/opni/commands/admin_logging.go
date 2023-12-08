@@ -5,7 +5,7 @@ package commands
 import (
 	"fmt"
 
-	"github.com/rancher/opni/plugins/logging/apis/loggingadmin"
+	"github.com/open-panoptes/opni/plugins/logging/apis/loggingadmin"
 	"github.com/spf13/cobra"
 	"github.com/ttacon/chalk"
 	"google.golang.org/protobuf/types/known/emptypb"

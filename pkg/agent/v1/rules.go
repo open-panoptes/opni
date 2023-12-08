@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rancher/opni/apis"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/rules"
-	"github.com/rancher/opni/pkg/rules/prometheusrule"
-	"github.com/rancher/opni/pkg/util/k8sutil"
-	"github.com/rancher/opni/pkg/util/notifier"
-	"github.com/rancher/opni/plugins/metrics/apis/remotewrite"
+	"github.com/open-panoptes/opni/apis"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/rules"
+	"github.com/open-panoptes/opni/pkg/rules/prometheusrule"
+	"github.com/open-panoptes/opni/pkg/util/k8sutil"
+	"github.com/open-panoptes/opni/pkg/util/notifier"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/remotewrite"
 	"gopkg.in/yaml.v3"
 )
 

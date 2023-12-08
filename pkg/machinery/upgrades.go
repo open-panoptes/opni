@@ -3,9 +3,9 @@ package machinery
 import (
 	"errors"
 
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/oci"
-	"github.com/rancher/opni/pkg/update"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/oci"
+	"github.com/open-panoptes/opni/pkg/update"
 	"log/slog"
 )
 

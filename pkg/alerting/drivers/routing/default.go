@@ -6,13 +6,13 @@ import (
 
 	"slices"
 
+	"github.com/open-panoptes/opni/pkg/alerting/drivers/config"
+	"github.com/open-panoptes/opni/pkg/alerting/message"
+	"github.com/open-panoptes/opni/pkg/alerting/shared"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	"github.com/open-panoptes/opni/pkg/capabilities/wellknown"
 	"github.com/prometheus/alertmanager/pkg/labels"
 	"github.com/prometheus/common/model"
-	"github.com/rancher/opni/pkg/alerting/drivers/config"
-	"github.com/rancher/opni/pkg/alerting/message"
-	"github.com/rancher/opni/pkg/alerting/shared"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	"github.com/rancher/opni/pkg/capabilities/wellknown"
 	"github.com/samber/lo"
 )
 

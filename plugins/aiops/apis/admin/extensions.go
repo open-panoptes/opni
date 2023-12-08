@@ -1,7 +1,7 @@
 package admin
 
 import (
-	"github.com/rancher/opni/pkg/validation"
+	"github.com/open-panoptes/opni/pkg/validation"
 )
 
 func (a *AISettings) Validate() error {

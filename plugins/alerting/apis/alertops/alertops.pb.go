@@ -2,13 +2,13 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/plugins/alerting/apis/alertops/alertops.proto
+// source: github.com/open-panoptes/opni/plugins/alerting/apis/alertops/alertops.proto
 
 package alertops
 
 import (
-	v1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	_ "github.com/rancher/opni/pkg/apis/storage/v1"
+	v1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	_ "github.com/open-panoptes/opni/pkg/apis/storage/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"html/template"
 
-	"github.com/rancher/opni/pkg/resources"
-	opnimeta "github.com/rancher/opni/pkg/util/meta"
+	"github.com/open-panoptes/opni/pkg/resources"
+	opnimeta "github.com/open-panoptes/opni/pkg/util/meta"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,7 +22,7 @@ import (
 const (
 	configKey             = "config.yaml"
 	preprocessorVersion   = "v0.1.5-rc1-0.85.0"
-	preprocessorImageRepo = "ghcr.io/rancher-sandbox"
+	preprocessorImageRepo = "ghcr.io/open-panoptes"
 	preprocessorImage     = "opni-otel-collector"
 	otlpGRPCPort          = 4317
 )

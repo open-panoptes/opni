@@ -7,9 +7,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/storage"
-	"github.com/rancher/opni/pkg/storage/inmemory"
-	"github.com/rancher/opni/pkg/test/testutil"
+	"github.com/open-panoptes/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/storage/inmemory"
+	"github.com/open-panoptes/opni/pkg/test/testutil"
 	"github.com/samber/lo"
 	"google.golang.org/grpc/codes"
 )

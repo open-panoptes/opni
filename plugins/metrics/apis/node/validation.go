@@ -1,8 +1,8 @@
 package node
 
 import (
+	"github.com/open-panoptes/opni/pkg/validation"
 	"github.com/prometheus/common/model"
-	"github.com/rancher/opni/pkg/validation"
 )
 
 func (s *SyncRequest) Validate() error {

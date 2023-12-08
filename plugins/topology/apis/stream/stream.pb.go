@@ -2,12 +2,12 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/plugins/topology/apis/stream/stream.proto
+// source: github.com/open-panoptes/opni/plugins/topology/apis/stream/stream.proto
 
 package stream
 
 import (
-	v1 "github.com/rancher/opni/pkg/apis/core/v1"
+	v1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"

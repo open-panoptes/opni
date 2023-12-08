@@ -6,12 +6,12 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	bootstrapv2 "github.com/rancher/opni/pkg/apis/bootstrap/v2"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/bootstrap"
-	"github.com/rancher/opni/pkg/test"
-	mock_ident "github.com/rancher/opni/pkg/test/mock/ident"
+	bootstrapv2 "github.com/open-panoptes/opni/pkg/apis/bootstrap/v2"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/bootstrap"
+	"github.com/open-panoptes/opni/pkg/test"
+	mock_ident "github.com/open-panoptes/opni/pkg/test/mock/ident"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 

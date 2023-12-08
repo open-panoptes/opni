@@ -13,15 +13,16 @@ import (
 	"fmt"
 	"os"
 
+	"log/slog"
+
 	"github.com/nats-io/nats.go"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/slo/shared"
-	"github.com/rancher/opni/pkg/topology/store"
-	"github.com/rancher/opni/pkg/util"
-	"github.com/rancher/opni/plugins/topology/apis/stream"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/slo/shared"
+	"github.com/open-panoptes/opni/pkg/topology/store"
+	"github.com/open-panoptes/opni/pkg/util"
+	"github.com/open-panoptes/opni/plugins/topology/apis/stream"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"log/slog"
 )
 
 type TopologyStreamWriteConfig struct {

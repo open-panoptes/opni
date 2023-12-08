@@ -9,7 +9,7 @@ Implements format from
 import (
 	"time"
 
-	"github.com/rancher/opni/pkg/alerting/message"
+	"github.com/open-panoptes/opni/pkg/alerting/message"
 	"github.com/samber/lo"
 )
 

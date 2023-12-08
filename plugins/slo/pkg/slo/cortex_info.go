@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/rancher/opni/plugins/metrics/apis/cortexadmin"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/cortexadmin"
 
+	"github.com/open-panoptes/opni/pkg/metrics/compat"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/rulefmt"
-	"github.com/rancher/opni/pkg/metrics/compat"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"

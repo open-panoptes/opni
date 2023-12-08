@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/plugins/metrics/apis/cortexadmin/status.proto
+// source: github.com/open-panoptes/opni/plugins/metrics/apis/cortexadmin/status.proto
 
 package cortexadmin
 

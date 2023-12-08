@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - ragu               v1.0.0
-// source: github.com/rancher/opni/pkg/apis/bootstrap/v1/bootstrap.proto
+// source: github.com/open-panoptes/opni/pkg/apis/bootstrap/v1/bootstrap.proto
 
 package v1
 
@@ -142,5 +142,5 @@ var Bootstrap_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/rancher/opni/pkg/apis/bootstrap/v1/bootstrap.proto",
+	Metadata: "github.com/open-panoptes/opni/pkg/apis/bootstrap/v1/bootstrap.proto",
 }

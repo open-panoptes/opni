@@ -3,15 +3,15 @@ package test
 import (
 	"time"
 
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	v1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/plugins/meta"
-	"github.com/rancher/opni/pkg/test"
-	"github.com/rancher/opni/plugins/alerting/pkg/agent"
-	"github.com/rancher/opni/plugins/alerting/pkg/alerting"
-	"github.com/rancher/opni/plugins/alerting/pkg/alerting/alarms/v1"
-	endpointv1 "github.com/rancher/opni/plugins/alerting/pkg/alerting/endpoints/v1"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	v1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/plugins/meta"
+	"github.com/open-panoptes/opni/pkg/test"
+	"github.com/open-panoptes/opni/plugins/alerting/pkg/agent"
+	"github.com/open-panoptes/opni/plugins/alerting/pkg/alerting"
+	"github.com/open-panoptes/opni/plugins/alerting/pkg/alerting/alarms/v1"
+	endpointv1 "github.com/open-panoptes/opni/plugins/alerting/pkg/alerting/endpoints/v1"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 

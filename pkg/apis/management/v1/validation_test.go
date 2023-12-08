@@ -5,9 +5,9 @@ import (
 	. "github.com/onsi/gomega"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	v1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/validation"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	v1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/validation"
 )
 
 func validateEntry[T validation.Validator](in T, expected error) {

@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/magefile/mage/mage"
-	"github.com/rancher/opni/magefiles/targets"
+	"github.com/open-panoptes/opni/magefiles/targets"
 	"go.opentelemetry.io/otel/trace"
 
 	"go.opentelemetry.io/otel/exporters/jaeger"

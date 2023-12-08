@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime/debug"
 
-	"github.com/rancher/opni/pkg/versions"
+	"github.com/open-panoptes/opni/pkg/versions"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 )

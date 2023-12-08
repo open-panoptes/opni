@@ -1,7 +1,7 @@
 package v1
 
 import (
-	storagev1 "github.com/rancher/opni/pkg/apis/storage/v1"
+	storagev1 "github.com/open-panoptes/opni/pkg/apis/storage/v1"
 )
 
 // TODO : new proto config logic will abstract away these method implementations

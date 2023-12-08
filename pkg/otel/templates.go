@@ -5,8 +5,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/open-panoptes/opni/pkg/util"
 	"github.com/prometheus/common/model"
-	"github.com/rancher/opni/pkg/util"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 

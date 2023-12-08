@@ -8,7 +8,7 @@ import (
 	"log/slog"
 
 	"github.com/cisco-open/k8s-objectmatcher/patch"
-	opnilogger "github.com/rancher/opni/pkg/logger"
+	opnilogger "github.com/open-panoptes/opni/pkg/logger"
 	"github.com/samber/lo"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

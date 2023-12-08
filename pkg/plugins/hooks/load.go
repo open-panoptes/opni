@@ -2,7 +2,7 @@ package hooks
 
 import (
 	gsync "github.com/kralicky/gpkg/sync"
-	"github.com/rancher/opni/pkg/plugins/meta"
+	"github.com/open-panoptes/opni/pkg/plugins/meta"
 	"google.golang.org/grpc"
 )
 

@@ -1,8 +1,8 @@
 package patch
 
 import (
+	controlv1 "github.com/open-panoptes/opni/pkg/apis/control/v1"
 	"github.com/prometheus/client_golang/prometheus"
-	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
 )
 
 type Cache interface {

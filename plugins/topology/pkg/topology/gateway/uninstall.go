@@ -6,13 +6,13 @@ import (
 
 	"log/slog"
 
-	"github.com/rancher/opni/pkg/capabilities"
-	"github.com/rancher/opni/pkg/capabilities/wellknown"
-	"github.com/rancher/opni/pkg/machinery/uninstall"
-	"github.com/rancher/opni/pkg/storage"
-	"github.com/rancher/opni/pkg/task"
+	"github.com/open-panoptes/opni/pkg/capabilities"
+	"github.com/open-panoptes/opni/pkg/capabilities/wellknown"
+	"github.com/open-panoptes/opni/pkg/machinery/uninstall"
+	"github.com/open-panoptes/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/task"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 )
 
 type TopologyUninstallTaskRunner struct {

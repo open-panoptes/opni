@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - ragu               v1.0.0
-// source: github.com/rancher/opni/pkg/plugins/apis/apiextensions/apiextensions.proto
+// source: github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions/apiextensions.proto
 
 package apiextensions
 
@@ -109,7 +109,7 @@ var ManagementAPIExtension_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/rancher/opni/pkg/plugins/apis/apiextensions/apiextensions.proto",
+	Metadata: "github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions/apiextensions.proto",
 }
 
 const (
@@ -199,7 +199,7 @@ var HTTPAPIExtension_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/rancher/opni/pkg/plugins/apis/apiextensions/apiextensions.proto",
+	Metadata: "github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions/apiextensions.proto",
 }
 
 const (
@@ -321,7 +321,7 @@ var StreamAPIExtension_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "github.com/rancher/opni/pkg/plugins/apis/apiextensions/apiextensions.proto",
+	Metadata: "github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions/apiextensions.proto",
 }
 
 const (
@@ -411,5 +411,5 @@ var UnaryAPIExtension_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/rancher/opni/pkg/plugins/apis/apiextensions/apiextensions.proto",
+	Metadata: "github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions/apiextensions.proto",
 }

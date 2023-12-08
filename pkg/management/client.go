@@ -3,7 +3,7 @@ package management
 import (
 	"context"
 
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

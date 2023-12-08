@@ -12,22 +12,22 @@ import (
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/alerting/drivers/config"
-	"github.com/rancher/opni/pkg/alerting/interfaces"
-	"github.com/rancher/opni/pkg/alerting/templates"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/alerting/drivers/config"
+	"github.com/open-panoptes/opni/pkg/alerting/interfaces"
+	"github.com/open-panoptes/opni/pkg/alerting/templates"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/util"
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"text/template"
 
+	"github.com/open-panoptes/opni/pkg/alerting/message"
 	amtemplate "github.com/prometheus/alertmanager/template"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/promql"
 	promtemplate "github.com/prometheus/prometheus/template"
-	"github.com/rancher/opni/pkg/alerting/message"
 )
 
 func init() {

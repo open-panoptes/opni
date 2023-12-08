@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/util"
 	"github.com/tidwall/gjson"
 )
 

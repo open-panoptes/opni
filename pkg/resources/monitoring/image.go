@@ -1,8 +1,8 @@
 package monitoring
 
 import (
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/resources"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/resources"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

@@ -1,7 +1,7 @@
 package node
 
 import (
-	"github.com/rancher/opni/pkg/otel"
+	"github.com/open-panoptes/opni/pkg/otel"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )

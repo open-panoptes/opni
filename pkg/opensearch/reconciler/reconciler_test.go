@@ -11,12 +11,12 @@ import (
 	"github.com/jarcoal/httpmock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/open-panoptes/opni/pkg/opensearch/dashboards"
+	"github.com/open-panoptes/opni/pkg/opensearch/opensearch"
+	"github.com/open-panoptes/opni/pkg/opensearch/opensearch/errors"
+	"github.com/open-panoptes/opni/pkg/opensearch/opensearch/types"
+	"github.com/open-panoptes/opni/pkg/opensearch/reconciler"
 	"github.com/opensearch-project/opensearch-go/opensearchapi"
-	"github.com/rancher/opni/pkg/opensearch/dashboards"
-	"github.com/rancher/opni/pkg/opensearch/opensearch"
-	"github.com/rancher/opni/pkg/opensearch/opensearch/errors"
-	"github.com/rancher/opni/pkg/opensearch/opensearch/types"
-	"github.com/rancher/opni/pkg/opensearch/reconciler"
 	"github.com/samber/lo"
 )
 

@@ -3,13 +3,13 @@ package ecdh_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	bootstrapv2 "github.com/rancher/opni/pkg/apis/bootstrap/v2"
+	bootstrapv2 "github.com/open-panoptes/opni/pkg/apis/bootstrap/v2"
 
 	cryptoecdh "crypto/ecdh"
 	"crypto/rand"
 
-	"github.com/rancher/opni/pkg/ecdh"
-	"github.com/rancher/opni/pkg/keyring"
+	"github.com/open-panoptes/opni/pkg/ecdh"
+	"github.com/open-panoptes/opni/pkg/keyring"
 )
 
 var _ = Describe("ECDH", Label("unit"), func() {

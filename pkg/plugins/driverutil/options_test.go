@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/samber/lo"
 
-	"github.com/rancher/opni/pkg/plugins/driverutil"
+	"github.com/open-panoptes/opni/pkg/plugins/driverutil"
 )
 
 var _ = Describe("Options", Label("unit"), func() {

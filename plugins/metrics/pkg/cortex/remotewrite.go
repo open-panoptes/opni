@@ -7,14 +7,16 @@ import (
 	"net/http"
 	"strings"
 
+	"log/slog"
+
 	"github.com/cortexproject/cortex/pkg/cortexpb"
-	"github.com/rancher/opni/pkg/auth/cluster"
-	"github.com/rancher/opni/pkg/auth/session"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/metrics"
-	"github.com/rancher/opni/pkg/util"
-	"github.com/rancher/opni/plugins/metrics/apis/remotewrite"
-	metricsutil "github.com/rancher/opni/plugins/metrics/pkg/util"
+	"github.com/open-panoptes/opni/pkg/auth/cluster"
+	"github.com/open-panoptes/opni/pkg/auth/session"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/metrics"
+	"github.com/open-panoptes/opni/pkg/util"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/remotewrite"
+	metricsutil "github.com/open-panoptes/opni/plugins/metrics/pkg/util"
 	"github.com/weaveworks/common/user"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -23,7 +25,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"log/slog"
 )
 
 type RemoteWriteForwarder struct {

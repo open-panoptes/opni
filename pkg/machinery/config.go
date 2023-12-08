@@ -1,8 +1,8 @@
 package machinery
 
 import (
-	"github.com/rancher/opni/pkg/config"
-	"github.com/rancher/opni/pkg/config/meta"
+	"github.com/open-panoptes/opni/pkg/config"
+	"github.com/open-panoptes/opni/pkg/config/meta"
 )
 
 type JsonDocument interface {

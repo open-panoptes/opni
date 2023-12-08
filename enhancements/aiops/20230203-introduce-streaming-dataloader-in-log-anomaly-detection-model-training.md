@@ -22,14 +22,14 @@ When Opni's user launches a workload log anomaly detection training job with hug
 * Function downloading data from Opensearch. The input is a query `q` from training controller. The function will download data from Opensearch with this query `q` and will return a generator. It yields each scroll(10000 logs) of the search results.
 * Data-preprocessing function: 
     - input: a query `q` from training controller, this function then calls the function downloading data from Opensearch with this query `q` and iterables over each scroll of logs.
-    - step1: Masking. Apply [Opni's pre-defined masking rules](https://github.com/rancher/opni-inference-service/blob/main/opni_inference_service/models/opnilog/masker.py) to logs.
+    - step1: Masking. Apply [Opni's pre-defined masking rules](https://github.com/open-panoptes/opni-inference-service/blob/main/opni_inference_service/models/opnilog/masker.py) to logs.
     - step2: Weighted random sampling. Logs typically contain lots of duplicates, so it is sufficient to train a model with a proper sampled subset of training dataset. At this moment, the amount of training data size after this sampling method is a fixed value `192000`, and each scroll (10000) of logs will be sampled accordingly. For example, assume there will be 3840000 logs downloaded from Opensearch in total, then each scroll (10000) of logs will be sampled from 10000 to 500 logs.
     - output: Yields each masked sampled log.
 * Streaming data-loader and IterableDataset:
     - IterableDataset. A custom implementation of IterableDataset similar to [`IterableDataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.IterableDataset). An `__iter__()` function will be implemented, it takes the `data-preprocessing function` as input, defines how each worker should provide an iterator to the streaming dataloader. For instance, if there are 3 queries in the payload from training-controller, then there will 3 workers spawned, each takes 1 query as input to its own copy of `data-preprocessing function`.
     - Streaming data-loader: takes the custom IterableDataset as input, serves as the input of model-training. Number of workers is equal to the number of queries from the payload from training-controller.
 * Tokenize and padding batches. 
-    - Tokenization. nothing new but just the [tokenization method](https://github.com/rancher/opni-inference-service/blob/main/opni_inference_service/models/opnilog/opnilog_tokenizer.py). For each log as input, tokenize the log to a lost of tokens, map each token to an integer(its `index`), return the list of token-indices.
+    - Tokenization. nothing new but just the [tokenization method](https://github.com/open-panoptes/opni-inference-service/blob/main/opni_inference_service/models/opnilog/opnilog_tokenizer.py). For each log as input, tokenize the log to a lost of tokens, map each token to an integer(its `index`), return the list of token-indices.
     - Padding. For each list of token-indices, add padding token-index to make the number of token-index in the list to a fixed value, the default value of it is `64`. This list will then be converted to a pytorch tensor and returned.
 
 

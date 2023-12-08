@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
+	controlv1 "github.com/open-panoptes/opni/pkg/apis/control/v1"
+	"github.com/open-panoptes/opni/pkg/urn"
 	"github.com/prometheus/client_golang/prometheus"
-	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
-	"github.com/rancher/opni/pkg/urn"
 	"google.golang.org/grpc"
 )
 

@@ -6,12 +6,12 @@ import (
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
-	"github.com/rancher/opni/pkg/plugins"
-	"github.com/rancher/opni/pkg/test/memfs"
-	"github.com/rancher/opni/pkg/test/testlog"
-	"github.com/rancher/opni/pkg/update/patch"
-	"github.com/rancher/opni/pkg/util"
+	controlv1 "github.com/open-panoptes/opni/pkg/apis/control/v1"
+	"github.com/open-panoptes/opni/pkg/plugins"
+	"github.com/open-panoptes/opni/pkg/test/memfs"
+	"github.com/open-panoptes/opni/pkg/test/testlog"
+	"github.com/open-panoptes/opni/pkg/update/patch"
+	"github.com/open-panoptes/opni/pkg/util"
 	"github.com/spf13/afero"
 )
 

@@ -11,7 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
-	"github.com/rancher/opni/plugins/metrics/apis/remoteread"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/remoteread"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

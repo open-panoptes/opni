@@ -6,7 +6,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	utilerrors "github.com/rancher/opni/pkg/util/errors"
+	utilerrors "github.com/open-panoptes/opni/pkg/util/errors"
 	"google.golang.org/grpc/codes"
 )
 

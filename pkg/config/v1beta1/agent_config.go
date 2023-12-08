@@ -1,8 +1,8 @@
 package v1beta1
 
 import (
-	"github.com/rancher/opni/pkg/config/meta"
-	"github.com/rancher/opni/pkg/tokens"
+	"github.com/open-panoptes/opni/pkg/config/meta"
+	"github.com/open-panoptes/opni/pkg/tokens"
 )
 
 type AgentConfig struct {

@@ -8,13 +8,13 @@ import (
 	"context"
 	"encoding/json"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/plugins/topology/apis/orchestrator"
-	"github.com/rancher/opni/plugins/topology/apis/representation"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/plugins/topology/apis/orchestrator"
+	"github.com/open-panoptes/opni/plugins/topology/apis/representation"
 	kgraph "github.com/steveteuber/kubectl-graph/pkg/graph"
 
-	"github.com/rancher/opni/pkg/topology/graph"
-	"github.com/rancher/opni/pkg/topology/store"
+	"github.com/open-panoptes/opni/pkg/topology/graph"
+	"github.com/open-panoptes/opni/pkg/topology/store"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"

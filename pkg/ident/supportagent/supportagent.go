@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/rancher/opni/pkg/config"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/ident"
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/config"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/ident"
+	"github.com/open-panoptes/opni/pkg/util"
 )
 
 type supportAgentProvider struct {

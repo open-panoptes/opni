@@ -13,14 +13,14 @@ import (
 
 	"slices"
 
-	opnicorev1beta1 "github.com/rancher/opni/apis/core/v1beta1"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/keyring/ephemeral"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/machinery"
-	"github.com/rancher/opni/pkg/opni/cliutil"
-	"github.com/rancher/opni/pkg/util"
+	opnicorev1beta1 "github.com/open-panoptes/opni/apis/core/v1beta1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/keyring/ephemeral"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/machinery"
+	"github.com/open-panoptes/opni/pkg/opni/cliutil"
+	"github.com/open-panoptes/opni/pkg/util"
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/types/known/emptypb"
 )

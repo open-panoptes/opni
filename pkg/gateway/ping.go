@@ -3,7 +3,7 @@ package gateway
 import (
 	"context"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 

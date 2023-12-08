@@ -5,8 +5,8 @@ import (
 
 	"log/slog"
 
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/plugins/meta"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/plugins/meta"
 	"github.com/spf13/afero"
 )
 

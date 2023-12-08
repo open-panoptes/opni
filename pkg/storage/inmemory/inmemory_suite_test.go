@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/rancher/opni/pkg/storage"
-	. "github.com/rancher/opni/pkg/test/conformance/storage"
-	_ "github.com/rancher/opni/pkg/test/setup"
-	"github.com/rancher/opni/pkg/util/future"
+	"github.com/open-panoptes/opni/pkg/storage"
+	. "github.com/open-panoptes/opni/pkg/test/conformance/storage"
+	_ "github.com/open-panoptes/opni/pkg/test/setup"
+	"github.com/open-panoptes/opni/pkg/util/future"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/storage/inmemory"
+	"github.com/open-panoptes/opni/pkg/storage/inmemory"
 )
 
 func TestInmemory(t *testing.T) {
