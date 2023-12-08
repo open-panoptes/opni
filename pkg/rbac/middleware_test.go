@@ -14,10 +14,10 @@ import (
 	"go.uber.org/atomic"
 	"go.uber.org/mock/gomock"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/rbac"
-	mock_rbac "github.com/rancher/opni/pkg/test/mock/rbac"
-	"github.com/rancher/opni/pkg/util"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/rbac"
+	mock_rbac "github.com/open-panoptes/opni/pkg/test/mock/rbac"
+	"github.com/open-panoptes/opni/pkg/util"
 )
 
 var testUsers = map[string][]string{

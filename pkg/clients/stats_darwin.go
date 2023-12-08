@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/util"
 	"golang.org/x/sys/unix"
 )
 

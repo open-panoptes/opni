@@ -4,9 +4,9 @@ import (
 	"context"
 	"os"
 
-	opnicorev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/logger"
+	opnicorev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/logger"
 )
 
 func (b *LoggingBackend) updateClusterMetadata(ctx context.Context, event *managementv1.WatchEvent) error {

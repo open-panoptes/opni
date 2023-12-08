@@ -5,10 +5,10 @@ package controllers
 import (
 	"context"
 
-	loggingv1beta1 "github.com/rancher/opni/apis/logging/v1beta1"
-	"github.com/rancher/opni/pkg/resources"
-	"github.com/rancher/opni/pkg/resources/preprocessor"
-	"github.com/rancher/opni/pkg/util/k8sutil"
+	loggingv1beta1 "github.com/open-panoptes/opni/apis/logging/v1beta1"
+	"github.com/open-panoptes/opni/pkg/resources"
+	"github.com/open-panoptes/opni/pkg/resources/preprocessor"
+	"github.com/open-panoptes/opni/pkg/util/k8sutil"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	cfgv1beta1 "github.com/rancher/opni/pkg/config/v1beta1"
+	cfgv1beta1 "github.com/open-panoptes/opni/pkg/config/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/validation/field"

@@ -3,9 +3,9 @@ package mock_auth
 import (
 	"context"
 
-	"github.com/rancher/opni/pkg/auth/challenges"
-	"github.com/rancher/opni/pkg/auth/cluster"
-	"github.com/rancher/opni/pkg/util/streams"
+	"github.com/open-panoptes/opni/pkg/auth/challenges"
+	"github.com/open-panoptes/opni/pkg/auth/cluster"
+	"github.com/open-panoptes/opni/pkg/util/streams"
 	"google.golang.org/grpc/metadata"
 )
 

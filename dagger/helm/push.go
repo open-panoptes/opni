@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 
 	"dagger.io/dagger"
-	"github.com/rancher/opni/dagger/config"
-	"github.com/rancher/opni/dagger/images"
-	"github.com/rancher/opni/pkg/oci"
+	"github.com/open-panoptes/opni/dagger/config"
+	"github.com/open-panoptes/opni/dagger/images"
+	"github.com/open-panoptes/opni/pkg/oci"
 )
 
 type PushOpts struct {

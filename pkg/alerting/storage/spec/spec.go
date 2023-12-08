@@ -3,10 +3,10 @@ package spec
 import (
 	"context"
 
-	"github.com/rancher/opni/pkg/alerting/drivers/routing"
-	"github.com/rancher/opni/pkg/alerting/interfaces"
-	"github.com/rancher/opni/pkg/alerting/storage/opts"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
+	"github.com/open-panoptes/opni/pkg/alerting/drivers/routing"
+	"github.com/open-panoptes/opni/pkg/alerting/interfaces"
+	"github.com/open-panoptes/opni/pkg/alerting/storage/opts"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

@@ -3,14 +3,14 @@ package management_test
 import (
 	"context"
 
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/capabilities"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/management"
-	"github.com/rancher/opni/pkg/plugins"
-	mock_capability "github.com/rancher/opni/pkg/test/mock/capability"
-	"github.com/rancher/opni/pkg/test/testlog"
-	"github.com/rancher/opni/pkg/util"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/capabilities"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/management"
+	"github.com/open-panoptes/opni/pkg/plugins"
+	mock_capability "github.com/open-panoptes/opni/pkg/test/mock/capability"
+	"github.com/open-panoptes/opni/pkg/test/testlog"
+	"github.com/open-panoptes/opni/pkg/util"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	. "github.com/onsi/ginkgo/v2"

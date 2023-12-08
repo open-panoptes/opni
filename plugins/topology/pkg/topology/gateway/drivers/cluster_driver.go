@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sync"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/plugins/topology/apis/orchestrator"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/plugins/topology/apis/orchestrator"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 

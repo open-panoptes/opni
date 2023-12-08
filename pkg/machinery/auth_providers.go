@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/rancher/opni/pkg/auth"
-	"github.com/rancher/opni/pkg/auth/noauth"
-	"github.com/rancher/opni/pkg/auth/openid"
-	"github.com/rancher/opni/pkg/auth/test"
-	"github.com/rancher/opni/pkg/config/meta"
-	"github.com/rancher/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/auth"
+	"github.com/open-panoptes/opni/pkg/auth/noauth"
+	"github.com/open-panoptes/opni/pkg/auth/openid"
+	"github.com/open-panoptes/opni/pkg/auth/test"
+	"github.com/open-panoptes/opni/pkg/config/meta"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
 )
 
 func LoadAuthProviders(ctx context.Context, objects meta.ObjectList) map[string]auth.Middleware {

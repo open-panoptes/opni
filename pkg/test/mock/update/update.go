@@ -9,8 +9,8 @@ import (
 	reflect "reflect"
 
 	prometheus "github.com/prometheus/client_golang/prometheus"
-	v1 "github.com/rancher/opni/pkg/apis/control/v1"
-	urn "github.com/rancher/opni/pkg/urn"
+	v1 "github.com/open-panoptes/opni/pkg/apis/control/v1"
+	urn "github.com/open-panoptes/opni/pkg/urn"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
 )

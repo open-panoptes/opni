@@ -12,7 +12,7 @@ import (
 	"github.com/iancoleman/strcase"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/builder"
-	"github.com/rancher/opni/internal/codegen/cli"
+	"github.com/open-panoptes/opni/internal/codegen/cli"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/runtime/protoimpl"
 	"google.golang.org/protobuf/types/descriptorpb"

@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/rancher/opni/pkg/plugins"
-	"github.com/rancher/opni/pkg/plugins/meta"
-	_ "github.com/rancher/opni/pkg/storage/etcd"
-	_ "github.com/rancher/opni/pkg/storage/jetstream"
-	"github.com/rancher/opni/plugins/example/pkg/example"
+	"github.com/open-panoptes/opni/pkg/plugins"
+	"github.com/open-panoptes/opni/pkg/plugins/meta"
+	_ "github.com/open-panoptes/opni/pkg/storage/etcd"
+	_ "github.com/open-panoptes/opni/pkg/storage/jetstream"
+	"github.com/open-panoptes/opni/plugins/example/pkg/example"
 )
 
 func main() {

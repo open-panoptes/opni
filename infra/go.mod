@@ -1,4 +1,4 @@
-module github.com/rancher/opni/infra
+module github.com/open-panoptes/opni/infra
 
 go 1.21
 

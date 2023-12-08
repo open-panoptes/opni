@@ -17,10 +17,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/rancher/opni/pkg/storage"
-	"github.com/rancher/opni/pkg/test/testutil"
-	"github.com/rancher/opni/pkg/util"
-	"github.com/rancher/opni/pkg/util/future"
+	"github.com/open-panoptes/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/test/testutil"
+	"github.com/open-panoptes/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/util/future"
 )
 
 func NewBytes(seed ...int64) []byte {

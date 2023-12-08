@@ -4,12 +4,12 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/internal/cortex/config/validation/limits.proto
+// source: github.com/open-panoptes/opni/internal/cortex/config/validation/limits.proto
 
 package validation
 
 import (
-	_ "github.com/rancher/opni/internal/codegen/cli"
+	_ "github.com/open-panoptes/opni/internal/codegen/cli"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	durationpb "google.golang.org/protobuf/types/known/durationpb"

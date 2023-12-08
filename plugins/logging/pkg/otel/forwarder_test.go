@@ -4,9 +4,16 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
+	"net/http"
+	"os"
+	"path"
+	"text/template"
+	"time"
+
 	"github.com/google/uuid"
-	"github.com/rancher/opni/pkg/test"
-	"github.com/rancher/opni/plugins/logging/pkg/otel"
+	"github.com/open-panoptes/opni/pkg/test"
+	"github.com/open-panoptes/opni/plugins/logging/pkg/otel"
 	"github.com/samber/lo"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/pdata/ptrace/ptraceotlp"
@@ -15,17 +22,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
-	"net"
-	"net/http"
-	"os"
-	"path"
-	"text/template"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/test/freeport"
-	"github.com/rancher/opni/pkg/test/testdata"
+	"github.com/open-panoptes/opni/pkg/test/freeport"
+	"github.com/open-panoptes/opni/pkg/test/testdata"
 )
 
 // aggregatorConfig is used to create the OTEL Collector that receives by OTLP

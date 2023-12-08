@@ -2,13 +2,13 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - ragu               v1.0.0
-// source: github.com/rancher/opni/plugins/aiops/apis/modeltraining/modeltraining.proto
+// source: github.com/open-panoptes/opni/plugins/aiops/apis/modeltraining/modeltraining.proto
 
 package modeltraining
 
 import (
 	context "context"
-	v1 "github.com/rancher/opni/pkg/apis/core/v1"
+	v1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -292,5 +292,5 @@ var ModelTraining_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/rancher/opni/plugins/aiops/apis/modeltraining/modeltraining.proto",
+	Metadata: "github.com/open-panoptes/opni/plugins/aiops/apis/modeltraining/modeltraining.proto",
 }

@@ -8,7 +8,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/auth/openid"
+	"github.com/open-panoptes/opni/pkg/auth/openid"
 	"github.com/samber/lo"
 )
 

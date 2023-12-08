@@ -13,9 +13,9 @@ import (
 	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/reflect/protopath"
 
-	storagev1 "github.com/rancher/opni/pkg/apis/storage/v1"
-	"github.com/rancher/opni/pkg/plugins/driverutil"
-	"github.com/rancher/opni/plugins/metrics/apis/cortexops"
+	storagev1 "github.com/open-panoptes/opni/pkg/apis/storage/v1"
+	"github.com/open-panoptes/opni/pkg/plugins/driverutil"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/cortexops"
 )
 
 type errLogger struct {

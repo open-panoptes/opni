@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/jarcoal/httpmock"
-	"github.com/rancher/opni/pkg/opensearch/certs"
+	"github.com/open-panoptes/opni/pkg/opensearch/certs"
 )
 
 const (

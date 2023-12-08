@@ -7,8 +7,8 @@ import (
 
 	"slices"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/plugins/metrics/apis/remoteread"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/remoteread"
 	"github.com/spf13/cobra"
 )
 

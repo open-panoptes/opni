@@ -3,7 +3,7 @@ package config
 import (
 	"errors"
 
-	"github.com/rancher/opni/pkg/config/meta"
+	"github.com/open-panoptes/opni/pkg/config/meta"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

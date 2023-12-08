@@ -31,14 +31,14 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/plugins"
-	"github.com/rancher/opni/pkg/plugins/apis/apiextensions"
-	"github.com/rancher/opni/pkg/plugins/hooks"
-	"github.com/rancher/opni/pkg/plugins/meta"
-	"github.com/rancher/opni/pkg/plugins/types"
-	"github.com/rancher/opni/pkg/util"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/plugins"
+	"github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions"
+	"github.com/open-panoptes/opni/pkg/plugins/hooks"
+	"github.com/open-panoptes/opni/pkg/plugins/meta"
+	"github.com/open-panoptes/opni/pkg/plugins/types"
+	"github.com/open-panoptes/opni/pkg/util"
 )
 
 func (m *Server) APIExtensions(context.Context, *emptypb.Empty) (*managementv1.APIExtensionInfoList, error) {

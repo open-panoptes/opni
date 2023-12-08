@@ -6,9 +6,9 @@ import (
 	"github.com/spf13/afero"
 	"github.com/ttacon/chalk"
 
-	"github.com/rancher/opni/pkg/keyring"
-	"github.com/rancher/opni/pkg/keyring/ephemeral"
-	"github.com/rancher/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/keyring"
+	"github.com/open-panoptes/opni/pkg/keyring/ephemeral"
+	"github.com/open-panoptes/opni/pkg/logger"
 )
 
 func LoadEphemeralKeys(fsys afero.Afero, dirs ...string) ([]*keyring.EphemeralKey, error) {

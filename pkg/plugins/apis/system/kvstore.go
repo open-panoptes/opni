@@ -4,7 +4,7 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/rancher/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/storage"
 	"github.com/samber/lo"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"

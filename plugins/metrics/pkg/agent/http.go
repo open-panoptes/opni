@@ -5,19 +5,20 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"log/slog"
+
 	"github.com/cortexproject/cortex/pkg/cortexpb"
 	"github.com/cortexproject/cortex/pkg/util/push"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
-	"github.com/rancher/opni/plugins/metrics/apis/node"
-	"github.com/rancher/opni/plugins/metrics/apis/remotewrite"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/node"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/remotewrite"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"log/slog"
 
-	"github.com/rancher/opni/pkg/clients"
-	"github.com/rancher/opni/pkg/health"
-	"github.com/rancher/opni/pkg/plugins/apis/apiextensions"
+	"github.com/open-panoptes/opni/pkg/clients"
+	"github.com/open-panoptes/opni/pkg/health"
+	"github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions"
 )
 
 type HttpServer struct {

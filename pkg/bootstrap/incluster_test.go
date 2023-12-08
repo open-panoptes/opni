@@ -6,11 +6,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/bootstrap"
-	"github.com/rancher/opni/pkg/capabilities/wellknown"
-	"github.com/rancher/opni/pkg/test"
-	mock_ident "github.com/rancher/opni/pkg/test/mock/ident"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/bootstrap"
+	"github.com/open-panoptes/opni/pkg/capabilities/wellknown"
+	"github.com/open-panoptes/opni/pkg/test"
+	mock_ident "github.com/open-panoptes/opni/pkg/test/mock/ident"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 

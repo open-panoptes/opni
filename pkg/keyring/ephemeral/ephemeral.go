@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/rancher/opni/pkg/validation"
+	"github.com/open-panoptes/opni/pkg/validation"
 )
 
 type (

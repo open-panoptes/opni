@@ -11,10 +11,10 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/supportagent/dateparser"
-	"github.com/rancher/opni/pkg/supportagent/filereader"
-	"github.com/rancher/opni/pkg/supportagent/shipper"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/supportagent/dateparser"
+	"github.com/open-panoptes/opni/pkg/supportagent/filereader"
+	"github.com/open-panoptes/opni/pkg/supportagent/shipper"
 	"google.golang.org/grpc"
 )
 

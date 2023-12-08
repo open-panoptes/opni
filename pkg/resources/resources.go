@@ -5,7 +5,7 @@ import (
 
 	"github.com/cisco-open/operator-tools/pkg/reconciler"
 	"github.com/go-logr/logr"
-	"github.com/rancher/opni/pkg/util/k8sutil"
+	"github.com/open-panoptes/opni/pkg/util/k8sutil"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"

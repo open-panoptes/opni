@@ -6,7 +6,7 @@ package collector;
 import "google/protobuf/empty.proto";
 import "opentelemetry/proto/metrics/v1/metrics.proto";
 
-option go_package = "github.com/rancher/opni/pkg/metrics/collector";
+option go_package = "github.com/open-panoptes/opni/pkg/metrics/collector";
 
 service RemoteCollector {
   rpc GetMetrics(google.protobuf.Empty) returns (opentelemetry.proto.metrics.v1.MetricsData);

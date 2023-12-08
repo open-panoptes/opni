@@ -42,56 +42,56 @@ func matchTestPackages(_ *types.Package, from *analysis.Pass) bool {
 func analyzeImports(p *analysis.Pass) (any, error) {
 	restrictions := []restrictedImport{
 		{
-			Regex: regexp.MustCompile("^github.com/rancher/opni/plugins/pkg/"),
+			Regex: regexp.MustCompile("^github.com/open-panoptes/opni/plugins/pkg/"),
 			Exceptions: []any{
-				"github.com/rancher/opni/plugins/pkg/",
+				"github.com/open-panoptes/opni/plugins/pkg/",
 				matchTestPackages,
-				"github.com/rancher/opni/cmd/",
-				"github.com/rancher/opni/pkg/opni/",
-				"github.com/rancher/opni/internal/cmd/",
-				"github.com/rancher/opni/pkg/agent/v1",
+				"github.com/open-panoptes/opni/cmd/",
+				"github.com/open-panoptes/opni/pkg/opni/",
+				"github.com/open-panoptes/opni/internal/cmd/",
+				"github.com/open-panoptes/opni/pkg/agent/v1",
 			},
 		},
 		{
-			Regex: regexp.MustCompile("^github.com/rancher/opni/pkg/test"),
+			Regex: regexp.MustCompile("^github.com/open-panoptes/opni/pkg/test"),
 			Exceptions: []any{
-				"github.com/rancher/opni/pkg/test",
-				"github.com/rancher/opni/test/",
-				regexp.MustCompile(`^github.com/rancher/opni/plugins/\w+/test$`),
+				"github.com/open-panoptes/opni/pkg/test",
+				"github.com/open-panoptes/opni/test/",
+				regexp.MustCompile(`^github.com/open-panoptes/opni/plugins/\w+/test$`),
 				matchTestPackages,
-				"github.com/rancher/opni/internal/mage/",
-				"github.com/rancher/opni/internal/cmd/testenv",
+				"github.com/open-panoptes/opni/internal/mage/",
+				"github.com/open-panoptes/opni/internal/cmd/testenv",
 			},
 		},
 		{
-			Regex: regexp.MustCompile("^github.com/rancher/opni/test"),
+			Regex: regexp.MustCompile("^github.com/open-panoptes/opni/test"),
 		},
 		{
-			Regex: regexp.MustCompile("^github.com/rancher/opni/web"),
+			Regex: regexp.MustCompile("^github.com/open-panoptes/opni/web"),
 			Exceptions: []any{
-				"github.com/rancher/opni/pkg/opni/commands",
-				"github.com/rancher/opni/pkg/dashboard",
+				"github.com/open-panoptes/opni/pkg/opni/commands",
+				"github.com/open-panoptes/opni/pkg/dashboard",
 			},
 		},
 		{
-			Regex: regexp.MustCompile("^github.com/rancher/opni/pkg/dashboard"),
+			Regex: regexp.MustCompile("^github.com/open-panoptes/opni/pkg/dashboard"),
 			Exceptions: []any{
-				"github.com/rancher/opni/pkg/opni/commands",
-				"github.com/rancher/opni/internal/cmd/testenv",
-				"github.com/rancher/opni/test/web_test",
+				"github.com/open-panoptes/opni/pkg/opni/commands",
+				"github.com/open-panoptes/opni/internal/cmd/testenv",
+				"github.com/open-panoptes/opni/test/web_test",
 			},
 		},
 		{
-			Regex: regexp.MustCompile("^github.com/rancher/opni/controllers"),
+			Regex: regexp.MustCompile("^github.com/open-panoptes/opni/controllers"),
 			Exceptions: []any{
-				"github.com/rancher/opni/controllers",
-				"github.com/rancher/opni/pkg/opni/commands",
+				"github.com/open-panoptes/opni/controllers",
+				"github.com/open-panoptes/opni/pkg/opni/commands",
 			},
 		},
 		{
-			Regex: regexp.MustCompile("^github.com/rancher/opni/pkg/opni/commands"),
+			Regex: regexp.MustCompile("^github.com/open-panoptes/opni/pkg/opni/commands"),
 			Exceptions: []any{
-				"github.com/rancher/opni/pkg/opni",
+				"github.com/open-panoptes/opni/pkg/opni",
 			},
 		},
 	}
@@ -106,7 +106,7 @@ func analyzeImports(p *analysis.Pass) (any, error) {
 	visit = func(pkg *types.Package, trace []string) {
 		path := pkg.Path()
 
-		if !strings.HasPrefix(path, "github.com/rancher/opni") {
+		if !strings.HasPrefix(path, "github.com/open-panoptes/opni") {
 			skip[path] = struct{}{}
 			return
 		}
@@ -177,7 +177,7 @@ func analyzeImports(p *analysis.Pass) (any, error) {
 func analyzeTests(p *analysis.Pass) (any, error) {
 	// - Test files must have a package name ending in _test
 	// - All ginkgo suites must have labels
-	// - All ginkgo suites must import "github.com/rancher/opni/pkg/test/setup"
+	// - All ginkgo suites must import "github.com/open-panoptes/opni/pkg/test/setup"
 	var hasTests, hasSuite, hasGinkgoTests bool
 	allLabels := map[string]struct{}{}
 	for _, f := range p.Files {
@@ -196,7 +196,7 @@ func analyzeTests(p *analysis.Pass) (any, error) {
 				// check for setup import
 				var hasSetupImport bool
 				for _, imp := range f.Imports {
-					if imp.Path.Value == `"github.com/rancher/opni/pkg/test/setup"` {
+					if imp.Path.Value == `"github.com/open-panoptes/opni/pkg/test/setup"` {
 						hasSetupImport = true
 						break
 					}
@@ -205,7 +205,7 @@ func analyzeTests(p *analysis.Pass) (any, error) {
 					p.Report(analysis.Diagnostic{
 						Pos:      f.Pos(),
 						Category: "ginkgo",
-						Message:  "test suite is missing import `_ \"github.com/rancher/opni/pkg/test/setup\"`",
+						Message:  "test suite is missing import `_ \"github.com/open-panoptes/opni/pkg/test/setup\"`",
 					})
 				}
 			}
@@ -411,8 +411,8 @@ func findTestImports(file *ast.File) []*ast.ImportSpec {
 			strings.HasPrefix(name, "github.com/onsi/ginkgo") ||
 			strings.HasPrefix(name, "github.com/onsi/gomega") ||
 			strings.HasPrefix(name, "github.com/onsi/biloba") ||
-			strings.HasPrefix(name, "github.com/rancher/opni/pkg/test") ||
-			strings.HasPrefix(name, "github.com/rancher/opni/test") {
+			strings.HasPrefix(name, "github.com/open-panoptes/opni/pkg/test") ||
+			strings.HasPrefix(name, "github.com/open-panoptes/opni/test") {
 			imports = append(imports, i)
 		}
 	}

@@ -5,9 +5,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/ident"
-	"github.com/rancher/opni/pkg/ident/kubernetes"
-	"github.com/rancher/opni/pkg/test/testk8s"
+	"github.com/open-panoptes/opni/pkg/ident"
+	"github.com/open-panoptes/opni/pkg/ident/kubernetes"
+	"github.com/open-panoptes/opni/pkg/test/testk8s"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"

@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"os"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/logger"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/logger"
 
-	"github.com/rancher/opni/pkg/opni/cliutil"
+	"github.com/open-panoptes/opni/pkg/opni/cliutil"
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/types/known/emptypb"
 )

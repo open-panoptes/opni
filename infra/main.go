@@ -8,12 +8,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/open-panoptes/opni/infra/pkg/aws"
+	"github.com/open-panoptes/opni/infra/pkg/resources"
 	"github.com/pulumi/pulumi-kubernetes/sdk/v3/go/kubernetes"
 	corev1 "github.com/pulumi/pulumi-kubernetes/sdk/v3/go/kubernetes/core/v1"
 	"github.com/pulumi/pulumi-kubernetes/sdk/v3/go/kubernetes/helm/v3"
 	. "github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-	"github.com/rancher/opni/infra/pkg/aws"
-	"github.com/rancher/opni/infra/pkg/resources"
 	"golang.org/x/mod/semver"
 
 	"github.com/pkg/errors"

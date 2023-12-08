@@ -14,9 +14,9 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/gin-gonic/gin"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/rbac"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/rbac"
 )
 
 type DataFormat string

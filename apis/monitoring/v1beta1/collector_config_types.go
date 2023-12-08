@@ -1,7 +1,7 @@
 package v1beta1
 
 import (
-	"github.com/rancher/opni/pkg/otel"
+	"github.com/open-panoptes/opni/pkg/otel"
 	"github.com/rancher/wrangler/pkg/crd"
 	"github.com/rancher/wrangler/pkg/schemas/openapi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

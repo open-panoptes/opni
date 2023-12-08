@@ -9,19 +9,20 @@ import (
 
 	"slices"
 
-	capabilityv1 "github.com/rancher/opni/pkg/apis/capability/v1"
-	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/capabilities/wellknown"
-	"github.com/rancher/opni/pkg/health"
-	"github.com/rancher/opni/pkg/util"
-	"github.com/rancher/opni/plugins/logging/apis/node"
-	"github.com/rancher/opni/plugins/logging/pkg/agent/drivers"
+	"log/slog"
+
+	capabilityv1 "github.com/open-panoptes/opni/pkg/apis/capability/v1"
+	controlv1 "github.com/open-panoptes/opni/pkg/apis/control/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/capabilities/wellknown"
+	"github.com/open-panoptes/opni/pkg/health"
+	"github.com/open-panoptes/opni/pkg/util"
+	"github.com/open-panoptes/opni/plugins/logging/apis/node"
+	"github.com/open-panoptes/opni/plugins/logging/pkg/agent/drivers"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"log/slog"
 )
 
 type LoggingNode struct {

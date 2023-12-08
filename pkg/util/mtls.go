@@ -5,7 +5,7 @@ import (
 	"crypto/x509"
 	"os"
 
-	"github.com/rancher/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
 )
 
 func LoadClientMTLSConfig(certs *v1beta1.MTLSSpec) (*tls.Config, error) {

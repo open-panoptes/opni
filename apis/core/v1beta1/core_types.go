@@ -1,7 +1,7 @@
 package v1beta1
 
 import (
-	opnicorev1 "github.com/rancher/opni/pkg/apis/core/v1"
+	opnicorev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 	"github.com/rancher/wrangler/pkg/crd"
 	"github.com/rancher/wrangler/pkg/schemas/openapi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

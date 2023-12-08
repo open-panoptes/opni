@@ -1,8 +1,8 @@
 package gateway
 
 import (
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/plugins/topology/pkg/topology/gateway/drivers"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/plugins/topology/pkg/topology/gateway/drivers"
 )
 
 func (p *Plugin) configureTopologyManagement() {

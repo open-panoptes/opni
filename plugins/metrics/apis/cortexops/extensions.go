@@ -3,12 +3,12 @@ package cortexops
 import (
 	"os"
 
-	"github.com/rancher/opni/internal/codegen/cli"
-	cliutil "github.com/rancher/opni/pkg/opni/cliutil"
-	driverutil "github.com/rancher/opni/pkg/plugins/driverutil"
-	"github.com/rancher/opni/pkg/plugins/driverutil/complete"
-	"github.com/rancher/opni/pkg/plugins/driverutil/rollback"
-	"github.com/rancher/opni/pkg/tui"
+	"github.com/open-panoptes/opni/internal/codegen/cli"
+	cliutil "github.com/open-panoptes/opni/pkg/opni/cliutil"
+	driverutil "github.com/open-panoptes/opni/pkg/plugins/driverutil"
+	"github.com/open-panoptes/opni/pkg/plugins/driverutil/complete"
+	"github.com/open-panoptes/opni/pkg/plugins/driverutil/rollback"
+	"github.com/open-panoptes/opni/pkg/tui"
 	cobra "github.com/spf13/cobra"
 	"golang.org/x/term"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"

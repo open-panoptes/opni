@@ -5,7 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/auth/challenges"
+	"github.com/open-panoptes/opni/pkg/auth/challenges"
 	"google.golang.org/grpc/metadata"
 )
 

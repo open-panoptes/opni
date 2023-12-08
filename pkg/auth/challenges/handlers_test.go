@@ -7,11 +7,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/test/mock/auth"
-	"github.com/rancher/opni/pkg/util/streams"
+	"github.com/open-panoptes/opni/pkg/util/streams"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/rancher/opni/pkg/auth/challenges"
+	"github.com/open-panoptes/opni/pkg/auth/challenges"
+	mock_auth "github.com/open-panoptes/opni/pkg/test/mock/auth"
 )
 
 type (

@@ -4,7 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/go-logr/logr"
-	"github.com/rancher/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/logger"
 )
 
 func NewControllerRuntimeLogger(level slog.Level) logr.Logger {

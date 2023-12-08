@@ -11,9 +11,9 @@ import (
 	"log/slog"
 
 	"github.com/klauspost/compress/zstd"
-	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/logger"
+	controlv1 "github.com/open-panoptes/opni/pkg/apis/control/v1"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/logger"
 	"github.com/spf13/afero"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/sync/errgroup"

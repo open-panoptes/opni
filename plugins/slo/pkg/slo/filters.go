@@ -7,11 +7,12 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/plugins/metrics/apis/cortexadmin"
-	sloapi "github.com/rancher/opni/plugins/slo/apis/slo"
-	"gopkg.in/yaml.v3"
 	"log/slog"
+
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/cortexadmin"
+	sloapi "github.com/open-panoptes/opni/plugins/slo/apis/slo"
+	"gopkg.in/yaml.v3"
 )
 
 //go:embed metricgroups/*.yaml

@@ -7,9 +7,9 @@ import (
 
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/rancher/opni/pkg/test"
-	"github.com/rancher/opni/pkg/test/freeport"
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/test"
+	"github.com/open-panoptes/opni/pkg/test/freeport"
+	"github.com/open-panoptes/opni/pkg/util"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"

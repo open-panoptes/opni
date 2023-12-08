@@ -3,7 +3,7 @@
 package commands
 
 import (
-	"github.com/rancher/opni/pkg/events"
+	"github.com/open-panoptes/opni/pkg/events"
 	"github.com/spf13/cobra"
 )
 

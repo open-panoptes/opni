@@ -7,11 +7,11 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/tokens"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/cortexadmin"
 	"github.com/prometheus/common/model"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/tokens"
-	"github.com/rancher/opni/plugins/metrics/apis/cortexadmin"
 	"github.com/samber/lo"
 	"github.com/ttacon/chalk"
 )

@@ -7,15 +7,16 @@ import (
 	"fmt"
 	"time"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/auth/challenges"
-	authutil "github.com/rancher/opni/pkg/auth/util"
-	"github.com/rancher/opni/pkg/util"
-	"github.com/rancher/opni/pkg/util/streams"
 	"log/slog"
 
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/auth/challenges"
+	authutil "github.com/open-panoptes/opni/pkg/auth/util"
+	"github.com/open-panoptes/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/util/streams"
+
 	"github.com/google/uuid"
-	"github.com/rancher/opni/pkg/auth/cluster"
+	"github.com/open-panoptes/opni/pkg/auth/cluster"
 	"github.com/samber/lo"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

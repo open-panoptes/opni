@@ -3,9 +3,9 @@ package mock_rules
 import (
 	"context"
 
-	"github.com/rancher/opni/pkg/rules"
-	mock_notifier "github.com/rancher/opni/pkg/test/mock/notifier"
-	"github.com/rancher/opni/pkg/util/notifier"
+	"github.com/open-panoptes/opni/pkg/rules"
+	mock_notifier "github.com/open-panoptes/opni/pkg/test/mock/notifier"
+	"github.com/open-panoptes/opni/pkg/util/notifier"
 	"go.uber.org/mock/gomock"
 )
 

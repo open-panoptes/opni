@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/rancher/opni/pkg/plugins"
-	"github.com/rancher/opni/pkg/plugins/meta"
-	"github.com/rancher/opni/plugins/slo/pkg/slo"
+	"github.com/open-panoptes/opni/pkg/plugins"
+	"github.com/open-panoptes/opni/pkg/plugins/meta"
+	"github.com/open-panoptes/opni/plugins/slo/pkg/slo"
 )
 
 func main() {

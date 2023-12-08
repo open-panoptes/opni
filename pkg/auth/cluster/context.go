@@ -3,7 +3,7 @@ package cluster
 import (
 	"context"
 
-	"github.com/rancher/opni/pkg/keyring"
+	"github.com/open-panoptes/opni/pkg/keyring"
 	"google.golang.org/grpc/metadata"
 )
 

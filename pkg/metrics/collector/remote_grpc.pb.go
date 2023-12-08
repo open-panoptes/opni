@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - ragu               v1.0.0
-// source: github.com/rancher/opni/pkg/metrics/collector/remote.proto
+// source: github.com/open-panoptes/opni/pkg/metrics/collector/remote.proto
 
 package collector
 
@@ -107,5 +107,5 @@ var RemoteCollector_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/rancher/opni/pkg/metrics/collector/remote.proto",
+	Metadata: "github.com/open-panoptes/opni/pkg/metrics/collector/remote.proto",
 }

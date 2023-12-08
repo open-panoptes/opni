@@ -9,13 +9,13 @@ import (
 
 	"log/slog"
 
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/health"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/rules"
-	"github.com/rancher/opni/pkg/util/notifier"
-	"github.com/rancher/opni/plugins/metrics/apis/node"
-	"github.com/rancher/opni/plugins/metrics/apis/remotewrite"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/health"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/rules"
+	"github.com/open-panoptes/opni/pkg/util/notifier"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/node"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/remotewrite"
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v3"
 )

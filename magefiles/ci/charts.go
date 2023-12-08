@@ -7,7 +7,7 @@ import (
 	charts "github.com/rancher/charts-build-scripts/pkg/actions"
 
 	// mage:import targets
-	"github.com/rancher/opni/magefiles/targets"
+	"github.com/open-panoptes/opni/magefiles/targets"
 
 	"github.com/magefile/mage/mg"
 )

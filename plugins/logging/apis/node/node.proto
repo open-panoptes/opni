@@ -1,11 +1,12 @@
 syntax = "proto3";
-option go_package = "github.com/rancher/opni/plugins/logging/apis/node";
-
-import "google/protobuf/empty.proto";
-import "github.com/rancher/opni/pkg/config/v1beta1/agent_config.proto";
-import "github.com/rancher/opni/pkg/apis/capability/v1/capability.proto";
 
 package node.logging;
+
+import "github.com/open-panoptes/opni/pkg/apis/capability/v1/capability.proto";
+import "github.com/open-panoptes/opni/pkg/config/v1beta1/agent_config.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/open-panoptes/opni/plugins/logging/apis/node";
 
 service NodeLoggingCapability {
   rpc Sync(SyncRequest) returns (SyncResponse);
@@ -23,12 +24,12 @@ message SyncRequest {
 }
 
 enum ConfigStatus {
-  Unknown = 0;
-  UpToDate = 1;
+  Unknown     = 0;
+  UpToDate    = 1;
   NeedsUpdate = 2;
 }
 
 message SyncResponse {
-  ConfigStatus configStatus = 1;
+  ConfigStatus            configStatus  = 1;
   LoggingCapabilityConfig updatedConfig = 2;
 }

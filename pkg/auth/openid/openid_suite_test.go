@@ -14,9 +14,9 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/auth/openid"
-	"github.com/rancher/opni/pkg/test/freeport"
-	_ "github.com/rancher/opni/pkg/test/setup"
+	"github.com/open-panoptes/opni/pkg/auth/openid"
+	"github.com/open-panoptes/opni/pkg/test/freeport"
+	_ "github.com/open-panoptes/opni/pkg/test/setup"
 )
 
 func TestOpenid(t *testing.T) {

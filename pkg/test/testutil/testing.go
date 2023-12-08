@@ -6,7 +6,7 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega/gexec"
-	"github.com/rancher/opni/pkg/test/testruntime"
+	"github.com/open-panoptes/opni/pkg/test/testruntime"
 )
 
 type Session interface {

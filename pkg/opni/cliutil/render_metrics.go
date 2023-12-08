@@ -6,16 +6,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rancher/opni/plugins/metrics/apis/cortexadmin"
-	"github.com/rancher/opni/plugins/metrics/apis/node"
-	"github.com/rancher/opni/plugins/metrics/apis/remoteread"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/cortexadmin"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/node"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/remoteread"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"slices"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 	"github.com/samber/lo"
 )
 

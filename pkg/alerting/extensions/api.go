@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rancher/opni/pkg/alerting/cache"
-	"github.com/rancher/opni/pkg/alerting/drivers/config"
-	"github.com/rancher/opni/pkg/alerting/message"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	"github.com/rancher/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/alerting/cache"
+	"github.com/open-panoptes/opni/pkg/alerting/drivers/config"
+	"github.com/open-panoptes/opni/pkg/alerting/message"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	"github.com/open-panoptes/opni/pkg/logger"
 	"github.com/samber/lo"
 	"google.golang.org/protobuf/encoding/protojson"
 )

@@ -7,12 +7,12 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/open-panoptes/opni/pkg/clients"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/remoteread"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/remotewrite"
+	"github.com/open-panoptes/opni/plugins/metrics/pkg/agent"
 	"github.com/prometheus/prometheus/prompb"
-	"github.com/rancher/opni/pkg/clients"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/plugins/metrics/apis/remoteread"
-	"github.com/rancher/opni/plugins/metrics/apis/remotewrite"
-	"github.com/rancher/opni/plugins/metrics/pkg/agent"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )

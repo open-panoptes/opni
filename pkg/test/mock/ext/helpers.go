@@ -1,6 +1,6 @@
 package mock_ext
 
-import "github.com/rancher/opni/pkg/test/testdata/plugins/ext"
+import "github.com/open-panoptes/opni/pkg/test/testdata/plugins/ext"
 
 type MockExtServerImpl struct {
 	ext.UnsafeExtServer

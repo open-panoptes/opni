@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/plugins/logging/apis/opensearch/opensearch.proto
+// source: github.com/open-panoptes/opni/plugins/logging/apis/opensearch/opensearch.proto
 
 package opensearch
 

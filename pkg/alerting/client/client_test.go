@@ -8,15 +8,15 @@ import (
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/alerting/client"
-	"github.com/rancher/opni/pkg/alerting/message"
-	"github.com/rancher/opni/pkg/alerting/shared"
+	"github.com/open-panoptes/opni/pkg/alerting/client"
+	"github.com/open-panoptes/opni/pkg/alerting/message"
+	"github.com/open-panoptes/opni/pkg/alerting/shared"
 	"github.com/samber/lo"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
 	alertmanagerv2 "github.com/prometheus/alertmanager/api/v2/models"
 	"github.com/prometheus/alertmanager/pkg/labels"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
 )
 
 func opniAlerts(ag alertmanagerv2.AlertGroups) alertmanagerv2.AlertGroups {

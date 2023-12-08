@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/samber/lo"
 
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/util"
 )
 
 var _ = Describe("Generic Utils", Label("unit"), func() {

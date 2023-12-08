@@ -9,10 +9,10 @@ import (
 	"log/slog"
 
 	"github.com/lestrrat-go/backoff/v2"
-	"github.com/rancher/opni/apis"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/util/k8sutil"
-	"github.com/rancher/opni/plugins/topology/apis/node"
+	"github.com/open-panoptes/opni/apis"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/util/k8sutil"
+	"github.com/open-panoptes/opni/plugins/topology/apis/node"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

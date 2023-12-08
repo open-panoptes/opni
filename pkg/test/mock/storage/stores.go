@@ -9,10 +9,10 @@ import (
 	reflect "reflect"
 	time "time"
 
-	v1 "github.com/rancher/opni/pkg/apis/core/v1"
-	keyring "github.com/rancher/opni/pkg/keyring"
-	storage "github.com/rancher/opni/pkg/storage"
-	lock "github.com/rancher/opni/pkg/storage/lock"
+	v1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	keyring "github.com/open-panoptes/opni/pkg/keyring"
+	storage "github.com/open-panoptes/opni/pkg/storage"
+	lock "github.com/open-panoptes/opni/pkg/storage/lock"
 	gomock "go.uber.org/mock/gomock"
 )
 

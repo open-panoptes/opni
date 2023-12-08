@@ -4,13 +4,13 @@ import (
 	"context"
 	"crypto/subtle"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	authutil "github.com/rancher/opni/pkg/auth/util"
-	"github.com/rancher/opni/pkg/util/streams"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	authutil "github.com/open-panoptes/opni/pkg/auth/util"
+	"github.com/open-panoptes/opni/pkg/util/streams"
 	"golang.org/x/crypto/blake2b"
 
-	"github.com/rancher/opni/pkg/auth/cluster"
-	"github.com/rancher/opni/pkg/keyring"
+	"github.com/open-panoptes/opni/pkg/auth/cluster"
+	"github.com/open-panoptes/opni/pkg/keyring"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"

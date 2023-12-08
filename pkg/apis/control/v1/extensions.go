@@ -9,7 +9,7 @@ import (
 
 	"slices"
 
-	"github.com/rancher/opni/pkg/urn"
+	"github.com/open-panoptes/opni/pkg/urn"
 	"golang.org/x/crypto/blake2b"
 )
 

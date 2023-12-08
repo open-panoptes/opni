@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/pkg/config/v1beta1/agent_config.proto
+// source: github.com/open-panoptes/opni/pkg/config/v1beta1/agent_config.proto
 
 package v1beta1
 

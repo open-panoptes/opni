@@ -3,8 +3,8 @@
 package commands
 
 import (
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/plugins/metrics/apis/remoteread"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/remoteread"
 	"github.com/spf13/cobra"
 )
 

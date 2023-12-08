@@ -8,12 +8,12 @@ import (
 
 	"slices"
 
+	"github.com/open-panoptes/opni/pkg/alerting/message"
+	"github.com/open-panoptes/opni/pkg/alerting/shared"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/validation"
 	promql "github.com/prometheus/prometheus/promql/parser"
-	"github.com/rancher/opni/pkg/alerting/message"
-	"github.com/rancher/opni/pkg/alerting/shared"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/util"
-	"github.com/rancher/opni/pkg/validation"
 	"github.com/samber/lo"
 )
 

@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/rancher/opni/pkg/management"
-	"github.com/rancher/opni/plugins/alerting/pkg/alerting/alarms/v1"
+	"github.com/open-panoptes/opni/pkg/management"
+	"github.com/open-panoptes/opni/plugins/alerting/pkg/alerting/alarms/v1"
 
 	"github.com/nats-io/nats.go"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	natsutil "github.com/rancher/opni/pkg/util/nats"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	natsutil "github.com/open-panoptes/opni/pkg/util/nats"
 )
 
 func (p *Plugin) newClusterWatcherHooks(ctx context.Context, ingressStream *nats.StreamConfig) *management.ManagementWatcherHooks[*managementv1.WatchEvent] {

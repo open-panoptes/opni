@@ -1,8 +1,8 @@
 package alertops
 
 import (
+	"github.com/open-panoptes/opni/pkg/validation"
 	prommodel "github.com/prometheus/common/model"
-	"github.com/rancher/opni/pkg/validation"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 

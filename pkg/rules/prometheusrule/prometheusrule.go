@@ -6,11 +6,11 @@ import (
 
 	"log/slog"
 
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/rules"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/rulefmt"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/rules"
 	"github.com/samber/lo"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

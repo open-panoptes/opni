@@ -11,10 +11,10 @@ import (
 	"log/slog"
 
 	"github.com/go-logr/logr/slogr"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/supportagent/dateparser"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/adapter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/entry"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/supportagent/dateparser"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 	collogspb "go.opentelemetry.io/proto/otlp/collector/logs/v1"

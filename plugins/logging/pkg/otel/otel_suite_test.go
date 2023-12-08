@@ -5,9 +5,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/test"
-	_ "github.com/rancher/opni/pkg/test/setup"
-	"github.com/rancher/opni/pkg/test/testruntime"
+	"github.com/open-panoptes/opni/pkg/test"
+	_ "github.com/open-panoptes/opni/pkg/test/setup"
+	"github.com/open-panoptes/opni/pkg/test/testruntime"
 )
 
 var env *test.Environment

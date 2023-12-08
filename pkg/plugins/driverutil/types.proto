@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package driverutil;
 
-import "github.com/rancher/opni/internal/codegen/cli/cli.proto";
-import "github.com/rancher/opni/pkg/apis/core/v1/core.proto";
+import "github.com/open-panoptes/opni/internal/codegen/cli/cli.proto";
+import "github.com/open-panoptes/opni/pkg/apis/core/v1/core.proto";
 
-option go_package = "github.com/rancher/opni/pkg/plugins/driverutil";
+option go_package               = "github.com/open-panoptes/opni/pkg/plugins/driverutil";
 option (cli.generator).generate = true;
 
 enum Target {

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/opni/commands"
-	"github.com/rancher/opni/pkg/opni/common"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/opni/commands"
+	"github.com/open-panoptes/opni/pkg/opni/common"
 	"github.com/ttacon/chalk"
 	"golang.org/x/term"
 

@@ -5,11 +5,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/open-panoptes/opni/pkg/test/testdata"
 	"github.com/prometheus/prometheus/model/rulefmt"
-	"github.com/rancher/opni/pkg/test/testdata"
 
-	"github.com/rancher/opni/pkg/rules"
-	"github.com/rancher/opni/pkg/util/notifier"
+	"github.com/open-panoptes/opni/pkg/rules"
+	"github.com/open-panoptes/opni/pkg/util/notifier"
 )
 
 var _ = Describe("Types", Label("unit"), func() {

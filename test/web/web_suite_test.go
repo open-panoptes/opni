@@ -11,13 +11,13 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/dashboard"
-	"github.com/rancher/opni/pkg/test"
-	_ "github.com/rancher/opni/pkg/test/setup"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/dashboard"
+	"github.com/open-panoptes/opni/pkg/test"
+	_ "github.com/open-panoptes/opni/pkg/test/setup"
 	"golang.org/x/net/context"
 
-	_ "github.com/rancher/opni/plugins/metrics/test"
+	_ "github.com/open-panoptes/opni/plugins/metrics/test"
 )
 
 func TestWeb(t *testing.T) {

@@ -8,10 +8,10 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/samber/lo"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/capabilities"
-	"github.com/rancher/opni/pkg/storage"
-	"github.com/rancher/opni/pkg/util"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/capabilities"
+	"github.com/open-panoptes/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/util"
 )
 
 func makeCluster(caps ...string) *corev1.Cluster {

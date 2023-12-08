@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/cortexproject/cortex/pkg/cortexpb"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/metrics"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/metrics"
 	"github.com/weaveworks/common/user"
 	"google.golang.org/grpc"
 )

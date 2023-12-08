@@ -88,7 +88,7 @@ func buildMainPackage(opts buildOpts) error {
 	}
 	if !opts.Debug {
 		args = append(args,
-			"-ldflags", fmt.Sprintf("-w -s -X github.com/rancher/opni/pkg/versions.Version=%s", version),
+			"-ldflags", fmt.Sprintf("-w -s -X github.com/open-panoptes/opni/pkg/versions.Version=%s", version),
 			"-trimpath",
 		)
 	}

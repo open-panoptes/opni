@@ -5,8 +5,8 @@ import (
 
 	"slices"
 
+	"github.com/open-panoptes/opni/pkg/validation"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
-	"github.com/rancher/opni/pkg/validation"
 )
 
 func (in *LoadRuleRequest) Validate() error {

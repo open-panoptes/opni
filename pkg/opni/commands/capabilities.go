@@ -12,11 +12,11 @@ import (
 
 	"slices"
 
-	capabilityv1 "github.com/rancher/opni/pkg/apis/capability/v1"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/opni/cliutil"
+	capabilityv1 "github.com/open-panoptes/opni/pkg/apis/capability/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/opni/cliutil"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"github.com/ttacon/chalk"

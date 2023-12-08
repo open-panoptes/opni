@@ -8,12 +8,12 @@ import (
 	"path"
 	"strings"
 
-	alertmanager_internal "github.com/rancher/opni/internal/alerting/alertmanager"
-	"github.com/rancher/opni/internal/alerting/syncer"
-	"github.com/rancher/opni/pkg/alerting/client"
-	"github.com/rancher/opni/pkg/alerting/shared"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	"github.com/rancher/opni/pkg/tracing"
+	alertmanager_internal "github.com/open-panoptes/opni/internal/alerting/alertmanager"
+	"github.com/open-panoptes/opni/internal/alerting/syncer"
+	"github.com/open-panoptes/opni/pkg/alerting/client"
+	"github.com/open-panoptes/opni/pkg/alerting/shared"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	"github.com/open-panoptes/opni/pkg/tracing"
 	"github.com/spf13/cobra"
 )
 

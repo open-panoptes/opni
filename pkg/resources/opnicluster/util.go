@@ -1,9 +1,9 @@
 package opnicluster
 
 import (
-	aiv1beta1 "github.com/rancher/opni/apis/ai/v1beta1"
-	"github.com/rancher/opni/pkg/resources"
-	opnimeta "github.com/rancher/opni/pkg/util/meta"
+	aiv1beta1 "github.com/open-panoptes/opni/apis/ai/v1beta1"
+	"github.com/open-panoptes/opni/pkg/resources"
+	opnimeta "github.com/open-panoptes/opni/pkg/util/meta"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )

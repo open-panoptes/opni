@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
+	controlv1 "github.com/open-panoptes/opni/pkg/apis/control/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 	"github.com/samber/lo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

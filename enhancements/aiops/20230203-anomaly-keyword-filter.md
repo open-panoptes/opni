@@ -68,7 +68,7 @@ This is an example of the query to be used. It has been verified in the dev cons
                         {'query_string': {'query': '(error) or (fail) or (fatal) or (exception) or (timeout) or (unavailable) or (crash) or (connection refused) or (network error) or (deadlock) or (out of disk) or (high load)', 'default_field': 'log'}}]}}}
 ```
 
-Additionally, for the keyword OOM, further investigation will be needed on how that keyword can be matched as well. This has been expressed as an [idea](https://github.com/rancher/opni/discussions/1049).
+Additionally, for the keyword OOM, further investigation will be needed on how that keyword can be matched as well. This has been expressed as an [idea](https://github.com/open-panoptes/opni/discussions/1049).
 
 ## Dependencies: 
 Besides the requirement of having Opni AIOps already enabled with an NVIDIA GPU setup on a cluster, no additional dependencies are present.

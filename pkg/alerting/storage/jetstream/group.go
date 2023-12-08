@@ -8,8 +8,8 @@ import (
 	"sort"
 
 	"github.com/nats-io/nats.go"
-	"github.com/rancher/opni/pkg/alerting/interfaces"
-	"github.com/rancher/opni/pkg/alerting/storage/spec"
+	"github.com/open-panoptes/opni/pkg/alerting/interfaces"
+	"github.com/open-panoptes/opni/pkg/alerting/storage/spec"
 	"github.com/samber/lo"
 )
 

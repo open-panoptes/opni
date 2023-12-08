@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"dagger.io/dagger"
-	"github.com/rancher/opni/dagger/x/cmds"
+	"github.com/open-panoptes/opni/dagger/x/cmds"
 )
 
 func main() {

@@ -16,10 +16,10 @@ import (
 	healthv1 "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/keepalive"
 
-	agentv1 "github.com/rancher/opni/pkg/agent"
-	streamv1 "github.com/rancher/opni/pkg/apis/stream/v1"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/util"
+	agentv1 "github.com/open-panoptes/opni/pkg/agent"
+	streamv1 "github.com/open-panoptes/opni/pkg/apis/stream/v1"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/util"
 )
 
 type ConnectionHandler interface {

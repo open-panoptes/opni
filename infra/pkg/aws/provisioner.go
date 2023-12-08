@@ -5,9 +5,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/open-panoptes/opni/infra/pkg/resources"
 	"github.com/pulumi/pulumi-kubernetes/sdk/v3/go/kubernetes"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-	"github.com/rancher/opni/infra/pkg/resources"
 
 	. "github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 

@@ -7,9 +7,9 @@ import (
 	"slices"
 
 	lru "github.com/hashicorp/golang-lru/v2"
-	"github.com/rancher/opni/pkg/alerting/drivers/config"
-	"github.com/rancher/opni/pkg/alerting/message"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
+	"github.com/open-panoptes/opni/pkg/alerting/drivers/config"
+	"github.com/open-panoptes/opni/pkg/alerting/message"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
 	"github.com/samber/lo"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )

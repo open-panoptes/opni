@@ -7,9 +7,9 @@ import (
 	. "github.com/onsi/gomega"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/test"
-	_ "github.com/rancher/opni/plugins/example/test"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/test"
+	_ "github.com/open-panoptes/opni/plugins/example/test"
 )
 
 //#region Test Setup

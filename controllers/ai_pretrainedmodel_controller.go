@@ -22,9 +22,9 @@ import (
 	"context"
 
 	"github.com/cisco-open/operator-tools/pkg/reconciler"
-	aiv1beta1 "github.com/rancher/opni/apis/ai/v1beta1"
-	"github.com/rancher/opni/pkg/resources/pretrainedmodel"
-	"github.com/rancher/opni/pkg/util/k8sutil"
+	aiv1beta1 "github.com/open-panoptes/opni/apis/ai/v1beta1"
+	"github.com/open-panoptes/opni/pkg/resources/pretrainedmodel"
+	"github.com/open-panoptes/opni/pkg/util/k8sutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"

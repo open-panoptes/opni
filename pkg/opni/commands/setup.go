@@ -6,13 +6,13 @@ import (
 	"strings"
 	"sync"
 
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/clients"
-	"github.com/rancher/opni/pkg/config"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/opni/cliutil"
-	"github.com/rancher/opni/pkg/tracing"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/clients"
+	"github.com/open-panoptes/opni/pkg/config"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/opni/cliutil"
+	"github.com/open-panoptes/opni/pkg/tracing"
 	"github.com/spf13/cobra"
 )
 

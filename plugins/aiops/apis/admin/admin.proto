@@ -5,7 +5,7 @@ package admin;
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
-option go_package = "github.com/rancher/opni/plugins/aiops/apis/admin";
+option go_package = "github.com/open-panoptes/opni/plugins/aiops/apis/admin";
 
 service AIAdmin {
   rpc GetAISettings(google.protobuf.Empty) returns (AISettings) {

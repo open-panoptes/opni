@@ -18,11 +18,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lestrrat-go/backoff/v2"
 	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/rancher/opni/pkg/auth"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/rbac"
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/auth"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/rbac"
+	"github.com/open-panoptes/opni/pkg/util"
 	"golang.org/x/sync/singleflight"
 )
 

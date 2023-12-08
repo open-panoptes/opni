@@ -1,7 +1,7 @@
 package mock_ident
 
 import (
-	"github.com/rancher/opni/pkg/ident"
+	"github.com/open-panoptes/opni/pkg/ident"
 	"go.uber.org/mock/gomock"
 )
 

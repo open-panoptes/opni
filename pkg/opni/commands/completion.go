@@ -9,10 +9,10 @@ import (
 
 	"slices"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/capabilities"
-	"github.com/rancher/opni/pkg/util"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/capabilities"
+	"github.com/open-panoptes/opni/pkg/util"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/types/known/emptypb"

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/iancoleman/strcase"
-	"github.com/rancher/opni/pkg/util/flagutil"
+	"github.com/open-panoptes/opni/pkg/util/flagutil"
 	"google.golang.org/genproto/googleapis/api/annotations"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
@@ -73,20 +73,20 @@ var (
 	_os         = protogen.GoImportPath("os")
 	_lo         = protogen.GoImportPath("github.com/samber/lo")
 	_strings    = protogen.GoImportPath("strings")
-	_cli        = protogen.GoImportPath("github.com/rancher/opni/internal/codegen/cli")
+	_cli        = protogen.GoImportPath("github.com/open-panoptes/opni/internal/codegen/cli")
 	_proto      = protogen.GoImportPath("google.golang.org/protobuf/proto")
 	_protojson  = protogen.GoImportPath("google.golang.org/protobuf/encoding/protojson")
 	_protoiface = protogen.GoImportPath("google.golang.org/protobuf/runtime/protoiface")
 	_cobra      = protogen.GoImportPath("github.com/spf13/cobra")
 	_pflag      = protogen.GoImportPath("github.com/spf13/pflag")
 	_emptypb    = protogen.GoImportPath("google.golang.org/protobuf/types/known/emptypb")
-	_flagutil   = protogen.GoImportPath("github.com/rancher/opni/pkg/util/flagutil")
-	_cliutil    = protogen.GoImportPath("github.com/rancher/opni/pkg/opni/cliutil")
+	_flagutil   = protogen.GoImportPath("github.com/open-panoptes/opni/pkg/util/flagutil")
+	_cliutil    = protogen.GoImportPath("github.com/open-panoptes/opni/pkg/opni/cliutil")
 	_errors     = protogen.GoImportPath("errors")
 	_status     = protogen.GoImportPath("google.golang.org/grpc/status")
 	_codes      = protogen.GoImportPath("google.golang.org/grpc/codes")
 	_errdetails = protogen.GoImportPath("google.golang.org/genproto/googleapis/rpc/errdetails")
-	_storage    = protogen.GoImportPath("github.com/rancher/opni/pkg/storage")
+	_storage    = protogen.GoImportPath("github.com/open-panoptes/opni/pkg/storage")
 )
 
 func genLeadingComments(g *protogen.GeneratedFile, loc protoreflect.SourceLocation) {

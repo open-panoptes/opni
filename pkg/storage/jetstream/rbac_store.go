@@ -9,8 +9,8 @@ import (
 
 	"github.com/lestrrat-go/backoff/v2"
 	"github.com/nats-io/nats.go"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/storage"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/storage"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 

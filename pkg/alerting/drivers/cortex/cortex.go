@@ -5,12 +5,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/open-panoptes/opni/pkg/alerting/message"
+	"github.com/open-panoptes/opni/pkg/alerting/metrics"
+	"github.com/open-panoptes/opni/pkg/alerting/shared"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
 	prommodel "github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/rulefmt"
-	"github.com/rancher/opni/pkg/alerting/message"
-	"github.com/rancher/opni/pkg/alerting/metrics"
-	"github.com/rancher/opni/pkg/alerting/shared"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
 	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
 )

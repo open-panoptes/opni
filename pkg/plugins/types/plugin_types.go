@@ -1,10 +1,10 @@
 package types
 
 import (
-	capabilityv1 "github.com/rancher/opni/pkg/apis/capability/v1"
-	"github.com/rancher/opni/pkg/metrics/collector"
-	"github.com/rancher/opni/pkg/plugins/apis/apiextensions"
-	"github.com/rancher/opni/pkg/plugins/apis/system"
+	capabilityv1 "github.com/open-panoptes/opni/pkg/apis/capability/v1"
+	"github.com/open-panoptes/opni/pkg/metrics/collector"
+	"github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions"
+	"github.com/open-panoptes/opni/pkg/plugins/apis/system"
 )
 
 type (

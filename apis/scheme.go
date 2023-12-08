@@ -1,7 +1,7 @@
 package apis
 
 import (
-	opnicorev1beta1 "github.com/rancher/opni/apis/core/v1beta1"
+	opnicorev1beta1 "github.com/open-panoptes/opni/apis/core/v1beta1"
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"

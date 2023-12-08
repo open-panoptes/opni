@@ -9,8 +9,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/kralicky/totem"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	streamv1 "github.com/rancher/opni/pkg/apis/stream/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	streamv1 "github.com/open-panoptes/opni/pkg/apis/stream/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 )

@@ -2,14 +2,14 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/plugins/metrics/apis/node/node.proto
+// source: github.com/open-panoptes/opni/plugins/metrics/apis/node/node.proto
 
 package node
 
 import (
-	_ "github.com/rancher/opni/pkg/apis/capability/v1"
-	v1 "github.com/rancher/opni/pkg/apis/core/v1"
-	v1beta1 "github.com/rancher/opni/pkg/config/v1beta1"
+	_ "github.com/open-panoptes/opni/pkg/apis/capability/v1"
+	v1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	v1beta1 "github.com/open-panoptes/opni/pkg/config/v1beta1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"

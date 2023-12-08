@@ -2,13 +2,13 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - ragu               v1.0.0
-// source: github.com/rancher/opni/plugins/example/pkg/example/example.proto
+// source: github.com/open-panoptes/opni/plugins/example/pkg/example/example.proto
 
 package example
 
 import (
 	context "context"
-	driverutil "github.com/rancher/opni/pkg/plugins/driverutil"
+	driverutil "github.com/open-panoptes/opni/pkg/plugins/driverutil"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -144,7 +144,7 @@ var ExampleAPIExtension_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/rancher/opni/plugins/example/pkg/example/example.proto",
+	Metadata: "github.com/open-panoptes/opni/plugins/example/pkg/example/example.proto",
 }
 
 const (
@@ -234,7 +234,7 @@ var ExampleUnaryExtension_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/rancher/opni/plugins/example/pkg/example/example.proto",
+	Metadata: "github.com/open-panoptes/opni/plugins/example/pkg/example/example.proto",
 }
 
 const (
@@ -583,5 +583,5 @@ var Config_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/rancher/opni/plugins/example/pkg/example/example.proto",
+	Metadata: "github.com/open-panoptes/opni/plugins/example/pkg/example/example.proto",
 }

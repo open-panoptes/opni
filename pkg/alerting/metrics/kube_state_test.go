@@ -3,8 +3,8 @@ package metrics_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/alerting/metrics"
-	"github.com/rancher/opni/pkg/alerting/shared"
+	"github.com/open-panoptes/opni/pkg/alerting/metrics"
+	"github.com/open-panoptes/opni/pkg/alerting/shared"
 )
 
 var _ = Describe("Building Kube Pod State Alert Rules", Label("unit"), func() {

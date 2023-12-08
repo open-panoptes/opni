@@ -8,9 +8,9 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/cisco-open/operator-tools/pkg/reconciler"
-	aiv1beta1 "github.com/rancher/opni/apis/ai/v1beta1"
-	"github.com/rancher/opni/pkg/resources"
-	"github.com/rancher/opni/pkg/resources/hyperparameters"
+	aiv1beta1 "github.com/open-panoptes/opni/apis/ai/v1beta1"
+	"github.com/open-panoptes/opni/pkg/resources"
+	"github.com/open-panoptes/opni/pkg/resources/hyperparameters"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"

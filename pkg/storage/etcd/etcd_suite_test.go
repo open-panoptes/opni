@@ -6,12 +6,12 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/storage/etcd"
-	"github.com/rancher/opni/pkg/test"
-	. "github.com/rancher/opni/pkg/test/conformance/storage"
-	_ "github.com/rancher/opni/pkg/test/setup"
-	"github.com/rancher/opni/pkg/test/testruntime"
-	"github.com/rancher/opni/pkg/util/future"
+	"github.com/open-panoptes/opni/pkg/storage/etcd"
+	"github.com/open-panoptes/opni/pkg/test"
+	. "github.com/open-panoptes/opni/pkg/test/conformance/storage"
+	_ "github.com/open-panoptes/opni/pkg/test/setup"
+	"github.com/open-panoptes/opni/pkg/test/testruntime"
+	"github.com/open-panoptes/opni/pkg/util/future"
 )
 
 func TestEtcd(t *testing.T) {

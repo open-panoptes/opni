@@ -12,9 +12,9 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/lestrrat-go/backoff/v2"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/storage"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/storage"
 )
 
 func (e *EtcdStore) CreateCluster(ctx context.Context, cluster *corev1.Cluster) error {

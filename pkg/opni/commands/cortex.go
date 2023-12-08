@@ -5,7 +5,7 @@ package commands
 import (
 	"flag"
 
-	cortex_internal "github.com/rancher/opni/internal/cortex"
+	cortex_internal "github.com/open-panoptes/opni/internal/cortex"
 	"github.com/spf13/cobra"
 )
 

@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rancher/opni/pkg/auth"
-	"github.com/rancher/opni/pkg/auth/openid"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/noauth"
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/auth"
+	"github.com/open-panoptes/opni/pkg/auth/openid"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/noauth"
+	"github.com/open-panoptes/opni/pkg/util"
 	"log/slog"
 )
 

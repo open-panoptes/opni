@@ -13,10 +13,10 @@ import (
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/samber/lo"
 
+	monitoringv1beta1 "github.com/open-panoptes/opni/apis/monitoring/v1beta1"
 	promoperatorv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	promcommon "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
-	monitoringv1beta1 "github.com/rancher/opni/apis/monitoring/v1beta1"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"

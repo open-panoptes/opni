@@ -11,10 +11,10 @@ import (
 
 	"log/slog"
 
-	"github.com/rancher/opni/pkg/auth/challenges"
-	"github.com/rancher/opni/pkg/auth/cluster"
-	authv2 "github.com/rancher/opni/pkg/auth/cluster/v2"
-	"github.com/rancher/opni/pkg/auth/session"
+	"github.com/open-panoptes/opni/pkg/auth/challenges"
+	"github.com/open-panoptes/opni/pkg/auth/cluster"
+	authv2 "github.com/open-panoptes/opni/pkg/auth/cluster/v2"
+	"github.com/open-panoptes/opni/pkg/auth/session"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -25,14 +25,14 @@ import (
 
 	"github.com/kralicky/totem"
 
-	streamv1 "github.com/rancher/opni/pkg/apis/stream/v1"
-	"github.com/rancher/opni/pkg/caching"
-	"github.com/rancher/opni/pkg/ident"
-	"github.com/rancher/opni/pkg/keyring"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/trust"
-	"github.com/rancher/opni/pkg/util"
-	"github.com/rancher/opni/pkg/util/future"
+	streamv1 "github.com/open-panoptes/opni/pkg/apis/stream/v1"
+	"github.com/open-panoptes/opni/pkg/caching"
+	"github.com/open-panoptes/opni/pkg/ident"
+	"github.com/open-panoptes/opni/pkg/keyring"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/trust"
+	"github.com/open-panoptes/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/util/future"
 )
 
 type GatewayClient interface {

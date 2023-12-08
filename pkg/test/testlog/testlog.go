@@ -4,8 +4,8 @@ import (
 	"log/slog"
 
 	"github.com/onsi/ginkgo/v2"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/test/testruntime"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/test/testruntime"
 	"github.com/samber/lo"
 )
 

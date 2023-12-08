@@ -3,8 +3,8 @@ package destination
 import (
 	"context"
 
-	"github.com/rancher/opni/pkg/alerting/drivers/config"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
+	"github.com/open-panoptes/opni/pkg/alerting/drivers/config"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
 )
 
 var (

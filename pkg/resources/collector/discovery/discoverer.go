@@ -10,8 +10,8 @@ import (
 
 	"log/slog"
 
+	monitoringv1beta1 "github.com/open-panoptes/opni/apis/monitoring/v1beta1"
 	promoperatorv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	monitoringv1beta1 "github.com/rancher/opni/apis/monitoring/v1beta1"
 
 	promcommon "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"

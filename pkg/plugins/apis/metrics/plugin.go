@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/hashicorp/go-plugin"
-	"github.com/rancher/opni/pkg/metrics/collector"
-	"github.com/rancher/opni/pkg/plugins"
+	"github.com/open-panoptes/opni/pkg/metrics/collector"
+	"github.com/open-panoptes/opni/pkg/plugins"
 	"google.golang.org/grpc"
 )
 

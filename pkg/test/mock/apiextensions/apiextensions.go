@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	totem "github.com/kralicky/totem"
-	apiextensions "github.com/rancher/opni/pkg/plugins/apis/apiextensions"
+	apiextensions "github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
 	metadata "google.golang.org/grpc/metadata"

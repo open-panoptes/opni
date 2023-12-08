@@ -10,10 +10,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
-	_ "github.com/rancher/opni/pkg/test/setup"
-	"github.com/rancher/opni/pkg/test/testutil"
-	"github.com/rancher/opni/pkg/update/patch"
+	controlv1 "github.com/open-panoptes/opni/pkg/apis/control/v1"
+	_ "github.com/open-panoptes/opni/pkg/test/setup"
+	"github.com/open-panoptes/opni/pkg/test/testutil"
+	"github.com/open-panoptes/opni/pkg/update/patch"
 	"github.com/spf13/afero"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/crypto/blake2b"
@@ -26,9 +26,9 @@ func TestPatch(t *testing.T) {
 }
 
 var (
-	test1Path    = "github.com/rancher/opni/pkg/test/testdata/patch/test1"
+	test1Path    = "github.com/open-panoptes/opni/pkg/test/testdata/patch/test1"
 	test1Package = "urn:opni:plugin:binary:test1"
-	test2Path    = "github.com/rancher/opni/pkg/test/testdata/patch/test2"
+	test2Path    = "github.com/open-panoptes/opni/pkg/test/testdata/patch/test2"
 	test2Package = "urn:opni:plugin:binary:test2"
 
 	testPackages = map[string]string{

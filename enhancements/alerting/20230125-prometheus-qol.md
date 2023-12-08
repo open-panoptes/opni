@@ -62,7 +62,7 @@ message Reference {
 
 ## Dependencies:
 
-- Condition Status Optimizations https://github.com/rancher/opni/pull/971
+- Condition Status Optimizations https://github.com/open-panoptes/opni/pull/971
 
 ## Risks and contingencies:
 

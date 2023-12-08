@@ -3,12 +3,12 @@ package slo
 import (
 	"os"
 
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/plugins/apis/system"
-	"github.com/rancher/opni/pkg/slo/shared"
-	"github.com/rancher/opni/plugins/metrics/apis/cortexadmin"
-	sloapi "github.com/rancher/opni/plugins/slo/apis/slo"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/plugins/apis/system"
+	"github.com/open-panoptes/opni/pkg/slo/shared"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/cortexadmin"
+	sloapi "github.com/open-panoptes/opni/plugins/slo/apis/slo"
 )
 
 func (p *Plugin) UseManagementAPI(client managementv1.ManagementClient) {

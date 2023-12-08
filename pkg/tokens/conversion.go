@@ -3,7 +3,7 @@ package tokens
 import (
 	"encoding/hex"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 )
 
 func FromBootstrapToken(t *corev1.BootstrapToken) (*Token, error) {

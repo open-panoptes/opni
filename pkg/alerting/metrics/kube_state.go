@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/open-panoptes/opni/pkg/alerting/metrics/naming"
+	"github.com/open-panoptes/opni/pkg/alerting/shared"
 	"github.com/prometheus/common/model"
-	"github.com/rancher/opni/pkg/alerting/metrics/naming"
-	"github.com/rancher/opni/pkg/alerting/shared"
 )
 
 func NewKubeStateRule(

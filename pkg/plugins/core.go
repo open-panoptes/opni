@@ -10,8 +10,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/go-plugin"
-	"github.com/rancher/opni/pkg/plugins/meta"
-	"github.com/rancher/opni/pkg/tracing"
+	"github.com/open-panoptes/opni/pkg/plugins/meta"
+	"github.com/open-panoptes/opni/pkg/tracing"
 	"google.golang.org/grpc"
 	rpb "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 )

@@ -5,9 +5,9 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/jhump/protoreflect/grpcreflect"
-	"github.com/rancher/opni/pkg/plugins"
-	"github.com/rancher/opni/pkg/plugins/apis/apiextensions"
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/plugins"
+	"github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions"
+	"github.com/open-panoptes/opni/pkg/util"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )

@@ -8,9 +8,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/task"
-	_ "github.com/rancher/opni/pkg/test/setup"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/task"
+	_ "github.com/open-panoptes/opni/pkg/test/setup"
 )
 
 func TestTask(t *testing.T) {

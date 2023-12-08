@@ -12,7 +12,7 @@ import (
 	collogspb "go.opentelemetry.io/proto/otlp/collector/logs/v1"
 	otlplogsv1 "go.opentelemetry.io/proto/otlp/logs/v1"
 
-	_ "github.com/rancher/opni/pkg/test/setup"
+	_ "github.com/open-panoptes/opni/pkg/test/setup"
 )
 
 func TestShipper(t *testing.T) {

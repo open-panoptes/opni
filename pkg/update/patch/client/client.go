@@ -15,11 +15,11 @@ import (
 
 	"log/slog"
 
-	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
-	"github.com/rancher/opni/pkg/plugins"
-	"github.com/rancher/opni/pkg/update"
-	"github.com/rancher/opni/pkg/update/patch"
-	"github.com/rancher/opni/pkg/urn"
+	controlv1 "github.com/open-panoptes/opni/pkg/apis/control/v1"
+	"github.com/open-panoptes/opni/pkg/plugins"
+	"github.com/open-panoptes/opni/pkg/update"
+	"github.com/open-panoptes/opni/pkg/update/patch"
+	"github.com/open-panoptes/opni/pkg/urn"
 	"github.com/spf13/afero"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/sync/errgroup"
@@ -115,7 +115,7 @@ func findTempDirBase(baseFs afero.Fs, pluginDir string) (string, error) {
 		if stat, ok := sys.(*syscall.Stat_t); ok {
 			deviceInfoAvailable = true
 			// This cast is necessary for arm64 compilation.
-			// See https://github.com/rancher/opni/issues/1614
+			// See https://github.com/open-panoptes/opni/issues/1614
 			pluginDirDevice = uint64(stat.Dev)
 		}
 	}
@@ -128,7 +128,7 @@ func findTempDirBase(baseFs afero.Fs, pluginDir string) (string, error) {
 				if sys := info.Sys(); sys != nil {
 					if stat, ok := sys.(*syscall.Stat_t); ok {
 						// This cast is necessary for arm64 compilation.
-						// See https://github.com/rancher/opni/issues/1614
+						// See https://github.com/open-panoptes/opni/issues/1614
 						if uint64(stat.Dev) == pluginDirDevice {
 							return candidate, nil
 						}

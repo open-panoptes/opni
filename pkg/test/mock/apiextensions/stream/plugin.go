@@ -8,9 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	v1 "github.com/rancher/opni/pkg/apis/stream/v1"
-	apiextensions "github.com/rancher/opni/pkg/plugins/apis/apiextensions"
-	stream "github.com/rancher/opni/pkg/plugins/apis/apiextensions/stream"
+	v1 "github.com/open-panoptes/opni/pkg/apis/stream/v1"
+	apiextensions "github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions"
+	stream "github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions/stream"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"

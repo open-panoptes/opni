@@ -3,9 +3,9 @@ package drivers
 import (
 	"context"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/plugins/driverutil"
-	"github.com/rancher/opni/plugins/metrics/apis/cortexops"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/plugins/driverutil"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/cortexops"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 

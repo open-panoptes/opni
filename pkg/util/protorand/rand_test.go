@@ -9,9 +9,9 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"github.com/rancher/opni/pkg/test/testdata/plugins/ext"
-	"github.com/rancher/opni/pkg/test/testutil"
-	"github.com/rancher/opni/pkg/util/protorand"
+	"github.com/open-panoptes/opni/pkg/test/testdata/plugins/ext"
+	"github.com/open-panoptes/opni/pkg/test/testutil"
+	"github.com/open-panoptes/opni/pkg/util/protorand"
 )
 
 var _ = Describe("Protorand", Label("unit"), func() {

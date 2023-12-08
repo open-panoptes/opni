@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/rancher/opni/pkg/ident"
+	"github.com/open-panoptes/opni/pkg/ident"
 )
 
 type testProvider struct{}

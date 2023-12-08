@@ -3,11 +3,11 @@ package controllers
 import (
 	"context"
 
-	loggingv1beta1 "github.com/rancher/opni/apis/logging/v1beta1"
-	"github.com/rancher/opni/pkg/resources"
-	"github.com/rancher/opni/pkg/resources/recurringsnapshot"
-	"github.com/rancher/opni/pkg/util/k8sutil"
-	"github.com/rancher/opni/pkg/util/meta"
+	loggingv1beta1 "github.com/open-panoptes/opni/apis/logging/v1beta1"
+	"github.com/open-panoptes/opni/pkg/resources"
+	"github.com/open-panoptes/opni/pkg/resources/recurringsnapshot"
+	"github.com/open-panoptes/opni/pkg/util/k8sutil"
+	"github.com/open-panoptes/opni/pkg/util/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"

@@ -1,6 +1,6 @@
 package v1beta1
 
-import "github.com/rancher/opni/pkg/config/meta"
+import "github.com/open-panoptes/opni/pkg/config/meta"
 
 type AuthProvider struct {
 	meta.TypeMeta   `json:",inline"`

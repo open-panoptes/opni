@@ -9,20 +9,20 @@ import (
 
 	"slices"
 
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/util"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"gopkg.in/yaml.v3"
 
-	"github.com/rancher/opni/pkg/alerting/drivers/backend"
-	"github.com/rancher/opni/pkg/alerting/drivers/routing"
-	"github.com/rancher/opni/pkg/alerting/message"
-	"github.com/rancher/opni/pkg/alerting/shared"
-	storage_opts "github.com/rancher/opni/pkg/alerting/storage/opts"
-	"github.com/rancher/opni/pkg/alerting/storage/spec"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
+	"github.com/open-panoptes/opni/pkg/alerting/drivers/backend"
+	"github.com/open-panoptes/opni/pkg/alerting/drivers/routing"
+	"github.com/open-panoptes/opni/pkg/alerting/message"
+	"github.com/open-panoptes/opni/pkg/alerting/shared"
+	storage_opts "github.com/open-panoptes/opni/pkg/alerting/storage/opts"
+	"github.com/open-panoptes/opni/pkg/alerting/storage/spec"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
 	"github.com/samber/lo"
 	"log/slog"
 )

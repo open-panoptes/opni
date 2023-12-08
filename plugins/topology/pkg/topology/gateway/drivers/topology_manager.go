@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/rancher/opni/apis"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/util/k8sutil"
-	"github.com/rancher/opni/plugins/topology/apis/orchestrator"
+	"github.com/open-panoptes/opni/apis"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/util/k8sutil"
+	"github.com/open-panoptes/opni/plugins/topology/apis/orchestrator"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

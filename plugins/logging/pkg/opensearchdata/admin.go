@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/lestrrat-go/backoff/v2"
+	opensearchtypes "github.com/open-panoptes/opni/pkg/opensearch/opensearch/types"
+	"github.com/open-panoptes/opni/pkg/plugins/apis/system"
 	"github.com/opensearch-project/opensearch-go/opensearchutil"
-	opensearchtypes "github.com/rancher/opni/pkg/opensearch/opensearch/types"
-	"github.com/rancher/opni/pkg/plugins/apis/system"
 )
 
 const (

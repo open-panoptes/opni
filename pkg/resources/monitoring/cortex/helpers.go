@@ -3,8 +3,8 @@ package cortex
 import (
 	"fmt"
 
+	"github.com/open-panoptes/opni/pkg/resources"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	"github.com/rancher/opni/pkg/resources"
 	"github.com/samber/lo"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

@@ -1,6 +1,6 @@
 package loggingadmin
 
-import "github.com/rancher/opni/pkg/validation"
+import "github.com/open-panoptes/opni/pkg/validation"
 
 func (o *OpensearchClusterV2) Validate() error {
 	if o.S3 != nil {

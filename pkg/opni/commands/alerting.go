@@ -5,7 +5,7 @@ package commands
 import (
 	"flag"
 
-	"github.com/rancher/opni/internal/alerting/amtool"
+	"github.com/open-panoptes/opni/internal/alerting/amtool"
 	"github.com/spf13/cobra"
 )
 

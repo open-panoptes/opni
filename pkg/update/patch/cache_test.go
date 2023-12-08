@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 
-	"github.com/rancher/opni/pkg/update/patch"
+	"github.com/open-panoptes/opni/pkg/update/patch"
 )
 
 type TestCache interface {

@@ -7,8 +7,8 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/pflag"
 
-	"github.com/rancher/opni/pkg/pkp"
-	"github.com/rancher/opni/pkg/trust"
+	"github.com/open-panoptes/opni/pkg/pkp"
+	"github.com/open-panoptes/opni/pkg/trust"
 )
 
 var _ = Describe("Flags", Label("unit"), func() {

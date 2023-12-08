@@ -75,11 +75,11 @@ message PlainMessage {
 
 ## Supporting documents:
 
-- https://github.com/rancher/opni/wiki/Alerting-Routing-Model
+- https://github.com/open-panoptes/opni/wiki/Alerting-Routing-Model
 
 ## Dependencies:
 
-- Opni Router interface : https://github.com/rancher/opni/pull/942
+- Opni Router interface : https://github.com/open-panoptes/opni/pull/942
 
 ## Risks and contingencies:
 

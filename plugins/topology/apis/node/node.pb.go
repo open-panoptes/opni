@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/plugins/topology/apis/node/node.proto
+// source: github.com/open-panoptes/opni/plugins/topology/apis/node/node.proto
 
 package node
 

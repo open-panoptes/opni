@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
+	opensearchtypes "github.com/open-panoptes/opni/pkg/opensearch/opensearch/types"
+	loggingerrors "github.com/open-panoptes/opni/plugins/logging/pkg/errors"
 	"github.com/opensearch-project/opensearch-go/opensearchutil"
-	opensearchtypes "github.com/rancher/opni/pkg/opensearch/opensearch/types"
-	loggingerrors "github.com/rancher/opni/plugins/logging/pkg/errors"
 )
 
 func (m *Manager) DoSnapshot(ctx context.Context, repository string, indices []string) error {

@@ -6,13 +6,13 @@ import (
 
 	"log/slog"
 
-	healthpkg "github.com/rancher/opni/pkg/health"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/plugins/apis/apiextensions/stream"
-	"github.com/rancher/opni/pkg/plugins/apis/capability"
-	"github.com/rancher/opni/pkg/plugins/apis/health"
-	"github.com/rancher/opni/pkg/plugins/meta"
-	"github.com/rancher/opni/plugins/alerting/pkg/agent/drivers"
+	healthpkg "github.com/open-panoptes/opni/pkg/health"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions/stream"
+	"github.com/open-panoptes/opni/pkg/plugins/apis/capability"
+	"github.com/open-panoptes/opni/pkg/plugins/apis/health"
+	"github.com/open-panoptes/opni/pkg/plugins/meta"
+	"github.com/open-panoptes/opni/plugins/alerting/pkg/agent/drivers"
 )
 
 type Plugin struct {

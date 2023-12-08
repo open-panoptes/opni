@@ -11,15 +11,15 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/test/memfs"
-	"github.com/rancher/opni/pkg/test/testlog"
-	"github.com/rancher/opni/pkg/update"
+	"github.com/open-panoptes/opni/pkg/test/memfs"
+	"github.com/open-panoptes/opni/pkg/test/testlog"
+	"github.com/open-panoptes/opni/pkg/update"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
-	"github.com/rancher/opni/pkg/test/testutil"
-	patchclient "github.com/rancher/opni/pkg/update/patch/client"
+	controlv1 "github.com/open-panoptes/opni/pkg/apis/control/v1"
+	"github.com/open-panoptes/opni/pkg/test/testutil"
+	patchclient "github.com/open-panoptes/opni/pkg/update/patch/client"
 	"github.com/spf13/afero"
 )
 

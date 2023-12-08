@@ -2,13 +2,13 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v1.0.0
-// source: github.com/rancher/opni/pkg/apis/management/v1/management.proto
+// source: github.com/open-panoptes/opni/pkg/apis/management/v1/management.proto
 
 package v1
 
 import (
-	v11 "github.com/rancher/opni/pkg/apis/capability/v1"
-	v1 "github.com/rancher/opni/pkg/apis/core/v1"
+	v11 "github.com/open-panoptes/opni/pkg/apis/capability/v1"
+	v1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 	annotations "google.golang.org/genproto/googleapis/api/annotations"
 	_ "google.golang.org/genproto/googleapis/rpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"

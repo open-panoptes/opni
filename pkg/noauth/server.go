@@ -12,10 +12,10 @@ import (
 	"log/slog"
 
 	"github.com/lestrrat-go/jwx/jwk"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/auth/openid"
+	"github.com/open-panoptes/opni/pkg/util"
 	"github.com/ory/fosite"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/auth/openid"
-	"github.com/rancher/opni/pkg/util"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

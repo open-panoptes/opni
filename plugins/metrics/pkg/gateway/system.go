@@ -4,24 +4,24 @@ import (
 	"context"
 	"os"
 
-	"github.com/rancher/opni/plugins/metrics/apis/cortexops"
-	"github.com/rancher/opni/plugins/metrics/apis/node"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/cortexops"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/node"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/machinery"
-	"github.com/rancher/opni/pkg/plugins/apis/system"
-	"github.com/rancher/opni/pkg/task"
-	"github.com/rancher/opni/plugins/metrics/pkg/backend"
-	"github.com/rancher/opni/plugins/metrics/pkg/cortex"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/machinery"
+	"github.com/open-panoptes/opni/pkg/plugins/apis/system"
+	"github.com/open-panoptes/opni/pkg/task"
+	"github.com/open-panoptes/opni/plugins/metrics/pkg/backend"
+	"github.com/open-panoptes/opni/plugins/metrics/pkg/cortex"
 
-	_ "github.com/rancher/opni/pkg/storage/etcd"
-	_ "github.com/rancher/opni/pkg/storage/jetstream"
-	"github.com/rancher/opni/pkg/storage/kvutil"
+	_ "github.com/open-panoptes/opni/pkg/storage/etcd"
+	_ "github.com/open-panoptes/opni/pkg/storage/jetstream"
+	"github.com/open-panoptes/opni/pkg/storage/kvutil"
 )
 
 func (p *Plugin) UseManagementAPI(client managementv1.ManagementClient) {

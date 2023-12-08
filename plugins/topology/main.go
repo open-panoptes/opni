@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/rancher/opni/pkg/plugins"
-	"github.com/rancher/opni/pkg/plugins/meta"
-	"github.com/rancher/opni/plugins/topology/pkg/topology/agent"
-	"github.com/rancher/opni/plugins/topology/pkg/topology/gateway"
+	"github.com/open-panoptes/opni/pkg/plugins"
+	"github.com/open-panoptes/opni/pkg/plugins/meta"
+	"github.com/open-panoptes/opni/plugins/topology/pkg/topology/agent"
+	"github.com/open-panoptes/opni/plugins/topology/pkg/topology/gateway"
 )
 
 func main() {

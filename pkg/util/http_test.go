@@ -10,9 +10,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/caching"
-	"github.com/rancher/opni/pkg/test/freeport"
-	"github.com/rancher/opni/pkg/test/testgrpc"
+	"github.com/open-panoptes/opni/pkg/caching"
+	"github.com/open-panoptes/opni/pkg/test/freeport"
+	"github.com/open-panoptes/opni/pkg/test/testgrpc"
 )
 
 const (
@@ -29,7 +29,7 @@ var _ = BuildHttpTransportCaching(
 func BuildHttpTransportCaching(
 	t caching.HttpCachingTransport,
 ) bool {
-	//FIXME: https://github.com/rancher/opni/issues/1764
+	//FIXME: https://github.com/open-panoptes/opni/issues/1764
 	return XDescribe("Http util test suites", Ordered, Label("integration"), func() {
 		var serverPort int
 		var cachingClient *http.Client

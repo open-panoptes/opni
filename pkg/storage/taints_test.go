@@ -5,11 +5,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	mock_storage "github.com/rancher/opni/pkg/test/mock/storage"
+	mock_storage "github.com/open-panoptes/opni/pkg/test/mock/storage"
 	"go.uber.org/mock/gomock"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/storage"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/storage"
 )
 
 var _ = Describe("Taints", Ordered, Label("unit"), func() {

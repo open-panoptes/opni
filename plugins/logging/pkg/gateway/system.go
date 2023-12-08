@@ -4,17 +4,17 @@ import (
 	"context"
 	"os"
 
-	opnicorev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/machinery"
-	"github.com/rancher/opni/pkg/plugins/apis/system"
-	"github.com/rancher/opni/pkg/task"
+	opnicorev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/machinery"
+	"github.com/open-panoptes/opni/pkg/plugins/apis/system"
+	"github.com/open-panoptes/opni/pkg/task"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	_ "github.com/rancher/opni/pkg/storage/etcd"
-	_ "github.com/rancher/opni/pkg/storage/jetstream"
+	_ "github.com/open-panoptes/opni/pkg/storage/etcd"
+	_ "github.com/open-panoptes/opni/pkg/storage/jetstream"
 )
 
 func (p *Plugin) UseManagementAPI(client managementv1.ManagementClient) {

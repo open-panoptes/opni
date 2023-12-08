@@ -6,8 +6,8 @@ import (
 	strings "strings"
 
 	"github.com/nsf/jsondiff"
-	cliutil "github.com/rancher/opni/pkg/opni/cliutil"
-	"github.com/rancher/opni/pkg/plugins/driverutil"
+	cliutil "github.com/open-panoptes/opni/pkg/opni/cliutil"
+	"github.com/open-panoptes/opni/pkg/plugins/driverutil"
 	"github.com/samber/lo"
 	cobra "github.com/spf13/cobra"
 	"github.com/ttacon/chalk"

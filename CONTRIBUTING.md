@@ -24,7 +24,7 @@ It is highly recommended, though not required, to install [protols](https://gith
 
 To install it, follow the instructions in the protols README. You should then be able to open any protobuf file in the Opni codebase and interact with the code as you would with any other lsp-enabled language.
 
-See also: https://github.com/rancher/opni/wiki/Protols-Tips
+See also: https://github.com/open-panoptes/opni/wiki/Protols-Tips
 
 ## 2. Building Opni Locally
 

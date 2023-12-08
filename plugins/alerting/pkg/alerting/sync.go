@@ -6,14 +6,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rancher/opni/pkg/alerting/storage/opts"
-	"github.com/rancher/opni/pkg/capabilities/wellknown"
-	"github.com/rancher/opni/pkg/health"
+	"github.com/open-panoptes/opni/pkg/alerting/storage/opts"
+	"github.com/open-panoptes/opni/pkg/capabilities/wellknown"
+	"github.com/open-panoptes/opni/pkg/health"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	metricsnode "github.com/rancher/opni/plugins/metrics/apis/node"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	metricsnode "github.com/open-panoptes/opni/plugins/metrics/apis/node"
 )
 
 // capability name ---> condition name ---> condition status

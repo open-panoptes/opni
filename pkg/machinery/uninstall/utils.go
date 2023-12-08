@@ -7,8 +7,8 @@ import (
 
 	"log/slog"
 
-	capabilityv1 "github.com/rancher/opni/pkg/apis/capability/v1"
-	"github.com/rancher/opni/pkg/task"
+	capabilityv1 "github.com/open-panoptes/opni/pkg/apis/capability/v1"
+	"github.com/open-panoptes/opni/pkg/task"
 )
 
 type TimestampedMetadata struct {

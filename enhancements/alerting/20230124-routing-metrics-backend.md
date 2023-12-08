@@ -131,7 +131,7 @@ Some additional notes:
 
 ## Dependencies:
 
-- https://github.com/rancher/opni/pull/942
+- https://github.com/open-panoptes/opni/pull/942
 
 ## Risks and contingencies:
 

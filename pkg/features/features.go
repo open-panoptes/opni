@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/dbason/featureflags"
-	"github.com/rancher/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/logger"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/component-base/featuregate"

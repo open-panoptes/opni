@@ -3,8 +3,8 @@ package opts
 import (
 	"time"
 
-	"github.com/rancher/opni/pkg/alerting/drivers/config"
-	"github.com/rancher/opni/pkg/alerting/drivers/routing"
+	"github.com/open-panoptes/opni/pkg/alerting/drivers/config"
+	"github.com/open-panoptes/opni/pkg/alerting/drivers/routing"
 	"log/slog"
 )
 

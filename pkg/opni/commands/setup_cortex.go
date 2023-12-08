@@ -3,10 +3,10 @@
 package commands
 
 import (
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/plugins/metrics/apis/cortexadmin"
-	"github.com/rancher/opni/plugins/metrics/apis/cortexops"
-	"github.com/rancher/opni/plugins/metrics/apis/node"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/cortexadmin"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/cortexops"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/node"
 	"github.com/spf13/cobra"
 )
 

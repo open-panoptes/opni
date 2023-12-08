@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - ragu               v1.0.0
-// source: github.com/rancher/opni/pkg/apis/core/v1/core.proto
+// source: github.com/open-panoptes/opni/pkg/apis/core/v1/core.proto
 
 package v1
 
@@ -106,5 +106,5 @@ var Pinger_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "github.com/rancher/opni/pkg/apis/core/v1/core.proto",
+	Metadata: "github.com/open-panoptes/opni/pkg/apis/core/v1/core.proto",
 }

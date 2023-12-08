@@ -1,6 +1,6 @@
 package v1beta1
 
-import "github.com/rancher/opni/pkg/config/meta"
+import "github.com/open-panoptes/opni/pkg/config/meta"
 
 var SupportAgentConfigTypeMeta = meta.TypeMeta{
 	APIVersion: APIVersion,

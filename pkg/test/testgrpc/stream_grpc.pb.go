@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - ragu               v1.0.0
-// source: github.com/rancher/opni/pkg/test/testgrpc/stream.proto
+// source: github.com/open-panoptes/opni/pkg/test/testgrpc/stream.proto
 
 package testgrpc
 
@@ -137,5 +137,5 @@ var StreamService_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "github.com/rancher/opni/pkg/test/testgrpc/stream.proto",
+	Metadata: "github.com/open-panoptes/opni/pkg/test/testgrpc/stream.proto",
 }

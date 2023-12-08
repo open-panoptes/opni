@@ -10,13 +10,13 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/plugins"
-	"github.com/rancher/opni/pkg/plugins/apis/apiextensions"
-	managementext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/management"
-	"github.com/rancher/opni/pkg/plugins/meta"
-	"github.com/rancher/opni/pkg/test/testdata"
-	"github.com/rancher/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/plugins"
+	"github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions"
+	managementext "github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions/management"
+	"github.com/open-panoptes/opni/pkg/plugins/meta"
+	"github.com/open-panoptes/opni/pkg/test/testdata"
+	"github.com/open-panoptes/opni/pkg/util"
 	"google.golang.org/grpc"
 )
 
@@ -165,25 +165,25 @@ func (tp TestPluginSet) EnablePlugin(pkgName, pluginName string, mode meta.Plugi
 // caller's package. This will apply to all test environments in a suite.
 //
 // Must be called from init() in a package of the form
-// github.com/rancher/opni/plugins/<name>/test
+// github.com/open-panoptes/opni/plugins/<name>/test
 func EnablePlugin(mode meta.PluginMode, schemeFunc func(context.Context) meta.Scheme) {
-	// Get the top-level plugin package name, e.g. "github.com/rancher/opni/plugins/example"
+	// Get the top-level plugin package name, e.g. "github.com/open-panoptes/opni/plugins/example"
 	pc, _, _, ok := runtime.Caller(1)
 	if !ok {
 		panic("failed to get caller")
 	}
 
 	fn := runtime.FuncForPC(pc)
-	name := fn.Name() // "github.com/rancher/opni/plugins/<name>/test.init.x"
+	name := fn.Name() // "github.com/open-panoptes/opni/plugins/<name>/test.init.x"
 
-	regex := regexp.MustCompile(`^github.com/rancher/opni/plugins/(\w+)/test.init.\d+$`)
+	regex := regexp.MustCompile(`^github.com/open-panoptes/opni/plugins/(\w+)/test.init.\d+$`)
 
 	matches := regex.FindStringSubmatch(name)
 	if len(matches) != 2 {
 		panic("EnablePlugin must be called from init (caller: " + name + ")")
 	}
 
-	pkgName := "github.com/rancher/opni/plugins/" + matches[1]
+	pkgName := "github.com/open-panoptes/opni/plugins/" + matches[1]
 	pluginName := "plugin_" + matches[1]
 
 	globalTestPlugins.EnablePlugin(pkgName, pluginName, mode, schemeFunc)

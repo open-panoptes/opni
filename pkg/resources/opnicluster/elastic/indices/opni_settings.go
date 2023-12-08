@@ -3,7 +3,7 @@ package indices
 import (
 	"fmt"
 
-	opensearchtypes "github.com/rancher/opni/pkg/opensearch/opensearch/types"
+	opensearchtypes "github.com/open-panoptes/opni/pkg/opensearch/opensearch/types"
 )
 
 const (

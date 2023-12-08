@@ -7,7 +7,7 @@ Shared Enum, consts and errors for SLO apis & packages
 import (
 	"fmt"
 
-	validation "github.com/rancher/opni/pkg/validation"
+	validation "github.com/open-panoptes/opni/pkg/validation"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

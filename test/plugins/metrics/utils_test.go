@@ -8,9 +8,9 @@ import (
 	"github.com/cortexproject/cortex/pkg/cortexpb"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/remoteread"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/remotewrite"
 	"github.com/prometheus/prometheus/prompb"
-	"github.com/rancher/opni/plugins/metrics/apis/remoteread"
-	"github.com/rancher/opni/plugins/metrics/apis/remotewrite"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )

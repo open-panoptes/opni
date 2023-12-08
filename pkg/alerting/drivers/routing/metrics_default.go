@@ -1,9 +1,9 @@
 package routing
 
 import (
+	"github.com/open-panoptes/opni/pkg/alerting/drivers/config"
 	"github.com/prometheus/alertmanager/pkg/labels"
 	"github.com/prometheus/common/model"
-	"github.com/rancher/opni/pkg/alerting/drivers/config"
 )
 
 var OpniMetricsSubRoutingTreeId config.Matchers = []*labels.Matcher{

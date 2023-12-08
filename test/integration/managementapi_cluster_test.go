@@ -8,19 +8,19 @@ import (
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/capabilities/wellknown"
+	"github.com/open-panoptes/opni/pkg/capabilities/wellknown"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	v1 "github.com/rancher/opni/pkg/apis/capability/v1"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/task"
-	"github.com/rancher/opni/pkg/test"
-	"github.com/rancher/opni/pkg/util"
-	_ "github.com/rancher/opni/plugins/example/test"
+	v1 "github.com/open-panoptes/opni/pkg/apis/capability/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/task"
+	"github.com/open-panoptes/opni/pkg/test"
+	"github.com/open-panoptes/opni/pkg/util"
+	_ "github.com/open-panoptes/opni/plugins/example/test"
 )
 
 // #region Test Setup

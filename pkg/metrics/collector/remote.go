@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/rancher/opni/pkg/metrics/collector/transform"
+	"github.com/open-panoptes/opni/pkg/metrics/collector/transform"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	otlpmetricsv1 "go.opentelemetry.io/proto/otlp/metrics/v1"

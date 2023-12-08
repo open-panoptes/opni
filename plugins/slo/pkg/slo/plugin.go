@@ -3,19 +3,20 @@ package slo
 import (
 	"context"
 
-	"github.com/rancher/opni/plugins/metrics/apis/cortexadmin"
-	"github.com/rancher/opni/plugins/slo/apis/slo"
 	"log/slog"
 
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/logger"
-	managementext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/management"
-	"github.com/rancher/opni/pkg/plugins/apis/system"
-	"github.com/rancher/opni/pkg/plugins/meta"
-	"github.com/rancher/opni/pkg/storage"
-	"github.com/rancher/opni/pkg/util"
-	"github.com/rancher/opni/pkg/util/future"
+	"github.com/open-panoptes/opni/plugins/metrics/apis/cortexadmin"
+	"github.com/open-panoptes/opni/plugins/slo/apis/slo"
+
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	managementv1 "github.com/open-panoptes/opni/pkg/apis/management/v1"
+	"github.com/open-panoptes/opni/pkg/logger"
+	managementext "github.com/open-panoptes/opni/pkg/plugins/apis/apiextensions/management"
+	"github.com/open-panoptes/opni/pkg/plugins/apis/system"
+	"github.com/open-panoptes/opni/pkg/plugins/meta"
+	"github.com/open-panoptes/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/util/future"
 )
 
 type Plugin struct {

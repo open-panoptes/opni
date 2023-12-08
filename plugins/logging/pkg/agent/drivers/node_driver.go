@@ -3,8 +3,8 @@ package drivers
 import (
 	"context"
 
-	"github.com/rancher/opni/pkg/plugins/driverutil"
-	"github.com/rancher/opni/plugins/logging/apis/node"
+	"github.com/open-panoptes/opni/pkg/plugins/driverutil"
+	"github.com/open-panoptes/opni/plugins/logging/apis/node"
 )
 
 type LoggingNodeDriver interface {

@@ -9,11 +9,11 @@ import (
 	"log/slog"
 
 	backoffv2 "github.com/lestrrat-go/backoff/v2"
-	healthpkg "github.com/rancher/opni/pkg/health"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/plugins/alerting/pkg/agent/drivers"
-	"github.com/rancher/opni/plugins/alerting/pkg/apis/node"
-	"github.com/rancher/opni/plugins/alerting/pkg/apis/rules"
+	healthpkg "github.com/open-panoptes/opni/pkg/health"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/plugins/alerting/pkg/agent/drivers"
+	"github.com/open-panoptes/opni/plugins/alerting/pkg/apis/node"
+	"github.com/open-panoptes/opni/plugins/alerting/pkg/apis/rules"
 )
 
 var RuleSyncInterval = time.Minute * 2

@@ -4,14 +4,15 @@ import (
 	"context"
 	"sync"
 
-	"github.com/rancher/opni/pkg/alerting/server"
-	alertingSync "github.com/rancher/opni/pkg/alerting/server/sync"
-	"github.com/rancher/opni/pkg/alerting/storage/spec"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	"github.com/rancher/opni/pkg/util"
-	"github.com/rancher/opni/pkg/util/future"
-	notifications "github.com/rancher/opni/plugins/alerting/pkg/alerting/notifications/v1"
 	"log/slog"
+
+	"github.com/open-panoptes/opni/pkg/alerting/server"
+	alertingSync "github.com/open-panoptes/opni/pkg/alerting/server/sync"
+	"github.com/open-panoptes/opni/pkg/alerting/storage/spec"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	"github.com/open-panoptes/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/util/future"
+	notifications "github.com/open-panoptes/opni/plugins/alerting/pkg/alerting/notifications/v1"
 )
 
 type manualSync func(ctx context.Context, hashRing spec.HashRing, routers spec.RouterStorage) error

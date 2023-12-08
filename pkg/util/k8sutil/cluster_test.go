@@ -6,8 +6,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/test/testk8s"
-	"github.com/rancher/opni/pkg/util/k8sutil"
+	"github.com/open-panoptes/opni/pkg/test/testk8s"
+	"github.com/open-panoptes/opni/pkg/util/k8sutil"
 	"github.com/samber/lo"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"

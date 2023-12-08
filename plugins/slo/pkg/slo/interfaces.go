@@ -4,9 +4,10 @@ import (
 	"context"
 	"sync"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	sloapi "github.com/rancher/opni/plugins/slo/apis/slo"
 	"log/slog"
+
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	sloapi "github.com/open-panoptes/opni/plugins/slo/apis/slo"
 
 	"google.golang.org/protobuf/proto"
 )

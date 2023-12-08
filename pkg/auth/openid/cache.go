@@ -7,7 +7,7 @@ import (
 
 	"log/slog"
 
-	"github.com/rancher/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/logger"
 )
 
 type UserInfo struct {

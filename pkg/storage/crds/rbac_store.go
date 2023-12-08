@@ -3,9 +3,9 @@ package crds
 import (
 	"context"
 
-	monitoringv1beta1 "github.com/rancher/opni/apis/monitoring/v1beta1"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/storage"
+	monitoringv1beta1 "github.com/open-panoptes/opni/apis/monitoring/v1beta1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/storage"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"

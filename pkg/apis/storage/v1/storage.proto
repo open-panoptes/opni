@@ -2,6 +2,6 @@ syntax = "proto3";
 
 package storage;
 
-import public "github.com/rancher/opni/internal/cortex/config/storage/storage.proto";
+import public "github.com/open-panoptes/opni/internal/cortex/config/storage/storage.proto";
 
-option go_package = "github.com/rancher/opni/pkg/apis/storage/v1";
+option go_package = "github.com/open-panoptes/opni/pkg/apis/storage/v1";

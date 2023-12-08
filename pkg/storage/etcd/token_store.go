@@ -10,10 +10,10 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/lestrrat-go/backoff/v2"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/storage"
-	"github.com/rancher/opni/pkg/tokens"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/tokens"
 )
 
 func (e *EtcdStore) CreateToken(ctx context.Context, ttl time.Duration, opts ...storage.TokenCreateOption) (*corev1.BootstrapToken, error) {

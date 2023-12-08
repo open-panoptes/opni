@@ -1,13 +1,13 @@
 package storage
 
 import (
-	"github.com/rancher/opni/pkg/alerting/drivers/routing"
-	"github.com/rancher/opni/pkg/alerting/interfaces"
-	"github.com/rancher/opni/pkg/alerting/storage/jetstream"
-	"github.com/rancher/opni/pkg/alerting/storage/mem"
-	"github.com/rancher/opni/pkg/alerting/storage/opts"
-	"github.com/rancher/opni/pkg/alerting/storage/spec"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
+	"github.com/open-panoptes/opni/pkg/alerting/drivers/routing"
+	"github.com/open-panoptes/opni/pkg/alerting/interfaces"
+	"github.com/open-panoptes/opni/pkg/alerting/storage/jetstream"
+	"github.com/open-panoptes/opni/pkg/alerting/storage/mem"
+	"github.com/open-panoptes/opni/pkg/alerting/storage/opts"
+	"github.com/open-panoptes/opni/pkg/alerting/storage/spec"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
 )
 
 var _ spec.RouterStorage = (*jetstream.JetstreamRouterStore[routing.OpniRouting])(nil)

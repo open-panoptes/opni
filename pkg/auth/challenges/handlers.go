@@ -3,7 +3,7 @@ package challenges
 import (
 	"context"
 
-	"github.com/rancher/opni/pkg/util/streams"
+	"github.com/open-panoptes/opni/pkg/util/streams"
 )
 
 type ChallengeHandler interface {

@@ -2,7 +2,7 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 
-[![](https://get.pulumi.com/new/button.svg)](https://app.pulumi.com/new?template=https://github.com/rancher/opni)
+[![](https://get.pulumi.com/new/button.svg)](https://app.pulumi.com/new?template=https://github.com/open-panoptes/opni)
 
 Observability data comes in the form of ***logs, metrics and traces***.
 The collection and storage of observability data is handled by observability backends and agents.

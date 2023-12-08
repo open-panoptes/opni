@@ -3,7 +3,7 @@ package v1
 import (
 	"strings"
 
-	"github.com/rancher/opni/pkg/validation"
+	"github.com/open-panoptes/opni/pkg/validation"
 )
 
 type LabelSelectorOperator string

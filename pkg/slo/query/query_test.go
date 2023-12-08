@@ -3,8 +3,8 @@ package query_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/slo/query"
-	api "github.com/rancher/opni/plugins/slo/apis/slo"
+	"github.com/open-panoptes/opni/pkg/slo/query"
+	api "github.com/open-panoptes/opni/plugins/slo/apis/slo"
 )
 
 func constructionShouldSucceed(q *query.SLOQueryResult, err error) {

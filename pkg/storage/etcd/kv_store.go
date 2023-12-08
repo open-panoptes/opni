@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/rancher/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/storage"
 )
 
 type genericKeyValueStore struct {

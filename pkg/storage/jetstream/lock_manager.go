@@ -7,10 +7,10 @@ import (
 
 	"github.com/lestrrat-go/backoff/v2"
 	"github.com/nats-io/nats.go"
-	"github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/storage"
-	"github.com/rancher/opni/pkg/storage/lock"
+	"github.com/open-panoptes/opni/pkg/config/v1beta1"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/storage/lock"
 )
 
 // Requires jetstream 2.9+

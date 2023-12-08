@@ -9,9 +9,9 @@ import (
 	"log/slog"
 
 	"github.com/kralicky/totem"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/metrics"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/metrics"
 	"go.opentelemetry.io/otel/attribute"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -21,14 +21,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	agentv1 "github.com/rancher/opni/pkg/agent"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	streamv1 "github.com/rancher/opni/pkg/apis/stream/v1"
-	"github.com/rancher/opni/pkg/auth/cluster"
-	"github.com/rancher/opni/pkg/plugins/meta"
-	"github.com/rancher/opni/pkg/plugins/types"
-	"github.com/rancher/opni/pkg/storage"
-	"github.com/rancher/opni/pkg/util"
+	agentv1 "github.com/open-panoptes/opni/pkg/agent"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	streamv1 "github.com/open-panoptes/opni/pkg/apis/stream/v1"
+	"github.com/open-panoptes/opni/pkg/auth/cluster"
+	"github.com/open-panoptes/opni/pkg/plugins/meta"
+	"github.com/open-panoptes/opni/pkg/plugins/types"
+	"github.com/open-panoptes/opni/pkg/storage"
+	"github.com/open-panoptes/opni/pkg/util"
 )
 
 type streamPlugin struct {

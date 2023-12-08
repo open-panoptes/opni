@@ -4,13 +4,14 @@ import (
 	"context"
 	"sync"
 
-	"github.com/rancher/opni/pkg/alerting/server"
-	alertingSync "github.com/rancher/opni/pkg/alerting/server/sync"
-	"github.com/rancher/opni/pkg/alerting/storage/spec"
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
-	"github.com/rancher/opni/pkg/util"
-	"github.com/rancher/opni/pkg/util/future"
 	"log/slog"
+
+	"github.com/open-panoptes/opni/pkg/alerting/server"
+	alertingSync "github.com/open-panoptes/opni/pkg/alerting/server/sync"
+	"github.com/open-panoptes/opni/pkg/alerting/storage/spec"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
+	"github.com/open-panoptes/opni/pkg/util"
+	"github.com/open-panoptes/opni/pkg/util/future"
 )
 
 type NotificationServerComponent struct {

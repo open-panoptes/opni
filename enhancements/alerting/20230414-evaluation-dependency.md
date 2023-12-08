@@ -152,7 +152,7 @@ service DependencyManager{
 - [`gonum`](https://pkg.go.dev/gonum.org/v1/gonum)
 - [`gonum` graph](https://pkg.go.dev/gonum.org/v1/gonum/graph)
 - [`gonum` graph serialization](https://pkg.go.dev/gonum.org/v1/gonum/graph/encoding)
-- [`Opni task.Controller`](https://github.com/rancher/opni/blob/e128a9ee122dec86e055cbc763d8184a77b6f1cf/pkg/task/controller.go#L27)
+- [`Opni task.Controller`](https://github.com/open-panoptes/opni/blob/e128a9ee122dec86e055cbc763d8184a77b6f1cf/pkg/task/controller.go#L27)
 
 ## Dependencies:
 

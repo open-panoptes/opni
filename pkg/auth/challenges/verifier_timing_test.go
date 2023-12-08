@@ -13,12 +13,12 @@ import (
 	gsync "github.com/kralicky/gpkg/sync"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/auth/challenges"
-	"github.com/rancher/opni/pkg/ecdh"
-	"github.com/rancher/opni/pkg/keyring"
-	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/storage"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
+	"github.com/open-panoptes/opni/pkg/auth/challenges"
+	"github.com/open-panoptes/opni/pkg/ecdh"
+	"github.com/open-panoptes/opni/pkg/keyring"
+	"github.com/open-panoptes/opni/pkg/logger"
+	"github.com/open-panoptes/opni/pkg/storage"
 )
 
 // Can't use the test keyring store broker due to possible extra overhead

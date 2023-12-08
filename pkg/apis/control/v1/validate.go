@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"github.com/rancher/opni/pkg/validation"
+	"github.com/open-panoptes/opni/pkg/validation"
 )
 
 func (a *PluginArchive) Validate() error {

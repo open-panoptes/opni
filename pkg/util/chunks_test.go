@@ -7,8 +7,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gmeasure"
+	"github.com/open-panoptes/opni/pkg/util"
 	"github.com/prometheus/prometheus/prompb"
-	"github.com/rancher/opni/pkg/util"
 	"github.com/samber/lo"
 )
 

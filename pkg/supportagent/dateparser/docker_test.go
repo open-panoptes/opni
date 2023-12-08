@@ -3,7 +3,7 @@ package dateparser_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/opni/pkg/supportagent/dateparser"
+	"github.com/open-panoptes/opni/pkg/supportagent/dateparser"
 )
 
 var _ = Describe("Docker Dateparser", Ordered, Label("unit"), func() {

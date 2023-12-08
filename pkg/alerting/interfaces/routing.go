@@ -1,7 +1,7 @@
 package interfaces
 
 import (
-	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
+	alertingv1 "github.com/open-panoptes/opni/pkg/apis/alerting/v1"
 )
 
 type Routable interface {

@@ -3,7 +3,7 @@ package versions
 import (
 	"runtime/debug"
 
-	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
+	corev1 "github.com/open-panoptes/opni/pkg/apis/core/v1"
 	"github.com/samber/lo"
 )
 
