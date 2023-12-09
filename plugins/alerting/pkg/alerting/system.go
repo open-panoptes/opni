@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/rancher/opni/pkg/caching"
@@ -180,12 +179,10 @@ func (p *Plugin) UseAPIExtensions(intf system.ExtensionClientInterface) {
 	services := []string{"CortexAdmin", "CortexOps"}
 	cc, err := intf.GetClientConn(p.ctx, services...)
 	if err != nil {
-		p.logger.With(logger.Err(err)).Error(fmt.Sprintf("failed to get required clients for alerting : %s", strings.Join(services, ",")))
 		if p.ctx.Err() != nil {
 			// Plugin is shutting down, don't exit
 			return
 		}
-		os.Exit(1)
 	}
 	p.adminClient.Set(cortexadmin.NewCortexAdminClient(cc))
 	p.cortexOpsClient.Set(cortexops.NewCortexOpsClient(cc))
