@@ -1,25 +1,17 @@
-//go:build ignore
-
-// TODO: implement this
-
 package monitoring
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 
 	_ "embed"
 
 	grafanav1beta1 "github.com/grafana-operator/grafana-operator/v5/api/v1beta1"
 	"github.com/imdario/mergo"
-	"github.com/rancher/opni/pkg/auth/openid"
-	"github.com/rancher/opni/pkg/config/v1beta1"
 	"github.com/rancher/opni/pkg/resources"
 	"github.com/samber/lo"
-	"github.com/ttacon/chalk"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -109,14 +101,15 @@ func (r *Reconciler) grafana() ([]resources.Resource, error) {
 		return absentResources, nil
 	}
 
-	gatewayHostname := r.gw.Spec.Hostname
-	grafanaHostname, err := r.getGrafanaHostname(gatewayHostname)
-	if err != nil {
-		return nil, err
-	}
-
-	defaults := r.createGrafanaSpecDefaults(grafanaHostname)
+	defaults := r.createGrafanaSpecDefaults()
 	spec := r.mc.Spec.Grafana.GrafanaSpec
+
+	// TODO: endpoint changes cause the deployment to be rolled out every time
+	// ips := []string{}
+	// for _, endpoint := range r.gw.Status.Endpoints {
+	// 	ips = append(ips, endpoint.IP)
+	// }
+	// defaults.Config["auth.proxy"]["whitelist"] = strings.Join(ips, ",")
 
 	// apply defaults to user-provided config
 	// ensure label selectors and secrets are appended to any user defined ones
@@ -129,86 +122,76 @@ func (r *Reconciler) grafana() ([]resources.Resource, error) {
 		spec.PersistentVolumeClaim.Spec.AccessModes = []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce}
 	}
 
-	// special case to fill the ingress hostname if not set
-	if spec.Ingress != nil && spec.Ingress.Spec != nil {
-		for _, rule := range spec.Ingress.Spec.Rules {
-			if rule.Host == "" {
-				rule.Host = grafanaHostname
-			}
-		}
-	}
-
 	grafana.Spec = spec
 
-	gatewayAuthProvider := r.gw.Spec.Auth.Provider
-	switch gatewayAuthProvider {
-	case v1beta1.AuthProviderNoAuth:
-		grafanaAuthGenericOauthCfg := map[string]string{
-			"enabled":             "true",
-			"client_id":           "grafana",
-			"client_secret":       "noauth",
-			"scopes":              "openid profile email",
-			"auth_url":            fmt.Sprintf("http://%s:4000/oauth2/authorize", gatewayHostname),
-			"token_url":           fmt.Sprintf("http://%s:4000/oauth2/token", gatewayHostname),
-			"api_url":             fmt.Sprintf("http://%s:4000/oauth2/userinfo", gatewayHostname),
-			"role_attribute_path": "grafana_role",
-		}
-		grafana.Spec.Config["auth.generic_oauth"] = grafanaAuthGenericOauthCfg
+	// switch gatewayAuthProvider {
+	// case v1beta1.AuthProviderNoAuth:
+	// 	grafanaAuthGenericOauthCfg := map[string]string{
+	// 		"enabled":             "true",
+	// 		"client_id":           "grafana",
+	// 		"client_secret":       "noauth",
+	// 		"scopes":              "openid profile email",
+	// 		"auth_url":            fmt.Sprintf("http://%s:4000/oauth2/authorize", gatewayHostname),
+	// 		"token_url":           fmt.Sprintf("http://%s:4000/oauth2/token", gatewayHostname),
+	// 		"api_url":             fmt.Sprintf("http://%s:4000/oauth2/userinfo", gatewayHostname),
+	// 		"role_attribute_path": "grafana_role",
+	// 	}
+	// 	grafana.Spec.Config["auth.generic_oauth"] = grafanaAuthGenericOauthCfg
 
-	case v1beta1.AuthProviderOpenID:
-		spec := r.gw.Spec.Auth.Openid
-		if spec.Discovery == nil && spec.WellKnownConfiguration == nil {
-			return nil, openid.ErrMissingDiscoveryConfig
-		}
-		wkc, err := spec.OpenidConfig.GetWellKnownConfiguration()
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch configuration from openid provider: %w", err)
-		}
-		scopes := spec.Scopes
-		if len(scopes) == 0 {
-			scopes = []string{"openid", "profile", "email"}
-		}
-		grafanaAuthGenericOauthCfg := map[string]string{
-			"enabled":             "true",
-			"client_id":           spec.ClientID,
-			"client_secret":       spec.ClientSecret,
-			"scopes":              strings.Join(scopes, " "),
-			"auth_url":            wkc.AuthEndpoint,
-			"token_url":           wkc.TokenEndpoint,
-			"api_url":             wkc.UserinfoEndpoint,
-			"role_attribute_path": spec.RoleAttributePath,
-		}
-		if len(spec.AllowedDomains) > 0 {
-			grafanaAuthGenericOauthCfg["allowed_domains"] = strings.Join(spec.AllowedDomains, " ")
-		}
-		if spec.AllowSignUp != nil {
-			grafanaAuthGenericOauthCfg["allow_sign_up"] = strconv.FormatBool(lo.FromPtr(spec.AllowSignUp))
-		}
-		if spec.InsecureSkipVerify != nil {
-			grafanaAuthGenericOauthCfg["tls_skip_verify_insecure"] = strconv.FormatBool(lo.FromPtr(spec.InsecureSkipVerify))
-		}
-		if spec.RoleAttributeStrict != nil {
-			grafanaAuthGenericOauthCfg["role_attribute_strict"] = strconv.FormatBool(lo.FromPtr(spec.RoleAttributeStrict))
-		}
-		if spec.TLSClientCA != "" && spec.TLSClientCert != "" && spec.TLSClientKey != "" {
-			grafanaAuthGenericOauthCfg["tls_client_cert"] = spec.TLSClientCert
-			grafanaAuthGenericOauthCfg["tls_client_key"] = spec.TLSClientKey
-			grafanaAuthGenericOauthCfg["tls_client_ca"] = spec.TLSClientCA
-		}
-		if spec.EmailAttributePath != "" {
-			grafanaAuthGenericOauthCfg["email_attribute_path"] = spec.EmailAttributePath
-		}
+	// case v1beta1.AuthProviderOpenID:
+	// 	spec := r.gw.Spec.Auth.Openid
+	// 	if spec.Discovery == nil && spec.WellKnownConfiguration == nil {
+	// 		return nil, openid.ErrMissingDiscoveryConfig
+	// 	}
+	// 	wkc, err := spec.OpenidConfig.GetWellKnownConfiguration()
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("failed to fetch configuration from openid provider: %w", err)
+	// 	}
+	// 	scopes := spec.Scopes
+	// 	if len(scopes) == 0 {
+	// 		scopes = []string{"openid", "profile", "email"}
+	// 	}
+	// 	grafanaAuthGenericOauthCfg := map[string]string{
+	// 		"enabled":             "true",
+	// 		"client_id":           spec.ClientID,
+	// 		"client_secret":       spec.ClientSecret,
+	// 		"scopes":              strings.Join(scopes, " "),
+	// 		"auth_url":            wkc.AuthEndpoint,
+	// 		"token_url":           wkc.TokenEndpoint,
+	// 		"api_url":             wkc.UserinfoEndpoint,
+	// 		"role_attribute_path": spec.RoleAttributePath,
+	// 	}
+	// 	if len(spec.AllowedDomains) > 0 {
+	// 		grafanaAuthGenericOauthCfg["allowed_domains"] = strings.Join(spec.AllowedDomains, " ")
+	// 	}
+	// 	if spec.AllowSignUp != nil {
+	// 		grafanaAuthGenericOauthCfg["allow_sign_up"] = strconv.FormatBool(lo.FromPtr(spec.AllowSignUp))
+	// 	}
+	// 	if spec.InsecureSkipVerify != nil {
+	// 		grafanaAuthGenericOauthCfg["tls_skip_verify_insecure"] = strconv.FormatBool(lo.FromPtr(spec.InsecureSkipVerify))
+	// 	}
+	// 	if spec.RoleAttributeStrict != nil {
+	// 		grafanaAuthGenericOauthCfg["role_attribute_strict"] = strconv.FormatBool(lo.FromPtr(spec.RoleAttributeStrict))
+	// 	}
+	// 	if spec.TLSClientCA != "" && spec.TLSClientCert != "" && spec.TLSClientKey != "" {
+	// 		grafanaAuthGenericOauthCfg["tls_client_cert"] = spec.TLSClientCert
+	// 		grafanaAuthGenericOauthCfg["tls_client_key"] = spec.TLSClientKey
+	// 		grafanaAuthGenericOauthCfg["tls_client_ca"] = spec.TLSClientCA
+	// 	}
+	// 	if spec.EmailAttributePath != "" {
+	// 		grafanaAuthGenericOauthCfg["email_attribute_path"] = spec.EmailAttributePath
+	// 	}
 
-		grafana.Spec.Config["auth.generic_oauth"] = grafanaAuthGenericOauthCfg
+	// 	grafana.Spec.Config["auth.generic_oauth"] = grafanaAuthGenericOauthCfg
 
-		if wkc.EndSessionEndpoint != "" {
-			grafana.Spec.Config["auth"]["signout_redirect_url"] = wkc.EndSessionEndpoint
-		}
+	// 	if wkc.EndSessionEndpoint != "" {
+	// 		grafana.Spec.Config["auth"]["signout_redirect_url"] = wkc.EndSessionEndpoint
+	// 	}
 
-		if spec.InsecureSkipVerify != nil && *spec.InsecureSkipVerify {
-			r.lg.Warn(chalk.Yellow.Color("InsecureSkipVerify enabled for openid auth"))
-		}
-	}
+	// 	if spec.InsecureSkipVerify != nil && *spec.InsecureSkipVerify {
+	// 		r.lg.Warn(chalk.Yellow.Color("InsecureSkipVerify enabled for openid auth"))
+	// 	}
+	// }
 
 	controllerutil.SetOwnerReference(r.mc, grafana, r.client.Scheme())
 	controllerutil.SetOwnerReference(r.mc, opniDatasource, r.client.Scheme())
@@ -227,7 +210,7 @@ func (r *Reconciler) grafana() ([]resources.Resource, error) {
 	return append(presentResources, legacyResources...), nil
 }
 
-func (r *Reconciler) createGrafanaSpecDefaults(grafanaHostname string) *grafanav1beta1.GrafanaSpec {
+func (r *Reconciler) createGrafanaSpecDefaults() *grafanav1beta1.GrafanaSpec {
 	tag := grafanaImageVersion
 	if r.mc.Spec.Grafana.GetVersion() != "" {
 		tag = strings.TrimSpace(r.mc.Spec.Grafana.GetVersion())
@@ -237,7 +220,7 @@ func (r *Reconciler) createGrafanaSpecDefaults(grafanaHostname string) *grafanav
 		Client: &grafanav1beta1.GrafanaClient{
 			PreferIngress: lo.ToPtr(false),
 		},
-		Config: createDefaultGrafanaIni(grafanaHostname),
+		Config: createDefaultGrafanaIni(),
 		Deployment: &grafanav1beta1.DeploymentV1{
 			Spec: grafanav1beta1.DeploymentV1Spec{
 				Template: &grafanav1beta1.DeploymentV1PodTemplateSpec{
@@ -403,22 +386,47 @@ func grafanaDatasourceTLSSecret() []grafanav1beta1.GrafanaDatasourceValueFrom {
 
 // createDefaultGrafanaIni defines the grafana.ini file.
 // See: https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/
-func createDefaultGrafanaIni(grafanaHostname string) map[string]map[string]string {
+func createDefaultGrafanaIni() map[string]map[string]string {
 	config := make(map[string]map[string]string)
 
-	serverSection := make(map[string]string)
-	serverSection["domain"] = grafanaHostname
-	serverSection["root_url"] = "https://" + grafanaHostname
-	config["server"] = serverSection
+	config["security"] = map[string]string{
+		// TODO: grafana operator absolutely hammers the api when provisioning and will get itself locked out immediately if the server is not ready, or something like that
+		"disable_brute_force_login_protection": "true",
+	}
+	config["dataproxy"] = map[string]string{
+		"send_user_header": "true",
+		"logging":          "true",
+	}
 
-	authSection := make(map[string]string)
-	authSection["disable_login_form"] = "true"
-	config["auth"] = authSection
+	config["server"] = map[string]string{
+		"root_url":            "/proxy/grafana",
+		"serve_from_sub_path": "false", // very important
+	}
 
-	oauthSection := make(map[string]string)
-	oauthSection["enabled"] = "true"
-	oauthSection["scopes"] = "openid profile email"
-	config["auth.generic_oauth"] = oauthSection
+	config["auth"] = map[string]string{
+		"disable_login_form": "true",
+	}
+
+	config["users"] = map[string]string{
+		"allow_sign_up":      "false",
+		"auto_assign_org":    "true",
+		"auto_assign_org_id": "1",
+	}
+	config["auth.proxy"] = map[string]string{
+		"enabled":         "true",
+		"header_name":     "X-WEBAUTH-USER",
+		"header_property": "username",
+		"auto_sign_up":    "true",
+		"sync_ttl":        "60",
+		"headers":         "Role:X-WEBAUTH-ROLE",
+
+		// https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/auth-proxy/#login-token-and-session-cookie
+		"enable_login_token": "false",
+	}
+	// oauthSection := make(map[string]string)
+	// oauthSection["enabled"] = "true"
+	// oauthSection["scopes"] = "openid profile email"
+	// config["auth.generic_oauth"] = oauthSection
 
 	unifiedAlertingSection := make(map[string]string)
 	unifiedAlertingSection["enabled"] = "true"
@@ -429,7 +437,7 @@ func createDefaultGrafanaIni(grafanaHostname string) map[string]map[string]strin
 	config["alerting"] = alertingSection
 
 	featureTogglesSection := make(map[string]string)
-	featureTogglesSection["enable"] = "accessTokenExpirationCheck panelTitleSearch increaseInMemDatabaseQueryCache newPanelChromeUI"
+	featureTogglesSection["enable"] = "panelTitleSearch increaseInMemDatabaseQueryCache newPanelChromeUI idForwarding"
 	config["feature_toggles"] = featureTogglesSection
 
 	dashboardsSection := make(map[string]string)
@@ -442,8 +450,9 @@ func createDefaultGrafanaIni(grafanaHostname string) map[string]map[string]strin
 func createDatasourceJSONData() (json.RawMessage, error) {
 	datasourceCfg := make(map[string]any)
 	datasourceCfg["alertmanagerUid"] = "opni_alertmanager"
-	datasourceCfg["oauthPassThru"] = true
+	datasourceCfg["tlsAuth"] = true
 	datasourceCfg["tlsAuthWithCACert"] = true
+	datasourceCfg["forwardGrafanaIdToken"] = true
 
 	jsonData, err := json.Marshal(datasourceCfg)
 	if err != nil {
@@ -455,7 +464,8 @@ func createDatasourceJSONData() (json.RawMessage, error) {
 func createAlertManagerDatasourceJSONData() (json.RawMessage, error) {
 	datasourceCfg := make(map[string]any)
 	datasourceCfg["implementation"] = "cortex"
-	datasourceCfg["oauthPassThru"] = true
+	datasourceCfg["withCredentials"] = true
+	datasourceCfg["tlsAuth"] = true
 	datasourceCfg["tlsAuthWithCACert"] = true
 
 	jsonData, err := json.Marshal(datasourceCfg)

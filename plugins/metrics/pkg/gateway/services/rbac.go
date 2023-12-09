@@ -99,7 +99,7 @@ func (r *RBACBackendService) GetRole(ctx context.Context, in *corev1.Reference) 
 
 func (r *RBACBackendService) CreateRole(ctx context.Context, in *corev1.Role) (*emptypb.Empty, error) {
 	if err := validation.Validate(in); err != nil {
-		return &emptypb.Empty{}, err
+		return nil, err
 	}
 
 	var revision int64
@@ -111,8 +111,10 @@ func (r *RBACBackendService) CreateRole(ctx context.Context, in *corev1.Role) (*
 		return nil, err
 	}
 	err = r.rolesStore.Put(ctx, in.GetId(), in, storage.WithRevision(revision))
-
-	return &emptypb.Empty{}, err
+	if err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
 }
 
 func (r *RBACBackendService) UpdateRole(ctx context.Context, in *corev1.Role) (*emptypb.Empty, error) {
@@ -127,20 +129,32 @@ func (r *RBACBackendService) UpdateRole(ctx context.Context, in *corev1.Role) (*
 
 	oldRole.Permissions = in.GetPermissions()
 	err = r.rolesStore.Put(ctx, oldRole.Reference().GetId(), oldRole, storage.WithRevision(in.GetRevision()))
-
-	return &emptypb.Empty{}, err
-}
-
-func (r *RBACBackendService) DeleteRole(ctx context.Context, in *corev1.Reference) (*emptypb.Empty, error) {
-	locker := system.NewLock(ctx, r.Context.KeyValueStoreClient(), lockKey(in.GetId()))
-	var innerErr error
-	err := locker.Do(func() {
-		innerErr = r.rolesStore.Delete(ctx, in.GetId())
-	})
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, innerErr
+	return &emptypb.Empty{}, nil
+}
+
+func (r *RBACBackendService) DeleteRole(ctx context.Context, in *corev1.Reference) (*emptypb.Empty, error) {
+	var rev int64
+	role, err := r.rolesStore.Get(ctx, in.GetId(), storage.WithRevisionOut(&rev))
+	if err != nil {
+		if storage.IsNotFound(err) {
+			return &emptypb.Empty{}, nil
+		}
+		return nil, status.Errorf(codes.Internal, "failed to get role: %v", err)
+	}
+	err = r.rolesStore.Delete(ctx, role.GetId(), storage.WithRevision(rev))
+	if err != nil {
+		if storage.IsNotFound(err) {
+			return &emptypb.Empty{}, nil
+		}
+		if storage.IsConflict(err) {
+			return nil, status.Errorf(codes.FailedPrecondition, "role has been modified, please try again")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to delete role: %v", err)
+	}
+	return &emptypb.Empty{}, nil
 }
 
 func (r *RBACBackendService) ListRoles(ctx context.Context, _ *emptypb.Empty) (*corev1.RoleList, error) {

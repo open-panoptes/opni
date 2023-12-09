@@ -21,6 +21,7 @@ type ClusterDriver interface {
 	PartialCortexOpsServer
 
 	GetCortexServiceConfig() CortexServiceConfig
+	GetGrafanaServiceConfig() GrafanaServiceConfig
 }
 
 type PartialCortexOpsServer interface {
@@ -57,4 +58,8 @@ type MTLSConfig struct {
 	ClientCA   string
 	ClientCert string
 	ClientKey  string
+}
+
+type GrafanaServiceConfig struct {
+	HTTPAddress string
 }

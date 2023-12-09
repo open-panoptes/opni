@@ -14,6 +14,7 @@ import (
 	"github.com/rancher/opni/pkg/auth/local"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/proxy"
+	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/util/oidc"
 	ginoauth2 "github.com/zalando/gin-oauth2"
 	"golang.org/x/oauth2"
@@ -92,6 +93,12 @@ func (m *MultiMiddleware) Handler(authCheck ...ginoauth2.AccessCheckFunction) gi
 			c.Header(authenticateHeader, authRealm)
 			c.AbortWithStatus(http.StatusUnauthorized)
 			m.Logger.Warn("auth failed for admin")
+			return
+		}
+		if storage.IsNotFound(err) {
+			c.Header(authenticateHeader, authRealm)
+			c.AbortWithStatus(http.StatusUnauthorized)
+			m.Logger.Warn("no admin password configured")
 			return
 		}
 		m.Logger.With(logger.Err(err)).Error("password verification failed")

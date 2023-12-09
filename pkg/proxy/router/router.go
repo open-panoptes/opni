@@ -134,6 +134,7 @@ func (r *implRouter) handle(c *gin.Context) {
 	proxy := httputil.ReverseProxy{
 		Rewrite:   rewrite,
 		Transport: r.transport,
+		ErrorLog:  slog.NewLogLogger(r.logger.Handler(), slog.LevelDebug), // TODO
 	}
 	proxy.ServeHTTP(c.Writer, c.Request)
 }

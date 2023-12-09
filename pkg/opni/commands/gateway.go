@@ -15,6 +15,7 @@ import (
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	"github.com/rancher/opni/pkg/config/reactive"
 	configv1 "github.com/rancher/opni/pkg/config/v1"
+	"github.com/rancher/opni/pkg/dashboard"
 	"github.com/rancher/opni/pkg/gateway"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/machinery"
@@ -487,6 +488,11 @@ persist their default configurations in the KV store.
 
 			g.MustRegisterCollector(m)
 
+			d, err := dashboard.NewServer(ctx, mgr, pluginLoader, g, dashboard.WithLogger(lg.WithGroup("dashboard")))
+			if err != nil {
+				return err
+			}
+
 			go func() {
 				ctx, ca := context.WithCancel(ctx)
 				defer ca()
@@ -521,6 +527,16 @@ persist their default configurations in the KV store.
 					lg.Info("management server stopped")
 				} else if err != nil {
 					lg.With(logger.Err(err)).Warn("management server exited with error")
+				}
+				return err
+			})
+			eg.Go(func() error {
+				lg.Debug("starting dashboard server")
+				err := d.ListenAndServe(ctx)
+				if errors.Is(err, context.Canceled) {
+					lg.Info("dashboard server stopped")
+				} else if err != nil {
+					lg.With(logger.Err(err)).Warn("dashboard server exited with error")
 				}
 				return err
 			})

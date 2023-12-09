@@ -72,11 +72,11 @@ func (r *Reconciler) Reconcile() (reconcile.Result, error) {
 
 	allResources := []resources.Resource{}
 
-	// grafanaResources, err := r.grafana()
-	// if err != nil {
-	// 	return k8sutil.RequeueErr(err).Result()
-	// }
-	// allResources = append(allResources, grafanaResources...)
+	grafanaResources, err := r.grafana()
+	if err != nil {
+		return k8sutil.RequeueErr(err).Result()
+	}
+	allResources = append(allResources, grafanaResources...)
 
 	if op := resources.ReconcileAll(r, allResources); op.ShouldRequeue() {
 		return op.Result()

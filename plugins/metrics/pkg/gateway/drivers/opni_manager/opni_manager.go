@@ -195,9 +195,6 @@ func (k *OpniManager) Status(ctx context.Context, _ *emptypb.Empty) (*driverutil
 			status.InstallState = driverutil.InstallState_Installed
 		}
 		mcStatus := cluster.Status.Cortex
-		if err != nil {
-			return nil, err
-		}
 		status.Version = mcStatus.Version
 		if cluster.GetDeletionTimestamp() != nil {
 			status.InstallState = driverutil.InstallState_Uninstalling
@@ -272,6 +269,12 @@ func (k *OpniManager) GetCortexServiceConfig() drivers.CortexServiceConfig {
 			ClientCert: "/run/cortex/certs/client/tls.crt",
 			ClientKey:  "/run/cortex/certs/client/tls.key",
 		},
+	}
+}
+
+func (k *OpniManager) GetGrafanaServiceConfig() drivers.GrafanaServiceConfig {
+	return drivers.GrafanaServiceConfig{
+		HTTPAddress: "grafana-service:3000",
 	}
 }
 

@@ -397,6 +397,12 @@ func (d *TestEnvMetricsClusterDriver) GetCortexServiceConfig() drivers.CortexSer
 	}
 }
 
+func (k *TestEnvMetricsClusterDriver) GetGrafanaServiceConfig() drivers.GrafanaServiceConfig {
+	return drivers.GrafanaServiceConfig{
+		HTTPAddress: "localhost:3000",
+	}
+}
+
 type TestEnvPrometheusNodeDriver struct {
 	env *test.Environment
 

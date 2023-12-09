@@ -43,7 +43,6 @@ import (
 type Server struct {
 	ServerOptions
 	mgr         *configv1.GatewayConfigManager
-	logger      *slog.Logger
 	pl          plugins.LoaderInterface
 	oauthConfig *oauth2.Config
 	ds          AuthDataSource
@@ -56,6 +55,7 @@ type extraHandler struct {
 }
 
 type ServerOptions struct {
+	logger        *slog.Logger
 	extraHandlers []extraHandler
 	assetsFS      fs.FS
 	authenticator local.LocalAuthenticator
@@ -91,6 +91,12 @@ func WithLocalAuthenticator(authenticator local.LocalAuthenticator) ServerOption
 	}
 }
 
+func WithLogger(logger *slog.Logger) ServerOption {
+	return func(o *ServerOptions) {
+		o.logger = logger
+	}
+}
+
 func NewServer(
 	ctx context.Context,
 	mgr *configv1.GatewayConfigManager,
@@ -101,6 +107,7 @@ func NewServer(
 	options := ServerOptions{
 		assetsFS:      web.DistFS,
 		authenticator: local.NewLocalAuthenticator(ds.StorageBackend().KeyValueStore(authutil.AuthNamespace)),
+		logger:        logger.NewNop(),
 	}
 	options.apply(opts...)
 
@@ -111,7 +118,6 @@ func NewServer(
 	return &Server{
 		ServerOptions: options,
 		mgr:           mgr,
-		logger:        logger.New().WithGroup("dashboard"),
 		pl:            pl,
 		ds:            ds,
 	}, nil
@@ -123,22 +129,34 @@ func (ws *Server) ListenAndServe(ctx context.Context) error {
 	var mu sync.Mutex
 	var cancel context.CancelFunc
 	var done chan struct{}
+
+	warn := time.AfterFunc(10*time.Second, func() {
+		lg.Warn("dashboard server taking longer than expected to start, check for missing configuration")
+	})
+	stopOnce := sync.OnceFunc(func() {
+		warn.Stop()
+	})
+
 	reactive.Bind(ctx, func(v []protoreflect.Value) {
 		mu.Lock()
 		defer mu.Unlock()
+		stopOnce()
 
 		if cancel != nil {
 			cancel()
 			<-done
 		}
 
-		httpListenAddr := v[0].String()
+		dc := v[0].Message().Interface().(*configv1.DashboardServerSpec)
+		mgmtHttpAddr := v[1].String()
+
+		httpListenAddr := dc.GetHttpListenAddress()
 		var tlsConfig *tls.Config
 		var err error
-		if !v[1].IsValid() {
+		if dc.GetWebCerts() == nil {
 			err = configv1.ErrInsecure
 		} else {
-			tlsConfig, err = v[1].Message().Interface().(*configv1.CertsSpec).AsTlsConfig(tls.NoClientCert)
+			tlsConfig, err = dc.GetWebCerts().AsTlsConfig(tls.NoClientCert)
 		}
 		if err != nil {
 			if errors.Is(err, configv1.ErrInsecure) {
@@ -152,8 +170,7 @@ func (ws *Server) ListenAndServe(ctx context.Context) error {
 				return
 			}
 		}
-		hostname := v[2].String()
-		mgmtHttpAddr := v[3].String()
+		hostname := dc.GetHostname()
 		var listener net.Listener
 		if tlsConfig == nil {
 			listener, err = net.Listen("tcp4", httpListenAddr)
@@ -189,6 +206,7 @@ func (ws *Server) ListenAndServe(ctx context.Context) error {
 		}
 
 		webfs := http.FS(sub)
+		router.Use(middleware.Handler(ws.checkAdminAccess))
 
 		router.NoRoute(func(c *gin.Context) {
 			ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
@@ -216,7 +234,6 @@ func (ws *Server) ListenAndServe(ctx context.Context) error {
 			return
 		}
 		apiGroup := router.Group("/opni-api")
-		apiGroup.Use(middleware.Handler(ws.checkAdminAccess))
 		apiGroup.Any("/*any", gin.WrapH(http.StripPrefix("/opni-api", httputil.NewSingleHostReverseProxy(mgmtUrl))))
 
 		proxy := router.Group("/proxy")
@@ -255,9 +272,7 @@ func (ws *Server) ListenAndServe(ctx context.Context) error {
 			lg.Info("dashboard server stopped")
 		}()
 	},
-		ws.mgr.Reactive(configv1.ProtoPath().Dashboard().HttpListenAddress()),
-		ws.mgr.Reactive(protopath.Path(configv1.ProtoPath().Dashboard().WebCerts())),
-		ws.mgr.Reactive(configv1.ProtoPath().Dashboard().Hostname()),
+		ws.mgr.Reactive(protopath.Path(configv1.ProtoPath().Dashboard())),
 		ws.mgr.Reactive(configv1.ProtoPath().Management().HttpListenAddress()),
 	)
 	<-ctx.Done()

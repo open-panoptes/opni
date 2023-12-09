@@ -248,6 +248,7 @@ func main() {
 			}
 			opts := []dashboard.ServerOption{
 				dashboard.WithLocalAuthenticator(&localauth.TestLocalAuthenticator{}),
+				dashboard.WithLogger(environment.Logger.WithGroup("dashboard")),
 			}
 			if noEmbeddedWebAssets {
 				absPath, err := filepath.Abs("web/")
