@@ -6,7 +6,6 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"path"
 	"strings"
 	sync "sync"
 	"time"
@@ -35,19 +34,10 @@ type TrackedConnectionListener interface {
 	// If a tracked connection is updated, this method will be called again with
 	// the same context, agentId, and leaseId, but updated instanceInfo.
 	// Implementations of this method MUST NOT block.
-	HandleTrackedConnection(ctx context.Context, agentId string, leaseId string, instanceInfo *corev1.InstanceInfo)
+	HandleTrackedConnection(ctx context.Context, agentId string, holder string, instanceInfo *corev1.InstanceInfo)
 }
 
-type TrackedInstanceListener interface {
-	// Called when a new gateway instance is tracked.
-	// The provided context will be canceled when the tracked instance is deleted.
-	// Implementations of this method MUST NOT block.
-	HandleTrackedInstance(ctx context.Context, instanceInfo *corev1.InstanceInfo)
-}
-
-const (
-	instancesKey = "__instances"
-)
+const controllingInstanceAnnotation = "controlling-instance"
 
 type activeTrackedConnection struct {
 	agentId               string
@@ -173,10 +163,10 @@ func (ct *ConnectionTracker) Run(ctx context.Context) error {
 		func(v []protoreflect.Value) {
 			ct.localInstanceInfoMu.Lock()
 			defer ct.localInstanceInfoMu.Unlock()
-			ct.localInstanceInfo.RelayAddress = v[0].String()
-			ct.localInstanceInfo.ManagementAddress = v[1].String()
-			ct.localInstanceInfo.GatewayAddress = v[2].String()
-			ct.localInstanceInfo.WebAddress = v[3].String()
+			ct.localInstanceInfo.RelayAddress = os.ExpandEnv(v[0].String())
+			ct.localInstanceInfo.ManagementAddress = os.ExpandEnv(v[1].String())
+			ct.localInstanceInfo.GatewayAddress = os.ExpandEnv(v[2].String())
+			ct.localInstanceInfo.WebAddress = os.ExpandEnv(v[3].String())
 			go ct.updateInstanceInfo(util.Must(proto.Marshal(ct.localInstanceInfo)))
 		},
 		ct.mgr.Reactive(configv1.ProtoPath().Relay().AdvertiseAddress()),
@@ -193,16 +183,7 @@ func (ct *ConnectionTracker) Run(ctx context.Context) error {
 	eg.Go(func() error {
 		for event := range connectionsWatcher {
 			ct.mu.Lock()
-			var key string
-			switch event.EventType {
-			case storage.WatchEventPut:
-				key = event.Current.Key()
-			case storage.WatchEventDelete:
-				key = event.Previous.Key()
-			}
-			if !strings.HasPrefix(key, instancesKey) {
-				ct.handleConnEvent(event)
-			}
+			ct.handleConnEvent(event)
 			ct.mu.Unlock()
 		}
 		return nil
@@ -249,7 +230,7 @@ type instanceInfoKeyType struct{}
 var instanceInfoKey = instanceInfoKeyType{}
 
 func (ct *ConnectionTracker) connKey(agentId string) string {
-	return path.Join(agentId, ct.whoami)
+	return agentId
 }
 
 func (ct *ConnectionTracker) StreamServerInterceptor() grpc.StreamServerInterceptor {
@@ -287,6 +268,9 @@ func (ct *ConnectionTracker) StreamServerInterceptor() grpc.StreamServerIntercep
 		}()
 
 		instanceInfo.Acquired = true
+		instanceInfo.Annotations = map[string]string{
+			controllingInstanceAnnotation: ct.whoami,
+		}
 		if err := ct.connectionsKv.Put(ss.Context(), ct.connKey(agentId), util.Must(proto.Marshal(instanceInfo))); err != nil {
 			ct.logger.Warn("failed to persist instance info in the connections KV")
 		}
@@ -297,18 +281,18 @@ func (ct *ConnectionTracker) StreamServerInterceptor() grpc.StreamServerIntercep
 	}
 }
 
-func decodeConnKey(key string) (agentId string, leaseId string, ok bool) {
-	parts := strings.Split(key, "/")
-	if len(parts) != 2 {
-		// only handle keys of the form <agentId>/<leaseId>
-		return "", "", false
-	}
+// func decodeConnKey(key string) (agentId string, leaseId string, ok bool) {
+// 	parts := strings.Split(key, "/")
+// 	if len(parts) != 2 {
+// 		// only handle keys of the form <agentId>/<leaseId>
+// 		return "", "", false
+// 	}
 
-	agentId = parts[0]
-	leaseId = parts[1]
-	ok = true
-	return
-}
+// 	agentId = parts[0]
+// 	leaseId = parts[1]
+// 	ok = true
+// 	return
+// }
 
 func (ct *ConnectionTracker) handleConnUpdate(
 	event storage.WatchEvent[storage.KeyRevision[[]byte]],
@@ -316,14 +300,14 @@ func (ct *ConnectionTracker) handleConnUpdate(
 	conn *activeTrackedConnection,
 	holder string,
 	info *corev1.InstanceInfo,
-) {
+) (invalidated bool) {
 	key := event.Current.Key()
 	lg := ct.logger.With("key", key, "agentId", agentId)
 	if !info.GetAcquired() {
 		// a different instance is only attempting to acquire the lock,
 		// ignore the event
 		lg.With("instance", info.GetRelayAddress()).Debug("tracked connection is still being acquired...")
-		return
+		return false
 	}
 	if conn.holder == holder {
 		// update revision and instance info, and notify listeners
@@ -336,13 +320,14 @@ func (ct *ConnectionTracker) handleConnUpdate(
 		for _, listener := range ct.connListeners {
 			listener.HandleTrackedConnection(conn.trackingContext, agentId, holder, info)
 		}
-		return
+		return false
 	}
 	// a different instance has acquired the lock, invalidate
 	// the current tracked connection
 	lg.Debug("tracked connection invalidated")
 	conn.cancelTrackingContext()
 	delete(ct.activeConnections, agentId)
+	return true
 }
 
 func (ct *ConnectionTracker) handleConnCreate(
@@ -374,11 +359,9 @@ func (ct *ConnectionTracker) handleConnCreate(
 }
 
 func (ct *ConnectionTracker) handleConnEvent(event storage.WatchEvent[storage.KeyRevision[[]byte]]) {
-	key := event.Current.Key()
-	agentId, holder, ok := decodeConnKey(key)
-	if !ok {
-		ct.logger.With("event", key).Warn("event cannot be indexed in the form : <agentId>/<leaseId>")
-		return
+	agentId := event.Current.Key()
+	if strings.Contains(agentId, "/") {
+		return // todo: hack to ignore old-style connection keys
 	}
 	switch event.EventType {
 	case storage.WatchEventPut:
@@ -401,18 +384,29 @@ func (ct *ConnectionTracker) handleConnEvent(event storage.WatchEvent[storage.Ke
 				lg.With(logger.Err(err)).Error("failed to unmarshal instance info")
 				return
 			}
-			ct.handleConnUpdate(
+			var holder string
+			if info.Annotations != nil {
+				holder = info.Annotations[controllingInstanceAnnotation]
+			}
+			invalidated := ct.handleConnUpdate(
 				event,
 				agentId,
 				conn,
 				holder,
 				info,
 			)
+			if !invalidated {
+				return
+			}
 		}
 		info, err := instanceInfo()
 		if err != nil {
 			lg.With(logger.Err(err)).Error("failed to unmarshal instance info")
 			return
+		}
+		var holder string
+		if info.Annotations != nil {
+			holder = info.Annotations[controllingInstanceAnnotation]
 		}
 		ct.handleConnCreate(
 			event,
@@ -420,16 +414,11 @@ func (ct *ConnectionTracker) handleConnEvent(event storage.WatchEvent[storage.Ke
 			holder,
 			info,
 		)
-
 	case storage.WatchEventDelete:
 		// make sure the previous revision of the deleted key is the same as the
 		// revision of the tracked connection.
 		lg := ct.logger.With("key", event.Previous.Key(), "rev", event.Previous.Revision())
 		if conn, ok := ct.activeConnections[agentId]; ok {
-			if conn.holder != holder {
-				// likely an expired lock attempt, ignore
-				return
-			}
 			prev := &corev1.InstanceInfo{}
 			if err := proto.Unmarshal(event.Previous.Value(), prev); err == nil {
 				if ct.IsLocalInstance(prev) {
@@ -453,14 +442,14 @@ func (ct *ConnectionTracker) handleConnEvent(event storage.WatchEvent[storage.Ke
 }
 
 func (ct *ConnectionTracker) IsLocalInstance(instanceInfo *corev1.InstanceInfo) bool {
-	if ct.localInstanceInfo == nil {
+	if ct.localInstanceInfo == nil || instanceInfo.Annotations == nil {
 		return false
 	}
 
 	// Note: this assumes that if the relay address is the same, then the
 	// management address is also the same. If we ever decide to allow
 	// standalone management servers, this will need to be updated.
-	return instanceInfo.GetRelayAddress() == ct.localInstanceInfo.GetRelayAddress()
+	return instanceInfo.Annotations[controllingInstanceAnnotation] == ct.whoami
 }
 
 func (ct *ConnectionTracker) IsTrackedLocal(agentId string) bool {

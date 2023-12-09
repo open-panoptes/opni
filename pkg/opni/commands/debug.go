@@ -363,7 +363,7 @@ func BuildDebugKvWatchCmd() *cobra.Command {
 			}
 
 			switch namespace {
-			case "connections":
+			case "connections", "lock/connections":
 				ui := tui.NewKeyValueStoreUI[*corev1.InstanceInfo](events)
 				return ui.Run()
 			default:
@@ -376,6 +376,7 @@ func BuildDebugKvWatchCmd() *cobra.Command {
 		if len(args) == 0 {
 			return []string{
 				"connections",
+				"lock/connections",
 			}, cobra.ShellCompDirectiveNoFileComp
 		}
 		return nil, cobra.ShellCompDirectiveNoFileComp
