@@ -66,8 +66,7 @@ func (r *Reconciler) certs() ([]resources.Resource, error) {
 func (r *Reconciler) selfsignedIssuer() client.Object {
 	return &cmv1.ClusterIssuer{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "opni-gateway-selfsigned-issuer",
-			Namespace: r.gw.Namespace,
+			Name: "opni-gateway-selfsigned-issuer",
 		},
 		Spec: cmv1.IssuerSpec{
 			IssuerConfig: cmv1.IssuerConfig{
@@ -118,6 +117,16 @@ func (r *Reconciler) gatewayCAIssuer() client.Object {
 }
 
 func (r *Reconciler) gatewayServingCert() client.Object {
+	hostname := r.gw.Spec.Config.GetDashboard().GetHostname()
+	dnsNames := []string{
+		fmt.Sprintf("opni.%s.svc", r.gw.Namespace),
+		fmt.Sprintf("opni.%s.svc.cluster.local", r.gw.Namespace),
+		fmt.Sprintf("opni-internal.%s.svc", r.gw.Namespace),
+		fmt.Sprintf("opni-internal.%s.svc.cluster.local", r.gw.Namespace),
+	}
+	if hostname != "" {
+		dnsNames = append(dnsNames, hostname)
+	}
 	return &cmv1.Certificate{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "opni-gateway-serving-cert",
@@ -134,13 +143,7 @@ func (r *Reconciler) gatewayServingCert() client.Object {
 				Kind:  "Issuer",
 				Name:  "opni-gateway-ca-issuer",
 			},
-			DNSNames: []string{
-				r.gw.Spec.Hostname,
-				fmt.Sprintf("opni.%s.svc", r.gw.Namespace),
-				fmt.Sprintf("opni.%s.svc.cluster.local", r.gw.Namespace),
-				fmt.Sprintf("opni-internal.%s.svc", r.gw.Namespace),
-				fmt.Sprintf("opni-internal.%s.svc.cluster.local", r.gw.Namespace),
-			},
+			DNSNames: dnsNames,
 			IPAddresses: []string{
 				"127.0.0.1",
 			},

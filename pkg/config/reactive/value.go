@@ -2,107 +2,123 @@ package reactive
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 
 	"github.com/google/uuid"
-	gsync "github.com/kralicky/gpkg/sync"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type reactiveValue struct {
-	valueMu       sync.Mutex
+	mu            sync.RWMutex
+	logger        *slog.Logger
 	rev           int64
+	pendingInit   bool
 	value         protoreflect.Value
-	watchChannels gsync.Map[string, chan protoreflect.Value]
-	watchFuncs    gsync.Map[string, *func(int64, protoreflect.Value)]
-
-	groupMu sync.Mutex
-	group   <-chan struct{}
+	watchChannels map[string]chan protoreflect.Value
+	watchFuncs    map[string]func(int64, protoreflect.Value, <-chan struct{})
 }
 
-func (r *reactiveValue) Update(rev int64, v protoreflect.Value, group <-chan struct{}) {
-	r.valueMu.Lock()
+func newReactiveValue(lg *slog.Logger) *reactiveValue {
+	return &reactiveValue{
+		logger:        lg,
+		pendingInit:   true,
+		watchChannels: make(map[string]chan protoreflect.Value),
+		watchFuncs:    make(map[string]func(int64, protoreflect.Value, <-chan struct{})),
+	}
+}
+
+func (s *reactiveValue) traceLog(msg string, attrs ...any) {
+	if s.logger == nil {
+		return
+	}
+	s.logger.Log(context.Background(), traceLogLevel, msg, attrs...)
+}
+
+func (r *reactiveValue) Update(rev int64, v protoreflect.Value, group <-chan struct{}, notify bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.traceLog("updating reactive value", "revision", rev, "group", group, "notify", notify)
+
 	r.rev = rev
 	r.value = v
-	r.valueMu.Unlock()
 
-	r.groupMu.Lock()
-	r.group = group
-	r.groupMu.Unlock()
+	if r.pendingInit {
+		r.pendingInit = false
+		r.traceLog("pending init complete")
+	} else if !notify {
+		r.traceLog("skipping notify")
+		return
+	}
 
-	r.watchChannels.Range(func(_ string, w chan protoreflect.Value) bool {
-		select {
-		case w <- v:
-		default:
-			// if the watch is not ready to receive, drop the previous value and
-			// replace it with the current value
-			select {
-			case <-w:
-				// current value discarded
-			default:
-				// the channel was read from just now
-			}
-			w <- v
-		}
-		return true
-	})
-	r.watchFuncs.Range(func(key string, value *func(int64, protoreflect.Value)) bool {
-		(*value)(rev, v)
-		return true
-	})
+	r.traceLog("notifying watch channels", "count", len(r.watchChannels))
+	for _, w := range r.watchChannels {
+		w <- v
+	}
+
+	r.traceLog("notifying watch funcs", "count", len(r.watchFuncs))
+	for _, f := range r.watchFuncs {
+		f(rev, v, group)
+	}
+
+	r.traceLog("update complete")
 }
 
 func (r *reactiveValue) Value() protoreflect.Value {
-	r.valueMu.Lock()
-	defer r.valueMu.Unlock()
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	return r.value
 }
 
 func (r *reactiveValue) Watch(ctx context.Context) <-chan protoreflect.Value {
-	ch := make(chan protoreflect.Value, 1)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	ch := make(chan protoreflect.Value, 4)
 
-	r.valueMu.Lock()
-	if r.rev != 0 {
+	r.traceLog("starting watch", "pendingInit", r.pendingInit)
+
+	if !r.pendingInit {
+		r.traceLog("not pending init; writing current value", "revision", r.rev, "value", r.value)
 		ch <- r.value
 	}
-	r.valueMu.Unlock()
 
 	key := uuid.NewString()
-	r.watchChannels.Store(key, ch)
+	r.watchChannels[key] = ch
+	r.traceLog("adding watch channel", "key", key)
 	context.AfterFunc(ctx, func() {
-		defer close(ch)
-		r.watchChannels.Delete(key)
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		r.traceLog("removing watch channel", "key", key)
+		delete(r.watchChannels, key)
+		close(ch)
 	})
 	return ch
 }
 
 func (r *reactiveValue) WatchFunc(ctx context.Context, onChanged func(protoreflect.Value)) {
-	r.watchFuncWithRev(ctx, func(_ int64, value protoreflect.Value) {
+	r.watchFuncInternal(ctx, func(_ int64, value protoreflect.Value, _ <-chan struct{}) {
 		onChanged(value)
 	})
 }
 
-func (r *reactiveValue) watchFuncWithRev(ctx context.Context, onChanged func(int64, protoreflect.Value)) {
-	r.valueMu.Lock()
-	if r.rev != 0 {
-		onChanged(r.rev, r.value)
+func (r *reactiveValue) watchFuncInternal(ctx context.Context, onChanged func(int64, protoreflect.Value, <-chan struct{})) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.traceLog("starting watch func", "pendingInit", r.pendingInit)
+
+	if !r.pendingInit {
+		r.traceLog("not pending init; calling watch func", "revision", r.rev, "value", r.value)
+		onChanged(r.rev, r.value, nil)
 	}
-	r.valueMu.Unlock()
 
 	key := uuid.NewString()
-	r.watchFuncs.Store(key, &onChanged)
+	r.watchFuncs[key] = onChanged
+	r.traceLog("adding watch func", "key", key)
 	context.AfterFunc(ctx, func() {
-		r.watchFuncs.Delete(key)
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		r.traceLog("removing watch func", "key", key)
+		delete(r.watchFuncs, key)
 	})
-}
-
-func (r *reactiveValue) wait() {
-	r.groupMu.Lock()
-	group := r.group
-	r.groupMu.Unlock()
-
-	if group == nil {
-		return
-	}
-	<-group
 }

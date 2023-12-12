@@ -113,20 +113,20 @@ func Scheme(ctx context.Context) meta.Scheme {
 }
 
 func initClusterDriver(ctx types.PluginContext) (drivers.ClusterDriver, error) {
-	driverName := ctx.GatewayConfig().Spec.Cortex.Management.ClusterDriver
-	if driverName == "" {
-		return nil, fmt.Errorf("cluster driver not configured")
-	}
-	builder, ok := drivers.ClusterDrivers.Get(driverName)
-	if !ok {
-		return nil, fmt.Errorf("unknown cluster driver %q", driverName)
+	// TODO(config)
+	allDrivers := drivers.ClusterDrivers.List()
+	var builder driverutil.Builder[drivers.ClusterDriver]
+	if len(allDrivers) > 0 {
+		builder, _ = drivers.ClusterDrivers.Get(allDrivers[0])
+	} else {
+		return nil, fmt.Errorf("no cluster drivers found")
 	}
 	driver, err := builder(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize cluster driver %q: %w", driverName, err)
+		return nil, fmt.Errorf("failed to initialize cluster driver %q: %w", allDrivers[0], err)
 	}
 	ctx.Logger().With(
-		"driver", driverName,
+		"driver", allDrivers[0],
 	).Info("initialized cluster driver")
 	return driver, nil
 }

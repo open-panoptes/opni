@@ -2,6 +2,7 @@ package reactive_test
 
 import (
 	"context"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -16,7 +17,7 @@ import (
 	"github.com/rancher/opni/pkg/util/flagutil"
 )
 
-var _ = Describe("Bind", Label("unit"), func() {
+var _ = Describe("Bind", Label("unit"), MustPassRepeatedly(10), func() {
 	var ctrl *reactive.Controller[*ext.SampleConfiguration]
 	var defaultStore, activeStore storage.ValueStoreT[*ext.SampleConfiguration]
 
@@ -63,15 +64,20 @@ var _ = Describe("Bind", Label("unit"), func() {
 			},
 		})).To(Succeed())
 
-		Eventually(called).Should(BeClosed())
+		select {
+		case <-called:
+		case <-time.After(10 * time.Millisecond):
+			Fail("reactive.Bind was not called")
+		}
 		// ensure no more updates are received
-		Consistently(called).Should(BeClosed())
+		time.Sleep(10 * time.Millisecond)
 	})
 
 	It("should handle partial updates", func(ctx SpecContext) {
 		callback := new(func(v []protoreflect.Value))
 		reactive.Bind(ctx,
 			func(v []protoreflect.Value) {
+				defer GinkgoRecover()
 				(*callback)(v)
 			},
 			ctrl.Reactive((&ext.SampleConfiguration{}).ProtoPath().MessageField().Field6().Field1()),
@@ -84,6 +90,7 @@ var _ = Describe("Bind", Label("unit"), func() {
 
 		called := make(chan struct{})
 		*callback = func(v []protoreflect.Value) {
+			defer GinkgoRecover()
 			defer close(called)
 			Expect(v).To(HaveLen(6))
 			Expect(v[0].Int()).To(Equal(int64(100)))
@@ -107,8 +114,13 @@ var _ = Describe("Bind", Label("unit"), func() {
 			},
 		})).To(Succeed())
 
-		Eventually(called).Should(BeClosed())
-		Consistently(called).Should(BeClosed())
+		select {
+		case <-called:
+		case <-time.After(10 * time.Millisecond):
+			Fail("reactive.Bind was not called")
+		}
+		// ensure no more updates are received
+		time.Sleep(10 * time.Millisecond)
 
 		called = make(chan struct{})
 		*callback = func(v []protoreflect.Value) {
@@ -135,7 +147,12 @@ var _ = Describe("Bind", Label("unit"), func() {
 			},
 		})).To(Succeed())
 
-		Eventually(called).Should(BeClosed())
-		Consistently(called).Should(BeClosed())
+		select {
+		case <-called:
+		case <-time.After(10 * time.Millisecond):
+			Fail("reactive.Bind was not called")
+		}
+		// ensure no more updates are received
+		time.Sleep(10 * time.Millisecond)
 	})
 })

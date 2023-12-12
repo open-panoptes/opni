@@ -22,6 +22,7 @@ import (
 	"github.com/jhump/protoreflect/grpcreflect"
 	gsync "github.com/kralicky/gpkg/sync"
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/health"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/plugins"
@@ -114,7 +115,7 @@ func (m *Server) configureApiExtensionDirector(ctx context.Context, pl plugins.L
 				fullName := fmt.Sprintf("/%s/%s", svcName, mtd.GetName())
 				lg.With(
 					"name", fullName,
-				).Info("loading method")
+				).Log(context.Background(), slog.LevelDebug-1, "loading method")
 
 				methodTable.Store(fullName, &UnknownStreamMetadata{
 					Conn:            cc,
@@ -135,7 +136,7 @@ func (m *Server) configureApiExtensionDirector(ctx context.Context, pl plugins.L
 				lg.With(
 					"name", svcName,
 					"rules", httpRules,
-				).Debug("rule descriptors")
+				).Log(context.Background(), slog.LevelDebug-1, "rule descriptors")
 			} else {
 				lg.With(
 					"name", svcName,
@@ -170,11 +171,11 @@ func (m *Server) configureApiExtensionDirector(ctx context.Context, pl plugins.L
 	}
 }
 
-func (m *Server) configureManagementHttpApi(ctx context.Context, mux *runtime.ServeMux) error {
+func (m *Server) configureManagementHttpApi(ctx context.Context, server *http.Server, addr string, mux *runtime.ServeMux) error {
 	m.apiExtMu.RLock()
 	defer m.apiExtMu.RUnlock()
 
-	cc, err := grpc.DialContext(ctx, m.config.GRPCListenAddress,
+	cc, err := grpc.DialContext(ctx, addr,
 		grpc.WithBlock(),
 		grpc.WithContextDialer(util.DialProtocol),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -184,31 +185,38 @@ func (m *Server) configureManagementHttpApi(ctx context.Context, mux *runtime.Se
 	}
 	stub := grpcdynamic.NewStub(cc)
 
-	desc, err := grpcreflect.LoadServiceDescriptor(&managementv1.Management_ServiceDesc)
-	if err != nil {
-		return fmt.Errorf("failed to load service descriptor: %w", err)
+	for _, builtin := range []*grpc.ServiceDesc{
+		&managementv1.Management_ServiceDesc,
+		&configv1.GatewayConfig_ServiceDesc,
+	} {
+		desc, err := grpcreflect.LoadServiceDescriptor(builtin)
+		if err != nil {
+			return fmt.Errorf("failed to load service descriptor: %w", err)
+		}
+		rules := loadHttpRuleDescriptors(desc)
+
+		status := &health.ServingStatus{} // local server, which is always serving
+		status.Set(healthpb.HealthCheckResponse_SERVING)
+		m.configureServiceStubHandlers(server, mux, stub, desc, rules, status)
 	}
-
-	rules := loadHttpRuleDescriptors(desc)
-
-	status := &health.ServingStatus{} // local server, which is always serving
-	status.Set(healthpb.HealthCheckResponse_SERVING)
-	m.configureServiceStubHandlers(mux, stub, desc, rules, status)
 	return nil
 }
 
-func (m *Server) configureHttpApiExtensions(mux *runtime.ServeMux) {
+func (m *Server) configureHttpApiExtensions(server *http.Server, mux *runtime.ServeMux) {
 	m.apiExtMu.RLock()
 	defer m.apiExtMu.RUnlock()
+	m.logger.Log(context.Background(), slog.LevelDebug-1, "configuring http api extensions", "extensions", len(m.apiExtensions))
 	for _, ext := range m.apiExtensions {
+		m.logger.Log(context.Background(), slog.LevelDebug-1, "configuring http api extension", "service", ext.serviceDesc.GetName())
 		stub := grpcdynamic.NewStub(ext.clientConn)
 		svcDesc := ext.serviceDesc
 		httpRules := ext.httpRules
-		m.configureServiceStubHandlers(mux, stub, svcDesc, httpRules, ext.status)
+		m.configureServiceStubHandlers(server, mux, stub, svcDesc, httpRules, ext.status)
 	}
 }
 
 func (m *Server) configureServiceStubHandlers(
+	server *http.Server,
 	mux *runtime.ServeMux,
 	stub grpcdynamic.Stub,
 	svcDesc *desc.ServiceDescriptor,
@@ -216,6 +224,8 @@ func (m *Server) configureServiceStubHandlers(
 	svcStatus *health.ServingStatus,
 ) {
 	lg := m.logger
+
+	lg.Log(context.Background(), slog.LevelDebug-1, "configuring service stub handlers", "service", svcDesc.GetName(), "rules", len(httpRules))
 
 	for _, rule := range httpRules {
 		var method string
@@ -239,8 +249,12 @@ func (m *Server) configureServiceStubHandlers(
 		}
 
 		qualifiedPath := fmt.Sprintf("/%s%s", svcDesc.GetName(), path)
+		lg.With(
+			"method", method,
+			"path", qualifiedPath,
+		).Log(context.Background(), slog.LevelDebug-1, "configuring http handler")
 
-		if err := mux.HandlePath(method, qualifiedPath, newHandler(stub, svcDesc, mux, rule, svcStatus, path)); err != nil {
+		if err := mux.HandlePath(method, qualifiedPath, newHandler(server, stub, svcDesc, mux, rule, svcStatus, path)); err != nil {
 			lg.With(
 				logger.Err(err),
 				"method", method,
@@ -250,7 +264,7 @@ func (m *Server) configureServiceStubHandlers(
 			lg.With(
 				"method", method,
 				"path", qualifiedPath,
-			).Debug("configured http handler")
+			).Log(context.Background(), slog.LevelDebug-1, "configured http handler")
 		}
 	}
 }
@@ -282,6 +296,7 @@ func loadHttpRuleDescriptors(svc *desc.ServiceDescriptor) []*managementv1.HTTPRu
 }
 
 func newHandler(
+	server *http.Server,
 	stub grpcdynamic.Stub,
 	svcDesc *desc.ServiceDescriptor,
 	mux *runtime.ServeMux,
@@ -339,6 +354,7 @@ func newHandler(
 				lg.With(logger.Err(err)).Error("failed to upgrade connection")
 				return
 			}
+			server.RegisterOnShutdown(func() { conn.Close() })
 
 			if err := handleWebsocketStream(ctx, conn, stub, methodDesc, lg); err != nil {
 				lg.With(logger.Err(err)).Error("websocket stream error")

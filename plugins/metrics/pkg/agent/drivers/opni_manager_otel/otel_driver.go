@@ -10,6 +10,7 @@ import (
 	"log/slog"
 
 	"github.com/lestrrat-go/backoff/v2"
+	opnicorev1 "github.com/rancher/opni/apis/core/v1"
 	opnicorev1beta1 "github.com/rancher/opni/apis/core/v1beta1"
 	monitoringv1beta1 "github.com/rancher/opni/apis/monitoring/v1beta1"
 	"github.com/rancher/opni/pkg/config/v1beta1"
@@ -54,6 +55,7 @@ type OTELNodeDriverOptions struct {
 func NewOTELDriver(options OTELNodeDriverOptions) (*OTELNodeDriver, error) {
 	if options.K8sClient == nil {
 		s := scheme.Scheme
+		opnicorev1.AddToScheme(s)
 		opnicorev1beta1.AddToScheme(s)
 		monitoringv1beta1.AddToScheme(s)
 		c, err := k8sutil.NewK8sClient(k8sutil.ClientOptions{

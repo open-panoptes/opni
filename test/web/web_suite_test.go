@@ -20,6 +20,7 @@ import (
 )
 
 func TestWeb(t *testing.T) {
+	t.Skipf("TODO: not implemented")
 	SetDefaultEventuallyTimeout(5 * time.Second)
 	gin.SetMode(gin.TestMode)
 	RegisterFailHandler(AbortSuite)

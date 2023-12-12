@@ -23,7 +23,7 @@ func newLease(key string) *nats.StreamConfig {
 }
 
 var (
-	LockValidity   = 60 * time.Second
+	LockValidity   = 5 * time.Second
 	LockRetryDelay = 100 * time.Millisecond
 )
 

@@ -365,4 +365,30 @@ var _ = Describe("Masks", Label("unit"), func() {
 		expected2.Normalize()
 		Expect(mask2).To(testutil.ProtoEqual(expected2))
 	})
+	It("should create masks containing only leaf fields from an existing mask", func() {
+		leaves := fieldmask.Leaves(&fieldmaskpb.FieldMask{
+			Paths: []string{
+				"field1.field1",
+				"field2.field1",
+				"field3",
+				"msg.field2.field1",
+				"msg.field3.field1",
+				"msg.field3.field2",
+				"msg.field3.field3",
+				"msg.field4",
+				"msg.field5",
+			},
+		}, (&ext.SampleMessage{}).ProtoReflect().Descriptor())
+		expectedLeaves := &fieldmaskpb.FieldMask{
+			Paths: []string{
+				"field1.field1",
+				"field2.field1",
+				"msg.field2.field1",
+				"msg.field3.field1",
+				"msg.field3.field2",
+				"msg.field3.field3",
+			},
+		}
+		Expect(leaves).To(testutil.ProtoEqual(expectedLeaves))
+	})
 })

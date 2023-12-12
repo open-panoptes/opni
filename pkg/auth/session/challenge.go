@@ -3,10 +3,17 @@ package session
 import (
 	"context"
 	"crypto/subtle"
+	"log/slog"
+	"sync/atomic"
+
+	configv1 "github.com/rancher/opni/pkg/config/v1"
+	"github.com/rancher/opni/pkg/logger"
+	"github.com/samber/lo"
 
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	authutil "github.com/rancher/opni/pkg/auth/util"
 	"github.com/rancher/opni/pkg/util/streams"
+	"github.com/spf13/afero"
 	"golang.org/x/crypto/blake2b"
 
 	"github.com/rancher/opni/pkg/auth/cluster"
@@ -14,6 +21,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const (
@@ -22,7 +30,7 @@ const (
 
 type ServerChallenge struct {
 	ServerChallengeOptions
-	attrLoader
+	Loader *atomic.Pointer[AttributeLoader]
 }
 
 type ServerChallengeOptions struct {
@@ -43,20 +51,47 @@ func WithAttributeRequestLimit(attributeRequestLimit int) ServerChallengeOption 
 	}
 }
 
-func NewServerChallenge(kr keyring.Keyring, opts ...ServerChallengeOption) (*ServerChallenge, error) {
+func NewServerChallenge(ctx context.Context, mgr *configv1.GatewayConfigManager, lg *slog.Logger, opts ...ServerChallengeOption) (*ServerChallenge, error) {
 	options := ServerChallengeOptions{
 		attributeRequestLimit: 10,
 	}
 	options.apply(opts...)
 
-	attr, err := loadAttributes(kr)
-	if err != nil {
-		return nil, err
-	}
+	loader := &atomic.Pointer[AttributeLoader]{}
+
+	mgr.Reactive(configv1.ProtoPath().Keyring().RuntimeKeyDirs()).WatchFunc(ctx, func(value protoreflect.Value) {
+		runtimeKeyDirList := value.List()
+
+		runtimeKeyDirs := make([]string, 0, runtimeKeyDirList.Len())
+		for i, l := 0, runtimeKeyDirList.Len(); i < l; i++ {
+			runtimeKeyDirs = append(runtimeKeyDirs, runtimeKeyDirList.Get(i).String())
+		}
+
+		// Set up cluster auth
+		ephemeralKeys, err := keyring.LoadEphemeralKeys(afero.Afero{
+			Fs: afero.NewOsFs(),
+		}, runtimeKeyDirs...)
+		if err != nil {
+			lg.With(logger.Err(err)).Error("failed to load ephemeral keys")
+			loader.Store(&AttributeLoader{})
+		}
+
+		attr, err := AttributeLoaderFromKeyring(keyring.New(lo.ToAnySlice(ephemeralKeys)...))
+		if err != nil {
+			lg.With(logger.Err(err)).Error("failed to load session attributes")
+			loader.Store(&AttributeLoader{})
+		}
+		old := loader.Swap(&attr)
+		if old == nil {
+			lg.Info("session attribute challenge handler now available")
+		} else {
+			lg.Info("session attribute challenge handler updated")
+		}
+	})
 
 	return &ServerChallenge{
 		ServerChallengeOptions: options,
-		attrLoader:             attr,
+		Loader:                 loader,
 	}, nil
 }
 
@@ -65,6 +100,11 @@ func (a *ServerChallenge) InterceptContext(ctx context.Context) context.Context 
 }
 
 func (a *ServerChallenge) DoChallenge(ss streams.Stream) (context.Context, error) {
+	loader := a.Loader.Load()
+	if loader == nil {
+		return nil, status.Errorf(codes.Unavailable, "the server is not accepting session attribute challenge requests")
+	}
+
 	challengeRequests := corev1.ChallengeRequestList{}
 	var reqAttributes []SecretAttribute
 
@@ -82,7 +122,7 @@ func (a *ServerChallenge) DoChallenge(ss streams.Stream) (context.Context, error
 	}
 
 	for _, v := range attrRequests {
-		if attr, ok := a.attributesByName[v]; ok {
+		if attr, ok := loader.attributesByName[v]; ok {
 			cr := &corev1.ChallengeRequest{
 				Challenge: authutil.NewRandom256(),
 			}
@@ -149,17 +189,17 @@ func (a *ServerChallenge) DoChallenge(ss streams.Stream) (context.Context, error
 }
 
 type ClientChallenge struct {
-	attrLoader
+	AttributeLoader
 }
 
 func NewClientChallenge(kr keyring.Keyring) (*ClientChallenge, error) {
-	attr, err := loadAttributes(kr)
+	attr, err := AttributeLoaderFromKeyring(kr)
 	if err != nil {
 		return nil, err
 	}
 
 	return &ClientChallenge{
-		attrLoader: attr,
+		AttributeLoader: attr,
 	}, nil
 }
 
@@ -231,12 +271,12 @@ func (a *ClientChallenge) DoChallenge(cs streams.Stream) (context.Context, error
 	return ctx, nil
 }
 
-type attrLoader struct {
+type AttributeLoader struct {
 	attributes       []SecretAttribute
 	attributesByName map[string]SecretAttribute
 }
 
-func (a *attrLoader) Attributes() []string {
+func (a *AttributeLoader) Attributes() []string {
 	var names []string
 	for _, attr := range a.attributes {
 		names = append(names, attr.Name())
@@ -245,11 +285,11 @@ func (a *attrLoader) Attributes() []string {
 }
 
 // Matches challenges.ConditionFunc
-func (a *attrLoader) HasAttributes(_ context.Context) (bool, error) {
+func (a *AttributeLoader) HasAttributes(_ context.Context) (bool, error) {
 	return len(a.attributes) > 0, nil
 }
 
-func loadAttributes(kr keyring.Keyring) (_ attrLoader, err error) {
+func AttributeLoaderFromKeyring(kr keyring.Keyring) (_ AttributeLoader, err error) {
 	var attrs []SecretAttribute
 	kr.Try(func(ek *keyring.EphemeralKey) {
 		if err != nil {
@@ -273,7 +313,7 @@ func loadAttributes(kr keyring.Keyring) (_ attrLoader, err error) {
 		attributesByName[attr.Name()] = attr
 	}
 
-	return attrLoader{
+	return AttributeLoader{
 		attributes:       attrs,
 		attributesByName: attributesByName,
 	}, nil

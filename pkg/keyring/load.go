@@ -1,4 +1,4 @@
-package machinery
+package keyring
 
 import (
 	"path/filepath"
@@ -6,14 +6,13 @@ import (
 	"github.com/spf13/afero"
 	"github.com/ttacon/chalk"
 
-	"github.com/rancher/opni/pkg/keyring"
 	"github.com/rancher/opni/pkg/keyring/ephemeral"
 	"github.com/rancher/opni/pkg/logger"
 )
 
-func LoadEphemeralKeys(fsys afero.Afero, dirs ...string) ([]*keyring.EphemeralKey, error) {
+func LoadEphemeralKeys(fsys afero.Afero, dirs ...string) ([]*EphemeralKey, error) {
 	keyringLog := logger.New().WithGroup("keyring")
-	var keys []*keyring.EphemeralKey
+	var keys []*EphemeralKey
 
 	for _, dir := range dirs {
 		infos, err := fsys.ReadDir(dir)

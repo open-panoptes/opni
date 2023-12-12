@@ -2,7 +2,7 @@
 // @generated from file github.com/rancher/opni/plugins/metrics/apis/node/config.proto (package node.metrics.config, syntax proto3)
 /* eslint-disable */
 
-import { ConfigurationHistoryRequest, ConfigurationHistoryResponse, GetRequest, MetricsCapabilityConfig, ResetRequest, SetRequest } from "./config_pb";
+import { ConfigurationHistoryRequest, ConfigurationHistoryResponse, DryRunRequest, DryRunResponse, GetRequest, MetricsCapabilityConfig, ResetRequest, SetRequest } from "./config_pb";
 import { axios } from "@pkg/opni/utils/axios";
 
 
@@ -176,6 +176,37 @@ export async function ResetConfiguration(input: ResetRequest): Promise<void> {
 
     const response = rawResponse;
     console.info('Here is the response for a request to NodeConfiguration-ResetConfiguration:', response);
+    return response;
+  } catch (ex: any) {
+    if (ex?.response?.data) {
+      const s = String.fromCharCode.apply(null, Array.from(new Uint8Array(ex?.response?.data)));
+      console.error(s);
+    }
+    throw ex;
+  }
+}
+
+
+export async function DryRun(input: DryRunRequest): Promise<DryRunResponse> {
+  try {
+    
+    if (input) {
+      console.info('Here is the input for a request to NodeConfiguration-DryRun:', input);
+    }
+  
+    const rawResponse = (await axios.request({
+      method: 'post',
+      responseType: 'arraybuffer',
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'Accept': 'application/octet-stream',
+      },
+      url: `/opni-api/NodeConfiguration/dry-run`,
+    data: input?.toBinary() as ArrayBuffer
+    })).data;
+
+    const response = DryRunResponse.fromBinary(new Uint8Array(rawResponse));
+    console.info('Here is the response for a request to NodeConfiguration-DryRun:', response);
     return response;
   } catch (ex: any) {
     if (ex?.response?.data) {

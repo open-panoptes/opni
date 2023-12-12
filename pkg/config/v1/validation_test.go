@@ -65,31 +65,31 @@ var _ = Describe("Gateway Config", Label("unit"), Ordered, func() {
 
 		// Listen Addresses
 		Entry("Listen Addresses (Server/Server)", withDefaults(func(cfg *configv1.GatewayConfigSpec) {
-			cfg.Storage.Etcd = &configv1.EtcdSpec{Endpoints: []string{"localhost:2379"}}
+			cfg.Storage = &configv1.StorageSpec{Etcd: &configv1.EtcdSpec{Endpoints: []string{"localhost:2379"}}}
 			*cfg.Server.HttpListenAddress = *cfg.Server.GrpcListenAddress
 		}), "[check_conflicting_addresses]"),
 		Entry("Listen Addresses (Management/Management)", withDefaults(func(cfg *configv1.GatewayConfigSpec) {
-			cfg.Storage.Etcd = &configv1.EtcdSpec{Endpoints: []string{"localhost:2379"}}
+			cfg.Storage = &configv1.StorageSpec{Etcd: &configv1.EtcdSpec{Endpoints: []string{"localhost:2379"}}}
 			*cfg.Management.HttpListenAddress = *cfg.Management.GrpcListenAddress
 		}), "[check_conflicting_addresses]"),
 		Entry("Listen Addresses (Relay/Server)", withDefaults(func(cfg *configv1.GatewayConfigSpec) {
-			cfg.Storage.Etcd = &configv1.EtcdSpec{Endpoints: []string{"localhost:2379"}}
+			cfg.Storage = &configv1.StorageSpec{Etcd: &configv1.EtcdSpec{Endpoints: []string{"localhost:2379"}}}
 			*cfg.Relay.GrpcListenAddress = *cfg.Server.GrpcListenAddress
 		}), "[check_conflicting_addresses]"),
 		Entry("Listen Addresses (Relay/Management)", withDefaults(func(cfg *configv1.GatewayConfigSpec) {
-			cfg.Storage.Etcd = &configv1.EtcdSpec{Endpoints: []string{"localhost:2379"}}
+			cfg.Storage = &configv1.StorageSpec{Etcd: &configv1.EtcdSpec{Endpoints: []string{"localhost:2379"}}}
 			*cfg.Relay.GrpcListenAddress = *cfg.Management.GrpcListenAddress
 		}), "[check_conflicting_addresses]"),
 		Entry("Listen Addresses (Server/Management)", withDefaults(func(cfg *configv1.GatewayConfigSpec) {
-			cfg.Storage.Etcd = &configv1.EtcdSpec{Endpoints: []string{"localhost:2379"}}
+			cfg.Storage = &configv1.StorageSpec{Etcd: &configv1.EtcdSpec{Endpoints: []string{"localhost:2379"}}}
 			*cfg.Server.GrpcListenAddress = *cfg.Management.GrpcListenAddress
 		}), "[check_conflicting_addresses]"),
 		Entry("Listen Addresses (Server/Relay)", withDefaults(func(cfg *configv1.GatewayConfigSpec) {
-			cfg.Storage.Etcd = &configv1.EtcdSpec{Endpoints: []string{"localhost:2379"}}
+			cfg.Storage = &configv1.StorageSpec{Etcd: &configv1.EtcdSpec{Endpoints: []string{"localhost:2379"}}}
 			*cfg.Server.GrpcListenAddress = *cfg.Relay.GrpcListenAddress
 		}), "[check_conflicting_addresses]"),
 		Entry("Listen Addresses (Management/Relay)", withDefaults(func(cfg *configv1.GatewayConfigSpec) {
-			cfg.Storage.Etcd = &configv1.EtcdSpec{Endpoints: []string{"localhost:2379"}}
+			cfg.Storage = &configv1.StorageSpec{Etcd: &configv1.EtcdSpec{Endpoints: []string{"localhost:2379"}}}
 			*cfg.Management.GrpcListenAddress = *cfg.Relay.GrpcListenAddress
 		}), "[check_conflicting_addresses]"),
 		Entry("Server Addresses", &configv1.ServerSpec{
@@ -340,12 +340,9 @@ var _ = Describe("Gateway Config", Label("unit"), Ordered, func() {
 	)
 })
 
-func withDefaults[T any, PT interface {
-	*T
-	flagutil.FlagSetter
-}](fn func(t PT)) PT {
-	var pt PT = new(T)
-	flagutil.LoadDefaults(pt)
-	fn(pt)
-	return pt
+func withDefaults(fn func(cfg *configv1.GatewayConfigSpec)) *configv1.GatewayConfigSpec {
+	cfg := &configv1.GatewayConfigSpec{}
+	flagutil.LoadDefaults(cfg)
+	fn(cfg)
+	return cfg
 }

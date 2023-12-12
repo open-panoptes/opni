@@ -2,6 +2,7 @@ package fieldmask
 
 import (
 	"fmt"
+	"strings"
 
 	art "github.com/plar/go-adaptive-radix-tree"
 	"google.golang.org/protobuf/proto"
@@ -198,4 +199,30 @@ func AsTree(mask *fieldmaskpb.FieldMask) art.Tree {
 		tree.Insert(art.Key(path), struct{}{})
 	}
 	return tree
+}
+
+// Returns a new mask consisting of only the paths that correspond to leaf
+// fields (non-message, terminal fields) in the given mask. The message
+// descriptor is used to check whether a field is a leaf field.
+func Leaves(mask *fieldmaskpb.FieldMask, desc protoreflect.MessageDescriptor) *fieldmaskpb.FieldMask {
+	out := &fieldmaskpb.FieldMask{
+		Paths: make([]string, 0, len(mask.GetPaths())),
+	}
+PATHS:
+	for _, path := range mask.GetPaths() {
+		md := desc
+		parts := strings.Split(path, ".")
+		for i, field := range parts {
+			fd := md.Fields().ByName(protoreflect.Name(field))
+			if fd != nil {
+				if fd.Kind() == protoreflect.MessageKind && (!fd.IsMap() && !fd.IsList()) {
+					md = fd.Message()
+				} else if i == len(parts)-1 {
+					out.Paths = append(out.Paths, path)
+					continue PATHS
+				}
+			}
+		}
+	}
+	return out
 }

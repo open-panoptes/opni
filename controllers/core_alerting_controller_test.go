@@ -2,15 +2,14 @@ package controllers_test
 
 import (
 	"context"
-	"os"
 
 	. "github.com/kralicky/kmatch"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	apicorev1 "github.com/rancher/opni/apis/core/v1"
 	corev1beta1 "github.com/rancher/opni/apis/core/v1beta1"
 	"github.com/rancher/opni/pkg/alerting/shared"
-	cfgv1beta1 "github.com/rancher/opni/pkg/config/v1beta1"
-	"github.com/rancher/opni/pkg/noauth"
+
 	"github.com/samber/lo"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,24 +25,13 @@ var _ client.Object = (*corev1beta1.AlertingCluster)(nil)
 
 var _ = Describe("Alerting Controller", Ordered, Label("controller", "slow"), func() {
 	gateway := &types.NamespacedName{}
-	testImage := "alerting-controller-test:latest"
-	BeforeAll(func() {
-		os.Setenv("OPNI_DEBUG_MANAGER_IMAGE", testImage)
-		DeferCleanup(os.Unsetenv, "OPNI_DEBUG_MANAGER_IMAGE")
-	})
-
 	BeforeEach(func() {
-		gw := &corev1beta1.Gateway{
+		gw := &apicorev1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: makeTestNamespace(),
 			},
-			Spec: corev1beta1.GatewaySpec{
-				Auth: corev1beta1.AuthSpec{
-					Provider: cfgv1beta1.AuthProviderNoAuth,
-					Noauth:   &noauth.ServerConfig{},
-				},
-			},
+			Spec: apicorev1.GatewaySpec{},
 		}
 		Expect(k8sClient.Create(context.Background(), gw)).To(Succeed())
 		Eventually(Object(gw)).Should(Exist())

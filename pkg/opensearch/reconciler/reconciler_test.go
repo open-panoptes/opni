@@ -32,7 +32,7 @@ var _ = Describe("Opensearch", Ordered, Label("unit"), func() {
 		kibanaDashboardVersionIndex = "opni-dashboard-version"
 
 		opensearchURL          = "https://mock-opensearch.example.com"
-		dashboardsURL          = "https://mock-dashboards.example.com"
+		dashboardsHost         = "mock-dashboards.example.com"
 		dashboardsUser         = "test"
 		dashboardsPassword     = "test"
 		dashboardsURLWithCreds = "https://test:test@mock-dashboards.example.com"
@@ -58,7 +58,7 @@ var _ = Describe("Opensearch", Ordered, Label("unit"), func() {
 
 		dashboardsClient, err := dashboards.NewClient(
 			dashboards.Config{
-				Host:     dashboardsURL,
+				Host:     dashboardsHost,
 				Username: dashboardsUser,
 				Password: dashboardsPassword,
 			},

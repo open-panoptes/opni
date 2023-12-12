@@ -10,7 +10,8 @@ import { RuntimeConfigValues } from "../../../../internal/cortex/config/runtimec
 import { Config } from "../../../../internal/cortex/config/compactor/compactor_pb";
 import { Config as Config$1 } from "../../../../internal/cortex/config/querier/querier_pb";
 import { Config as Config$2 } from "../../../../internal/cortex/config/storage/storage_pb";
-import { Action, PresetMetadata, Target, ValidationError } from "../../../../pkg/plugins/driverutil/types_pb";
+import { Action, PresetMetadata, Target } from "../../../../pkg/plugins/driverutil/types_pb";
+import { Violations } from "../../../../../../../buf/validate/expression_pb";
 
 /**
  * @generated from message cortexops.CapabilityBackendConfigSpec
@@ -449,9 +450,9 @@ export class DryRunResponse extends Message<DryRunResponse> {
   modified?: CapabilityBackendConfigSpec;
 
   /**
-   * @generated from field: repeated driverutil.ValidationError validationErrors = 3;
+   * @generated from field: buf.validate.Violations validationErrors = 3;
    */
-  validationErrors: ValidationError[] = [];
+  validationErrors?: Violations;
 
   constructor(data?: PartialMessage<DryRunResponse>) {
     super();
@@ -463,7 +464,7 @@ export class DryRunResponse extends Message<DryRunResponse> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "current", kind: "message", T: CapabilityBackendConfigSpec },
     { no: 2, name: "modified", kind: "message", T: CapabilityBackendConfigSpec },
-    { no: 3, name: "validationErrors", kind: "message", T: ValidationError, repeated: true },
+    { no: 3, name: "validationErrors", kind: "message", T: Violations },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): DryRunResponse {

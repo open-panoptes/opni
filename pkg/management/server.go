@@ -24,7 +24,8 @@ import (
 	"github.com/rancher/opni/pkg/caching"
 	"github.com/rancher/opni/pkg/capabilities"
 	"github.com/rancher/opni/pkg/config"
-	"github.com/rancher/opni/pkg/config/v1beta1"
+	"github.com/rancher/opni/pkg/config/reactive"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/health"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/pkp"
@@ -35,13 +36,14 @@ import (
 	"github.com/rancher/opni/pkg/plugins/types"
 	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/util"
-	"github.com/samber/lo"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	channelzservice "google.golang.org/grpc/channelz/service"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -75,14 +77,14 @@ type Server struct {
 	managementv1.UnsafeManagementServer
 	managementv1.UnimplementedLocalPasswordServer
 	managementServerOptions
-	config            *v1beta1.ManagementSpec
+	mgr               *configv1.GatewayConfigManager
 	rbacManagerStore  capabilities.RBACManagerStore
 	logger            *slog.Logger
 	coreDataSource    CoreDataSource
-	grpcServer        *grpc.Server
 	dashboardSettings *DashboardSettingsManager
-	router            *gin.Engine
 	localAuth         local.LocalAuthenticator
+	director          StreamDirector
+	pluginsLoaded     chan struct{}
 
 	apiExtMu      sync.RWMutex
 	apiExtensions []apiExtension
@@ -104,12 +106,6 @@ func (o *managementServerOptions) apply(opts ...ManagementServerOption) {
 	}
 }
 
-func WithLifecycler(lc config.Lifecycler) ManagementServerOption {
-	return func(o *managementServerOptions) {
-		o.lifecycler = lc
-	}
-}
-
 func WithCapabilitiesDataSource(src CapabilitiesDataSource) ManagementServerOption {
 	return func(o *managementServerOptions) {
 		o.capabilitiesDataSource = src
@@ -124,8 +120,8 @@ func WithHealthStatusDataSource(src HealthStatusDataSource) ManagementServerOpti
 
 func NewServer(
 	ctx context.Context,
-	conf *v1beta1.ManagementSpec,
 	cds CoreDataSource,
+	mgr *configv1.GatewayConfigManager,
 	pluginLoader plugins.LoaderInterface,
 	opts ...ManagementServerOption,
 ) *Server {
@@ -135,7 +131,7 @@ func NewServer(
 
 	m := &Server{
 		managementServerOptions: options,
-		config:                  conf,
+		mgr:                     mgr,
 		logger:                  lg,
 		coreDataSource:          cds,
 		rbacManagerStore:        capabilities.NewRBACManagerStore(lg),
@@ -143,30 +139,25 @@ func NewServer(
 			kv:     cds.StorageBackend().KeyValueStore("dashboard"),
 			logger: lg,
 		},
-		router: gin.New(),
+		pluginsLoaded: make(chan struct{}),
 	}
-
-	director := m.configureApiExtensionDirector(ctx, pluginLoader)
-	m.grpcServer = grpc.NewServer(
-		grpc.Creds(insecure.NewCredentials()),
-		grpc.UnknownServiceHandler(unknownServiceHandler(director)),
-		grpc.ChainStreamInterceptor(otelgrpc.StreamServerInterceptor()),
-		grpc.ChainUnaryInterceptor(
-			caching.NewClientGrpcTtlCacher().UnaryServerInterceptor(),
-			otelgrpc.UnaryServerInterceptor()),
-	)
-	managementv1.RegisterManagementServer(m.grpcServer, m)
-	managementv1.RegisterLocalPasswordServer(m.grpcServer, m)
-	channelzservice.RegisterChannelzServiceToServer(m.grpcServer)
+	m.director = m.configureApiExtensionDirector(ctx, pluginLoader)
 
 	pluginLoader.Hook(hooks.OnLoadM(func(sp types.SystemPlugin, md meta.PluginMeta) {
-		go sp.ServeManagementAPI(m)
 		go func() {
-			if err := sp.ServeAPIExtensions(m.config.GRPCListenAddress); err != nil {
+			if err := sp.ServeConfigAPI(m.mgr.AsServer()); err != nil {
 				lg.With(
 					"plugin", md.Module,
 					logger.Err(err),
-				).Error("failed to serve plugin API extensions")
+				).Error("failed to serve config API to plugin")
+			}
+		}()
+		go func() {
+			if err := sp.ServeManagementAPI(m); err != nil {
+				lg.With(
+					"plugin", md.Module,
+					logger.Err(err),
+				).Error("failed to serve management API to plugin")
 			}
 		}()
 	}))
@@ -201,6 +192,10 @@ func NewServer(
 		}
 	}))
 
+	pluginLoader.Hook(hooks.OnLoadingCompleted(func(int) {
+		close(m.pluginsLoaded)
+	}))
+
 	m.localAuth = local.NewLocalAuthenticator(m.coreDataSource.StorageBackend().KeyValueStore(authutil.AuthNamespace))
 
 	return m
@@ -211,93 +206,173 @@ type managementApiServer interface {
 }
 
 func (m *Server) ListenAndServe(ctx context.Context) error {
-	ctx, ca := context.WithCancelCause(ctx)
-
-	e1 := lo.Async(func() error {
+	eg := errgroup.Group{}
+	eg.Go(func() error {
 		err := m.listenAndServeGrpc(ctx)
 		if err != nil {
-			return fmt.Errorf("management grpc server exited with error: %w", err)
+			if !errors.Is(err, context.Canceled) {
+				return fmt.Errorf("management grpc server exited with error: %w", err)
+			}
 		}
+		m.logger.Info("management grpc server stopped")
 		return nil
 	})
-
-	e2 := lo.Async(func() error {
+	eg.Go(func() error {
 		err := m.listenAndServeHttp(ctx)
 		if err != nil {
-			return fmt.Errorf("management http server exited with error: %w", err)
+			if !errors.Is(err, context.Canceled) {
+				return fmt.Errorf("management http server exited with error: %w", err)
+			}
 		}
+		m.logger.Info("management http server stopped")
 		return nil
 	})
 
-	return util.WaitAll(ctx, ca, e1, e2)
+	return eg.Wait()
 }
 
 func (m *Server) listenAndServeGrpc(ctx context.Context) error {
-	if m.config.GRPCListenAddress == "" {
-		return errors.New("GRPCListenAddress not configured")
-	}
-	lg := m.logger
-	listener, err := util.NewProtocolListener(m.config.GRPCListenAddress)
-	if err != nil {
-		return err
-	}
-	lg.With(
-		"address", listener.Addr().String(),
-	).Info("management gRPC server starting")
+	grpcListenAddr := m.mgr.Reactive(configv1.ProtoPath().Management().GrpcListenAddress())
+	var mu sync.Mutex
+	var serveError error
+	var done chan struct{}
+	var server *grpc.Server
+	grpcListenAddr.WatchFunc(ctx, func(v protoreflect.Value) {
+		mu.Lock()
+		defer mu.Unlock()
 
-	errC := lo.Async(func() error {
-		return m.grpcServer.Serve(listener)
+		if server != nil {
+			server.Stop()
+		}
+
+		server = grpc.NewServer(
+			grpc.Creds(insecure.NewCredentials()),
+			grpc.UnknownServiceHandler(unknownServiceHandler(m.director)),
+			grpc.ChainStreamInterceptor(otelgrpc.StreamServerInterceptor()),
+			grpc.ChainUnaryInterceptor(
+				caching.NewClientGrpcTtlCacher().UnaryServerInterceptor(),
+				otelgrpc.UnaryServerInterceptor()),
+		)
+		managementv1.RegisterManagementServer(server, m)
+		configv1.RegisterGatewayConfigServer(server, m.mgr.AsServer())
+		managementv1.RegisterLocalPasswordServer(server, m)
+		channelzservice.RegisterChannelzServiceToServer(server)
+
+		addr := v.String()
+		listener, err := util.NewProtocolListener(addr)
+		if err != nil {
+			m.logger.With(
+				"address", addr,
+				logger.Err(err),
+			).Error("failed to start management gRPC server")
+			return
+		}
+		m.logger.With(
+			"address", listener.Addr().String(),
+		).Info("management gRPC server starting")
+		done = make(chan struct{})
+		go func(done chan struct{}) {
+			err := server.Serve(listener)
+			mu.Lock()
+			serveError = err
+			close(done)
+			mu.Unlock()
+		}(done)
 	})
-	select {
-	case <-ctx.Done():
-		m.grpcServer.Stop()
-		return ctx.Err()
-	case err := <-errC:
-		return err
+	<-ctx.Done()
+	mu.Lock()
+	if server != nil {
+		server.Stop()
 	}
+	mu.Unlock()
+	d := done
+	if d != nil {
+		<-d
+	}
+	return serveError
 }
 
 func (m *Server) listenAndServeHttp(ctx context.Context) error {
-	if m.config.GRPCListenAddress == "" {
-		return errors.New("GRPCListenAddress not configured")
-	}
-	lg := m.logger
-	lg.With(
-		"address", m.config.HTTPListenAddress,
-	).Info("management HTTP server starting")
-	gwmux := runtime.NewServeMux(
-		runtime.WithMarshalerOption("application/json", &LegacyJsonMarshaler{}),
-		runtime.WithMarshalerOption("application/octet-stream", &DynamicV1Marshaler{}),
-		runtime.WithMarshalerOption(runtime.MIMEWildcard, &DynamicV1Marshaler{}),
-	)
+	httpListenAddr := m.mgr.Reactive(configv1.ProtoPath().Management().HttpListenAddress())
+	grpcListenAddr := m.mgr.Reactive(configv1.ProtoPath().Management().GrpcListenAddress())
 
-	m.configureManagementHttpApi(ctx, gwmux)
-	m.configureHttpApiExtensions(gwmux)
-	m.router.Any("/*any", gin.WrapF(gwmux.ServeHTTP))
-	server := &http.Server{
-		Addr: m.config.HTTPListenAddress,
-		BaseContext: func(net.Listener) context.Context {
-			return ctx
-		},
-		Handler: m.router.Handler(),
+	var mu sync.Mutex
+	var stopServer func()
+
+	reactive.Bind(ctx, func(v []protoreflect.Value) {
+		mu.Lock()
+		defer mu.Unlock()
+
+		if stopServer != nil {
+			stopServer()
+		}
+
+		httpAddr := v[0].String()
+		grpcAddr := v[1].String()
+
+		listener, err := util.NewProtocolListener(httpAddr)
+		if err != nil {
+			m.logger.With(
+				"address", httpAddr,
+				logger.Err(err),
+			).Error("failed to start management HTTP server")
+			return
+		}
+		m.logger.With(
+			"address", listener.Addr().String(),
+		).Info("management HTTP server starting")
+		gwmux := runtime.NewServeMux(
+			runtime.WithMarshalerOption("application/json", &LegacyJsonMarshaler{}),
+			runtime.WithMarshalerOption("application/octet-stream", &DynamicV1Marshaler{}),
+			runtime.WithMarshalerOption(runtime.MIMEWildcard, &DynamicV1Marshaler{}),
+		)
+		router := gin.New()
+		server := &http.Server{
+			Addr: httpAddr,
+			BaseContext: func(net.Listener) context.Context {
+				return ctx
+			},
+			Handler: router.Handler(),
+		}
+		stopServer = sync.OnceFunc(func() {
+			server.Close()
+		})
+		router.Any("/*any", gin.WrapF(gwmux.ServeHTTP))
+		m.configureManagementHttpApi(ctx, server, grpcAddr, gwmux)
+		go func(server *http.Server) {
+			// important: wait for plugins that may have api extensions to load,
+			// otherwise the server will be started before adding them to the router
+			select {
+			case <-m.pluginsLoaded:
+			case <-ctx.Done():
+			}
+			m.configureHttpApiExtensions(server, gwmux)
+			if err := server.Serve(listener); err != nil {
+				if !errors.Is(err, http.ErrServerClosed) {
+					m.logger.With(logger.Err(err)).Warn("management HTTP server exited with error")
+				}
+			}
+			m.logger.Info("management HTTP server stopped")
+		}(server)
+	}, httpListenAddr, grpcListenAddr)
+	<-ctx.Done()
+	mu.Lock()
+	if stopServer != nil {
+		stopServer()
 	}
-	errC := lo.Async(func() error {
-		return server.ListenAndServe()
-	})
-	select {
-	case <-ctx.Done():
-		server.Close()
-		return ctx.Err()
-	case err := <-errC:
-		return err
-	}
+	mu.Unlock()
+	return ctx.Err()
 }
 
 func (m *Server) CertsInfo(_ context.Context, _ *emptypb.Empty) (*managementv1.CertsInfoResponse, error) {
 	resp := &managementv1.CertsInfoResponse{
 		Chain: []*corev1.CertInfo{},
 	}
-	for _, tlsCert := range m.coreDataSource.TLSConfig().Certificates[:1] {
+	tlsConfig := m.coreDataSource.TLSConfig()
+	if tlsConfig == nil || len(tlsConfig.Certificates) == 0 {
+		return resp, nil
+	}
+	for _, tlsCert := range tlsConfig.Certificates[:1] {
 		for _, der := range tlsCert.Certificate {
 			cert, err := x509.ParseCertificate(der)
 			if err != nil {
@@ -348,8 +423,4 @@ func (m *Server) ListCapabilities(ctx context.Context, in *emptypb.Empty) (*mana
 	return &managementv1.CapabilityList{
 		Items: items,
 	}, nil
-}
-
-func (m *Server) Server() *grpc.Server {
-	return m.grpcServer
 }

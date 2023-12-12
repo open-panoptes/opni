@@ -18,11 +18,11 @@ type (
 	relayServerSpecPathBuilder            protopath.Path
 	healthServerSpecPathBuilder           protopath.Path
 	dashboardServerSpecPathBuilder        protopath.Path
+	certsSpecPathBuilder                  protopath.Path
 	storageSpecPathBuilder                protopath.Path
 	etcdSpecPathBuilder                   protopath.Path
 	mTLSSpecPathBuilder                   protopath.Path
 	jetStreamSpecPathBuilder              protopath.Path
-	certsSpecPathBuilder                  protopath.Path
 	pluginsSpecPathBuilder                protopath.Path
 	pluginFiltersPathBuilder              protopath.Path
 	cacheSpecPathBuilder                  protopath.Path
@@ -84,6 +84,9 @@ func (p gatewayConfigSpecPathBuilder) Auth() authSpecPathBuilder {
 }
 func (p revisionPathBuilder) Timestamp() timestampPathBuilder {
 	return timestampPathBuilder(append(p, protopath.FieldAccess(((*v1.Revision)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(2))))
+}
+func (p dashboardServerSpecPathBuilder) WebCerts() certsSpecPathBuilder {
+	return certsSpecPathBuilder(append(p, protopath.FieldAccess(((*DashboardServerSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(5))))
 }
 func (p storageSpecPathBuilder) Etcd() etcdSpecPathBuilder {
 	return etcdSpecPathBuilder(append(p, protopath.FieldAccess(((*StorageSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(2))))
@@ -170,6 +173,24 @@ func (p dashboardServerSpecPathBuilder) Hostname() protopath.Path {
 func (p dashboardServerSpecPathBuilder) TrustedProxies() protopath.Path {
 	return protopath.Path(append(p, protopath.FieldAccess(((*DashboardServerSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(4))))
 }
+func (p certsSpecPathBuilder) CaCert() protopath.Path {
+	return protopath.Path(append(p, protopath.FieldAccess(((*CertsSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))
+}
+func (p certsSpecPathBuilder) CaCertData() protopath.Path {
+	return protopath.Path(append(p, protopath.FieldAccess(((*CertsSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(2))))
+}
+func (p certsSpecPathBuilder) ServingCert() protopath.Path {
+	return protopath.Path(append(p, protopath.FieldAccess(((*CertsSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(3))))
+}
+func (p certsSpecPathBuilder) ServingCertData() protopath.Path {
+	return protopath.Path(append(p, protopath.FieldAccess(((*CertsSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(4))))
+}
+func (p certsSpecPathBuilder) ServingKey() protopath.Path {
+	return protopath.Path(append(p, protopath.FieldAccess(((*CertsSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(5))))
+}
+func (p certsSpecPathBuilder) ServingKeyData() protopath.Path {
+	return protopath.Path(append(p, protopath.FieldAccess(((*CertsSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(6))))
+}
 func (p storageSpecPathBuilder) Backend() protopath.Path {
 	return protopath.Path(append(p, protopath.FieldAccess(((*StorageSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))
 }
@@ -206,24 +227,6 @@ func (p jetStreamSpecPathBuilder) Endpoint() protopath.Path {
 func (p jetStreamSpecPathBuilder) NkeySeedPath() protopath.Path {
 	return protopath.Path(append(p, protopath.FieldAccess(((*JetStreamSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(2))))
 }
-func (p certsSpecPathBuilder) CaCert() protopath.Path {
-	return protopath.Path(append(p, protopath.FieldAccess(((*CertsSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))
-}
-func (p certsSpecPathBuilder) CaCertData() protopath.Path {
-	return protopath.Path(append(p, protopath.FieldAccess(((*CertsSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(2))))
-}
-func (p certsSpecPathBuilder) ServingCert() protopath.Path {
-	return protopath.Path(append(p, protopath.FieldAccess(((*CertsSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(3))))
-}
-func (p certsSpecPathBuilder) ServingCertData() protopath.Path {
-	return protopath.Path(append(p, protopath.FieldAccess(((*CertsSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(4))))
-}
-func (p certsSpecPathBuilder) ServingKey() protopath.Path {
-	return protopath.Path(append(p, protopath.FieldAccess(((*CertsSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(5))))
-}
-func (p certsSpecPathBuilder) ServingKeyData() protopath.Path {
-	return protopath.Path(append(p, protopath.FieldAccess(((*CertsSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(6))))
-}
 func (p pluginsSpecPathBuilder) Dir() protopath.Path {
 	return protopath.Path(append(p, protopath.FieldAccess(((*PluginsSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))
 }
@@ -239,20 +242,8 @@ func (p filesystemCacheSpecPathBuilder) Dir() protopath.Path {
 func (p keyringSpecPathBuilder) RuntimeKeyDirs() protopath.Path {
 	return protopath.Path(append(p, protopath.FieldAccess(((*KeyringSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))
 }
-func (p agentUpgradesSpecPathBuilder) Driver() protopath.Path {
-	return protopath.Path(append(p, protopath.FieldAccess(((*AgentUpgradesSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))
-}
 func (p kubernetesAgentUpgradeSpecPathBuilder) ImageResolver() protopath.Path {
 	return protopath.Path(append(p, protopath.FieldAccess(((*KubernetesAgentUpgradeSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))
-}
-func (p kubernetesAgentUpgradeSpecPathBuilder) Namespace() protopath.Path {
-	return protopath.Path(append(p, protopath.FieldAccess(((*KubernetesAgentUpgradeSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(2))))
-}
-func (p kubernetesAgentUpgradeSpecPathBuilder) RepoOverride() protopath.Path {
-	return protopath.Path(append(p, protopath.FieldAccess(((*KubernetesAgentUpgradeSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(3))))
-}
-func (p pluginUpgradesSpecPathBuilder) Driver() protopath.Path {
-	return protopath.Path(append(p, protopath.FieldAccess(((*PluginUpgradesSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))
 }
 func (p binaryPluginUpgradeSpecPathBuilder) PatchEngine() protopath.Path {
 	return protopath.Path(append(p, protopath.FieldAccess(((*BinaryPluginUpgradeSpec)(nil)).ProtoReflect().Descriptor().Fields().ByNumber(1))))

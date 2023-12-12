@@ -2,6 +2,7 @@ package reactive
 
 import (
 	"context"
+	"log/slog"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -24,6 +25,7 @@ type Encoder[T any] interface {
 }
 
 type reactiveInternal[V any] interface {
-	watchFuncWithRev(ctx context.Context, onChanged func(rev int64, value V))
-	wait()
+	watchFuncInternal(ctx context.Context, onChanged func(rev int64, value V, group <-chan struct{}))
 }
+
+var traceLogLevel = slog.LevelDebug - 2

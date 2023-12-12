@@ -117,8 +117,8 @@ func (b *Builder) BuildMessage(msgType reflect.Type, newFieldHook func(f *builde
 			oldFieldHook(f, rf)
 			if f.Options == nil {
 				f.Options = &descriptorpb.FieldOptions{}
-				mutateExtension(f.Options, cli.E_Flag, b.EditFlagOptions(rf))
 			}
+			mutateExtension(f.Options, cli.E_Flag, b.EditFlagOptions(rf))
 		}
 	}
 	if b.EditFieldComment != nil {
@@ -127,6 +127,12 @@ func (b *Builder) BuildMessage(msgType reflect.Type, newFieldHook func(f *builde
 			oldFieldHook(f, rf)
 			if comments := f.GetComments(); comments != nil {
 				b.EditFieldComment(rf, &comments.LeadingComment)
+				if strings.HasPrefix(strings.TrimSpace(comments.LeadingComment), "Deprecated: ") {
+					if f.Options == nil {
+						f.Options = &descriptorpb.FieldOptions{}
+					}
+					f.Options.Deprecated = lo.ToPtr(true)
+				}
 			} else {
 				var c string
 				b.EditFieldComment(rf, &c)
@@ -249,11 +255,6 @@ FIELDS:
 			delete(b.cache, rfType)
 		}
 		newFieldHook(field, rf)
-
-		// check if the field is deprecated
-		if strings.HasPrefix(strings.TrimSpace(field.GetComments().LeadingComment), "Deprecated: ") {
-			field.Options.Deprecated = lo.ToPtr(true)
-		}
 		m.AddField(field)
 	}
 	b.cache[msgType] = m
@@ -421,10 +422,10 @@ func autoDiscoverMetadataFromFlags[FR FlagRegistrar[FS, F], FS FlagSet[F], F any
 			if flag.DefValue != "" {
 				if f.Options == nil {
 					f.Options = &descriptorpb.FieldOptions{}
-					mutateExtension(f.Options, cli.E_Flag, func(ext *cli.FlagOptions) {
-						ext.Default = &flag.DefValue
-					})
 				}
+				mutateExtension(f.Options, cli.E_Flag, func(ext *cli.FlagOptions) {
+					ext.Default = &flag.DefValue
+				})
 			}
 		}
 	}

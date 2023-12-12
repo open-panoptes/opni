@@ -94,6 +94,19 @@ type TestEnvAlertingClusterDriver struct {
 	subscribers       []chan client.AlertingClient
 }
 
+// GetAlertingServiceConfig implements drivers.ClusterDriver.
+func (e *TestEnvAlertingClusterDriver) GetAlertingServiceConfig() alerting_drivers.AlertingServiceConfig {
+	tempDir := e.env.GetTempDirectory()
+	return alerting_drivers.AlertingServiceConfig{
+		Certs: alerting_drivers.MTLSConfig{
+			ServerCA:   path.Join(tempDir, "alerting/root.crt"),
+			ClientCA:   path.Join(tempDir, "alerting/root.crt"),
+			ClientCert: path.Join(tempDir, "alerting/client.crt"),
+			ClientKey:  path.Join(tempDir, "alerting/client.key"),
+		},
+	}
+}
+
 var (
 	_ alerting_drivers.ClusterDriver = (*TestEnvAlertingClusterDriver)(nil)
 	_ alertops.AlertingAdminServer   = (*TestEnvAlertingClusterDriver)(nil)

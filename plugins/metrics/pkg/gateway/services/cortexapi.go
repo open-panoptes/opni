@@ -2,13 +2,13 @@ package services
 
 import (
 	"context"
-	"os"
+	"errors"
+	"net/http"
 
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/tools/pkg/memoize"
 
-	"github.com/rancher/opni/pkg/auth"
 	"github.com/rancher/opni/pkg/capabilities/wellknown"
 	"github.com/rancher/opni/pkg/logger"
 	httpext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/http"
@@ -41,7 +41,7 @@ type CortexApiService struct {
 
 func (s *CortexApiService) Activate() error {
 	defer close(s.cortexClientSetMu)
-	s.cortexClientSet = s.Context.Memoize(cortex.NewClientSet(s.Context.GatewayConfig()))
+	s.cortexClientSet = s.Context.Memoize(cortex.NewClientSet(s.Context.ClusterDriver()))
 	return nil
 }
 
@@ -56,7 +56,6 @@ func (s *CortexApiService) ConfigureRoutes(router *gin.Engine) {
 	lg.Info("configuring http api server")
 
 	router.Use(logger.GinLogger(lg), gin.Recovery())
-	config := s.Context.GatewayConfig().Spec
 
 	provider := NewRBACProvider(s.Context)
 	rbacMiddleware := rbac.NewMiddleware(rbac.MiddlewareConfig{
@@ -67,29 +66,30 @@ func (s *CortexApiService) ConfigureRoutes(router *gin.Engine) {
 		Capability: wellknown.CapabilityMetrics,
 	})
 
-	authMiddleware, ok := s.Context.AuthMiddlewares()[config.AuthProvider]
-	if !ok {
-		lg.With(
-			"name", config.AuthProvider,
-		).Error("auth provider not found")
-		os.Exit(1)
-	}
-
 	<-s.cortexClientSetMu
 	clientSet, err := cortex.AcquireClientSet(s.Context, s.cortexClientSet)
 	if err != nil {
 		return
 	}
 
+	cortexConfig := s.Context.ClusterDriver().GetCortexServiceConfig()
+
 	fwds := &forwarders{
-		QueryFrontend: fwd.To(config.Cortex.QueryFrontend.HTTPAddress, fwd.WithLogger(lg), fwd.WithTLS(clientSet.TLSConfig()), fwd.WithName("query-frontend")),
-		Alertmanager:  fwd.To(config.Cortex.Alertmanager.HTTPAddress, fwd.WithLogger(lg), fwd.WithTLS(clientSet.TLSConfig()), fwd.WithName("alertmanager")),
-		Ruler:         fwd.To(config.Cortex.Ruler.HTTPAddress, fwd.WithLogger(lg), fwd.WithTLS(clientSet.TLSConfig()), fwd.WithName("ruler")),
+		QueryFrontend: fwd.To(cortexConfig.QueryFrontend.HTTPAddress, fwd.WithLogger(lg), fwd.WithTLS(clientSet.TLSConfig()), fwd.WithName("query-frontend")),
+		Alertmanager:  fwd.To(cortexConfig.Alertmanager.HTTPAddress, fwd.WithLogger(lg), fwd.WithTLS(clientSet.TLSConfig()), fwd.WithName("alertmanager")),
+		Ruler:         fwd.To(cortexConfig.Ruler.HTTPAddress, fwd.WithLogger(lg), fwd.WithTLS(clientSet.TLSConfig()), fwd.WithName("ruler")),
 	}
 
 	mws := &middlewares{
 		RBAC: rbacMiddleware,
-		Auth: authMiddleware.(auth.HTTPMiddleware).Handle,
+		Auth: gin.HandlerFunc(func(c *gin.Context) {
+			user := c.GetHeader("X-Grafana-User")
+			if user == "" {
+				c.AbortWithError(http.StatusUnauthorized, errors.New("missing auth header"))
+				return
+			}
+			c.Set(rbac.UserIDKey, user)
+		}),
 	}
 
 	router.GET("/ready", fwds.QueryFrontend)
@@ -112,7 +112,6 @@ func (s *CortexApiService) configureAlertmanager(router *gin.Engine, f *forwarde
 			).Debug("multiple org ids found, limiting to first")
 			c.Header(cortex.OrgIDCodec.Key(), cortex.OrgIDCodec.Encode(ids[:1]))
 		}
-		return
 	}
 	router.Any("/api/prom/alertmanager", m.Auth, m.RBAC, orgIdLimiter, f.Alertmanager)
 	router.Any("/api/v1/alerts", m.Auth, m.RBAC, orgIdLimiter, f.Alertmanager)

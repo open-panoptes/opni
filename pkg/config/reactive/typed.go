@@ -42,7 +42,7 @@ func (m *typedReactive[E, T]) Value() T {
 
 func (m *typedReactive[E, T]) Watch(ctx context.Context) <-chan T {
 	wc := m.base.Watch(ctx)
-	ch := make(chan T, 1)
+	ch := make(chan T, cap(wc))
 
 	select {
 	case v := <-wc:
@@ -54,17 +54,7 @@ func (m *typedReactive[E, T]) Watch(ctx context.Context) <-chan T {
 		defer close(ch)
 		for v := range wc {
 			vt := m.encoder.FromValue(v)
-			select {
-			case ch <- vt:
-			default:
-				// replicate the behavior of reactiveMessage.update since we are
-				// wrapping the original channel
-				select {
-				case <-ch:
-				default:
-				}
-				ch <- vt
-			}
+			ch <- vt
 		}
 	}()
 	return ch
@@ -76,12 +66,8 @@ func (m *typedReactive[E, T]) WatchFunc(ctx context.Context, onChanged func(T)) 
 	})
 }
 
-func (m *typedReactive[E, T]) watchFuncWithRev(ctx context.Context, onChanged func(int64, T)) {
-	m.base.watchFuncWithRev(ctx, func(rev int64, v protoreflect.Value) {
-		onChanged(rev, m.encoder.FromValue(v))
+func (m *typedReactive[E, T]) watchFuncInternal(ctx context.Context, onChanged func(int64, T, <-chan struct{})) {
+	m.base.watchFuncInternal(ctx, func(rev int64, v protoreflect.Value, group <-chan struct{}) {
+		onChanged(rev, m.encoder.FromValue(v), group)
 	})
-}
-
-func (m *typedReactive[E, T]) wait() {
-	m.base.wait()
 }

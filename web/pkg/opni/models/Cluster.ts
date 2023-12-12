@@ -102,7 +102,7 @@ export class Cluster extends Resource {
   get status() {
     if (!this.healthStatus) {
       return {
-        state:   'Success',
+        state:   'info',
         message: 'Loading'
       };
     }

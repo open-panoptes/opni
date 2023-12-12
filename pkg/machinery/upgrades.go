@@ -2,11 +2,12 @@ package machinery
 
 import (
 	"errors"
+	"log/slog"
 
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/config/v1beta1"
 	"github.com/rancher/opni/pkg/oci"
 	"github.com/rancher/opni/pkg/update"
-	"log/slog"
 )
 
 func ConfigurePluginUpgrader(cfg v1beta1.PluginUpgradeSpec, pluginDir string, lg *slog.Logger) (update.SyncHandler, error) {
@@ -40,11 +41,8 @@ func ConfigureAgentUpgrader(cfg *v1beta1.AgentUpgradeSpec, lg *slog.Logger) (upd
 	}
 }
 
-func ConfigureOCIFetcher(providerType string, args ...any) (oci.Fetcher, error) {
-	if providerType == "" {
-		providerType = "noop"
-	}
-	builder := oci.GetFetcherBuilder(providerType)
+func ConfigureOCIFetcher(providerType configv1.KubernetesAgentUpgradeSpec_ImageResolver, args ...any) (oci.Fetcher, error) {
+	builder := oci.GetFetcherBuilder(providerType.String())
 	if builder == nil {
 		return nil, errors.New("oci provider not found")
 	}

@@ -13,10 +13,12 @@ import (
 
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
+	backoffv2 "github.com/lestrrat-go/backoff/v2"
 	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	"github.com/rancher/opni/pkg/bootstrap"
 	"github.com/rancher/opni/pkg/clients"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/config/v1beta1"
 	"github.com/rancher/opni/pkg/health"
 	"github.com/rancher/opni/pkg/health/annotations"
@@ -170,7 +172,7 @@ func New(ctx context.Context, conf *v1beta1.AgentConfig, opts ...AgentOption) (*
 	pl.Hook(hooks.OnLoadM(func(p types.HTTPAPIExtensionPlugin, md meta.PluginMeta) {
 		ctx, ca := context.WithTimeout(ctx, 10*time.Second)
 		defer ca()
-		cfg, err := p.Configure(ctx, apiextensions.NewInsecureCertConfig())
+		cfg, err := p.Configure(ctx, &configv1.CertsSpec{})
 		if err != nil {
 			lg.With(
 				"plugin", md.Module,
@@ -277,7 +279,7 @@ func New(ctx context.Context, conf *v1beta1.AgentConfig, opts ...AgentOption) (*
 	}
 
 	// Load ephemeral keyrings from disk, if any search dirs are configured
-	ekeys, err := machinery.LoadEphemeralKeys(afero.Afero{
+	ekeys, err := keyring.LoadEphemeralKeys(afero.Afero{
 		Fs: afero.NewOsFs(),
 	}, conf.Spec.Keyring.EphemeralKeyDirs...)
 	if err != nil {
@@ -350,7 +352,13 @@ func (a *Agent) ListenAndServe(ctx context.Context) error {
 	}
 
 	for _, conf := range []update.SyncConfig{agentSyncConf, pluginSyncConf} {
-		for ctx.Err() == nil {
+		retrier := backoffv2.Exponential(
+			backoffv2.WithMaxRetries(0),
+			backoffv2.WithMinInterval(100*time.Millisecond),
+			backoffv2.WithMaxInterval(1*time.Minute),
+		)
+		syncer := retrier.Start(ctx)
+		for backoffv2.Continue(syncer) {
 			err := conf.DoSync(ctx)
 			if err != nil {
 				switch status.Code(err) {
@@ -443,7 +451,8 @@ func (a *Agent) ListenAndServe(ctx context.Context) error {
 		return a.runGatewayClient(ctx)
 	})
 
-	return util.WaitAll(ctx, ca, e1, e2)
+	util.WaitAll(ctx, ca, e1, e2)
+	return context.Cause(ctx)
 }
 
 func (a *Agent) ListenAddress() string {

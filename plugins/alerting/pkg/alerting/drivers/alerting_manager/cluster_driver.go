@@ -364,6 +364,18 @@ func (a *AlertingClusterManager) GetDefaultReceiver() *config.WebhookConfig {
 	return nil
 }
 
+// GetAlertingServiceConfig implements drivers.ClusterDriver.
+func (e *AlertingClusterManager) GetAlertingServiceConfig() drivers.AlertingServiceConfig {
+	return drivers.AlertingServiceConfig{
+		Certs: drivers.MTLSConfig{
+			ServerCA:   "/run/alerting/certs/server/ca.crt",
+			ClientCA:   "/run/alerting/certs/client/ca.crt",
+			ClientCert: "/run/alerting/certs/client/tls.crt",
+			ClientKey:  "/run/alerting/certs/client/tls.key",
+		},
+	}
+}
+
 func listPeers(replicas int) []alertingClient.AlertingPeer {
 	peers := []alertingClient.AlertingPeer{}
 	for i := 0; i < replicas; i++ {

@@ -8,16 +8,16 @@ import (
 
 	"github.com/lestrrat-go/backoff/v2"
 	"github.com/nats-io/nats.go"
-	"github.com/rancher/opni/pkg/config/v1beta1"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/logger"
 )
 
-func AcquireJetstreamConn(ctx context.Context, conf *v1beta1.JetStreamStorageSpec, lg *slog.Logger) (nats.JetStreamContext, error) {
-	nkeyOpt, err := nats.NkeyOptionFromSeed(conf.NkeySeedPath)
+func AcquireJetstreamConn(ctx context.Context, conf *configv1.JetStreamSpec, lg *slog.Logger) (nats.JetStreamContext, error) {
+	nkeyOpt, err := nats.NkeyOptionFromSeed(conf.GetNkeySeedPath())
 	if err != nil {
 		return nil, err
 	}
-	nc, err := nats.Connect(conf.Endpoint,
+	nc, err := nats.Connect(conf.GetEndpoint(),
 		nkeyOpt,
 		nats.MaxReconnects(-1),
 		nats.RetryOnFailedConnect(true),

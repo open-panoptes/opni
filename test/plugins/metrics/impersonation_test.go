@@ -39,7 +39,7 @@ var _ = Describe("Tenant Impersonation", Ordered, Label("integration"), func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		compressed := snappy.Encode(nil, wrData)
-		return client.Store(context.Background(), compressed)
+		return client.Store(context.Background(), compressed, 0)
 	}
 	var queryVec = func(tenants []string, promql string) (model.Vector, error) {
 		resp, err := cortexAdminClient.Query(context.Background(), &cortexadmin.QueryRequest{

@@ -25,7 +25,7 @@ var (
  Observability + AIOps for Kubernetes
 `
 
-	DefaultLogLevel   = slog.LevelDebug
+	DefaultLogLevel   = slog.LevelDebug - 1
 	DefaultWriter     io.Writer
 	DefaultAddSource  = true
 	pluginGroupPrefix = "plugin"

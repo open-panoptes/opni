@@ -3,16 +3,22 @@
 package controllers
 
 import (
-	grafanav1beta1 "github.com/grafana-operator/grafana-operator/v5/api/v1beta1"
+	"context"
 	"log/slog"
+
+	grafanav1beta1 "github.com/grafana-operator/grafana-operator/v5/api/v1beta1"
 
 	"github.com/go-logr/logr"
 	grafanactrl "github.com/grafana-operator/grafana-operator/v5/controllers"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // +kubebuilder:rbac:groups=grafana.opni.io,resources=grafanas;grafanas/finalizers,verbs=get;list;watch;create;update;patch;delete
@@ -78,7 +84,16 @@ func (r *GrafanaDashboardReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&grafanav1beta1.GrafanaDashboard{}).
+		Watches(
+			&grafanav1beta1.Grafana{},
+			handler.EnqueueRequestsFromMapFunc(r.findGrafanas),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
+		).
 		Complete(&gc)
+}
+
+func (r *GrafanaDashboardReconciler) findGrafanas(ctx context.Context, gw client.Object) []ctrl.Request {
+	return findGrafanas(r.Client, ctx, gw)
 }
 
 func (r *GrafanaDatasourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -95,5 +110,32 @@ func (r *GrafanaDatasourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	//return gc.SetupWithManager(mgr, context.Background())
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&grafanav1beta1.GrafanaDatasource{}).
+		Watches(
+			&grafanav1beta1.Grafana{},
+			handler.EnqueueRequestsFromMapFunc(r.findGrafanas),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
+		).
 		Complete(gc)
+}
+
+func (r *GrafanaDatasourceReconciler) findGrafanas(ctx context.Context, gw client.Object) []ctrl.Request {
+	return findGrafanas(r.Client, ctx, gw)
+}
+
+func findGrafanas(c client.Client, ctx context.Context, gw client.Object) []ctrl.Request {
+	grafanas := &grafanav1beta1.GrafanaList{}
+	err := c.List(ctx, grafanas, client.InNamespace(gw.GetNamespace()))
+	if err != nil {
+		return []ctrl.Request{}
+	}
+	var requests []ctrl.Request
+	for _, mc := range grafanas.Items {
+		requests = append(requests, ctrl.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      mc.Name,
+				Namespace: mc.Namespace,
+			},
+		})
+	}
+	return requests
 }

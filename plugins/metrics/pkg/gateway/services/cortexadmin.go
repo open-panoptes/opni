@@ -43,7 +43,7 @@ type CortexAdminService struct {
 func (s *CortexAdminService) Activate() error {
 	defer s.Context.SetServingStatus(cortexadmin.CortexAdmin_ServiceDesc.ServiceName, managementext.Serving)
 
-	s.cortexClientSet = s.Context.Memoize(cortex.NewClientSet(s.Context.GatewayConfig()))
+	s.cortexClientSet = s.Context.Memoize(cortex.NewClientSet(s.Context.ClusterDriver()))
 	return nil
 }
 
@@ -56,16 +56,15 @@ func (s *CortexAdminService) ManagementServices() []util.ServicePackInterface {
 var _ cortexadmin.CortexAdminServer = (*CortexAdminService)(nil)
 
 func (s *CortexAdminService) AllUserStats(ctx context.Context, _ *emptypb.Empty) (*cortexadmin.UserIDStatsList, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET",
-		fmt.Sprintf("https://%s/distributor/all_user_stats", s.Context.GatewayConfig().Spec.Cortex.Distributor.HTTPAddress), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", "application/json")
 	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("https://%s/distributor/all_user_stats", cs.Distributor().URL()), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/json")
 	resp, err := cs.HTTP().Do(req)
 	if err != nil {
 		return nil, err
@@ -174,9 +173,11 @@ func (s *CortexAdminService) Query(ctx context.Context, in *cortexadmin.QueryReq
 		"query", in.Query,
 	)
 	lg.Debug("handling query")
-
-	req, err := http.NewRequestWithContext(ctx, "POST",
-		fmt.Sprintf("https://%s/prometheus/api/v1/query", s.Context.GatewayConfig().Spec.Cortex.QueryFrontend.HTTPAddress), nil)
+	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("https://%s/prometheus/api/v1/query", cs.QueryFrontend().Address()), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -186,10 +187,7 @@ func (s *CortexAdminService) Query(ctx context.Context, in *cortexadmin.QueryReq
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set(cortex.OrgIDCodec.Key(), cortex.OrgIDCodec.Encode(in.Tenants))
-	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
-	}
+
 	resp, err := cs.HTTP().Do(req)
 	if err != nil {
 		lg.With(
@@ -227,6 +225,10 @@ func (s *CortexAdminService) QueryRange(ctx context.Context, in *cortexadmin.Que
 	lg := s.Context.Logger().With(
 		"query", in.Query,
 	)
+	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
 	values := url.Values{}
 	values.Add("query", in.Query)
 	values.Add("start", formatTime(in.Start.AsTime()))
@@ -234,7 +236,7 @@ func (s *CortexAdminService) QueryRange(ctx context.Context, in *cortexadmin.Que
 	values.Add("step", in.Step.AsDuration().String())
 
 	req, err := http.NewRequestWithContext(ctx, "POST",
-		fmt.Sprintf("https://%s/prometheus/api/v1/query_range", s.Context.GatewayConfig().Spec.Cortex.QueryFrontend.HTTPAddress),
+		fmt.Sprintf("https://%s/prometheus/api/v1/query_range", cs.QueryFrontend().Address()),
 		strings.NewReader(values.Encode()))
 	if err != nil {
 		return nil, err
@@ -244,10 +246,7 @@ func (s *CortexAdminService) QueryRange(ctx context.Context, in *cortexadmin.Que
 	req.Header.Set(cortex.OrgIDCodec.Key(), cortex.OrgIDCodec.Encode(in.Tenants))
 
 	lg.Debug(req.URL.RawQuery)
-	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
-	}
+
 	resp, err := cs.HTTP().Do(req)
 	if err != nil {
 		return nil, err
@@ -310,19 +309,19 @@ func (s *CortexAdminService) GetRule(ctx context.Context,
 	lg := s.Context.Logger().With(
 		"group name", in.GroupName,
 	)
-
+	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
 	req, err := http.NewRequestWithContext(ctx, "GET",
 		fmt.Sprintf("https://%s/api/v1/rules/%s/%s",
-			s.Context.GatewayConfig().Spec.Cortex.Ruler.HTTPAddress, in.Namespace, in.GroupName), nil)
+			cs.Ruler().Address(), in.Namespace, in.GroupName), nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set(cortex.OrgIDCodec.Key(), cortex.OrgIDCodec.Encode([]string{in.ClusterId}))
-	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
-	}
+
 	resp, err := cs.HTTP().Do(req)
 	if err != nil {
 		lg.With(
@@ -421,9 +420,12 @@ func (s *CortexAdminService) LoadRules(ctx context.Context, in *cortexadmin.Load
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
-
+	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
 	req, err := http.NewRequestWithContext(ctx, "POST",
-		fmt.Sprintf("https://%s/api/v1/rules/%s", s.Context.GatewayConfig().Spec.Cortex.Ruler.HTTPAddress, in.Namespace), nil)
+		fmt.Sprintf("https://%s/api/v1/rules/%s", cs.Ruler().Address(), in.Namespace), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -431,10 +433,7 @@ func (s *CortexAdminService) LoadRules(ctx context.Context, in *cortexadmin.Load
 	req.Body = io.NopCloser(bytes.NewReader(in.YamlContent))
 	req.Header.Set("Content-Type", "application/yaml")
 	req.Header.Set(cortex.OrgIDCodec.Key(), cortex.OrgIDCodec.Encode([]string{in.ClusterId}))
-	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
-	}
+
 	resp, err := cs.HTTP().Do(req)
 	if err != nil {
 		lg.With(
@@ -458,17 +457,18 @@ func (s *CortexAdminService) DeleteRule(ctx context.Context, in *cortexadmin.Del
 		"namespace", in.Namespace,
 		"cluster", in.ClusterId,
 	)
-	req, err := http.NewRequestWithContext(ctx, "DELETE",
-		fmt.Sprintf("https://%s/api/v1/rules/%s/%s",
-			s.Context.GatewayConfig().Spec.Cortex.Ruler.HTTPAddress, in.Namespace, in.GroupName), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set(cortex.OrgIDCodec.Key(), cortex.OrgIDCodec.Encode([]string{in.ClusterId}))
 	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
+	req, err := http.NewRequestWithContext(ctx, "DELETE",
+		fmt.Sprintf("https://%s/api/v1/rules/%s/%s",
+			cs.Ruler().Address(), in.Namespace, in.GroupName), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set(cortex.OrgIDCodec.Key(), cortex.OrgIDCodec.Encode([]string{in.ClusterId}))
+
 	resp, err := cs.HTTP().Do(req)
 	if err != nil {
 		lg.With(
@@ -583,16 +583,18 @@ type httpResponse struct {
 
 func (s *CortexAdminService) FlushBlocks(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	// look up all healthy ingesters
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
-		fmt.Sprintf("https://%s/ingester/ring", s.Context.GatewayConfig().Spec.Cortex.Distributor.HTTPAddress), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Accept", "application/json")
 	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+		fmt.Sprintf("https://%s/ingester/ring", cs.Distributor().URL()), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Accept", "application/json")
+
 	resp, err := cs.HTTP().Do(req)
 	if err != nil {
 		return nil, err
@@ -626,15 +628,12 @@ func (s *CortexAdminService) FlushBlocks(ctx context.Context, _ *emptypb.Empty) 
 		}
 		// set the hostname from the cortex config as the tls server name, since
 		// the server's cert won't have a san for its ip in the pod cidr
-		hostSan, port, err := net.SplitHostPort(s.Context.GatewayConfig().Spec.Cortex.Distributor.HTTPAddress)
+		hostSan, port, err := net.SplitHostPort(cs.Distributor().URL())
 		if err != nil {
 			return nil, err
 		}
 		address := fmt.Sprintf("%s:%s", host, port)
-		cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, err.Error())
-		}
+
 		httpClient := cs.HTTP(cortex.WithServerNameOverride(hostSan))
 		wg.Go(func() error {
 			// adding ?wait=true will cause this request to block
@@ -753,6 +752,7 @@ func (s *CortexAdminService) GetCortexConfig(ctx context.Context, req *cortexadm
 
 func (s *CortexAdminService) proxyCortexToPrometheus(
 	ctx context.Context,
+	cs cortex.ClientSet,
 	tenant string,
 	method string,
 	url string,
@@ -774,10 +774,7 @@ func (s *CortexAdminService) proxyCortexToPrometheus(
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set(cortex.OrgIDCodec.Key(), cortex.OrgIDCodec.Encode([]string{tenant}))
-	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
-	}
+
 	resp, err := cs.HTTP().Do(req)
 	lg := s.Context.Logger().With(
 		"request", url,
@@ -795,13 +792,17 @@ func (s *CortexAdminService) proxyCortexToPrometheus(
 
 // returns duplicate metric names, since labels uniquely identify series but not metrics
 func (s *CortexAdminService) enumerateCortexSeries(ctx context.Context, request *cortexadmin.SeriesRequest) (*http.Response, error) {
+	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
 	values := url.Values{}
 	values.Add("match[]", fmt.Sprintf("{job=\"%s\"}", request.JobId))
 	reqUrl := fmt.Sprintf(
 		"https://%s/prometheus/api/v1/series?",
-		s.Context.GatewayConfig().Spec.Cortex.QueryFrontend.HTTPAddress,
+		cs.QueryFrontend().Address(),
 	)
-	resp, err := s.proxyCortexToPrometheus(ctx, request.Tenant, "GET", reqUrl, values, nil)
+	resp, err := s.proxyCortexToPrometheus(ctx, cs, request.Tenant, "GET", reqUrl, values, nil)
 	return resp, err
 }
 
@@ -863,13 +864,17 @@ func (s *CortexAdminService) parseCortexLabelsOnSeriesJob(
 }
 
 func (s *CortexAdminService) fetchCortexMetricMetadata(ctx context.Context, tenant string, metricName string) (*http.Response, error) {
+	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
 	values := url.Values{}
 	values.Add("metric", metricName)
 	reqUrl := fmt.Sprintf(
 		"https://%s/prometheus/api/v1/metadata?",
-		s.Context.GatewayConfig().Spec.Cortex.QueryFrontend.HTTPAddress,
+		cs.QueryFrontend().Address(),
 	)
-	resp, err := s.proxyCortexToPrometheus(ctx, tenant, "GET", reqUrl, values, nil)
+	resp, err := s.proxyCortexToPrometheus(ctx, cs, tenant, "GET", reqUrl, values, nil)
 	return resp, err
 }
 
@@ -890,13 +895,17 @@ func (s *CortexAdminService) parseCortexSeriesMetadata(resp *http.Response, metr
 }
 
 func (s *CortexAdminService) getCortexMetricLabels(ctx context.Context, request *cortexadmin.LabelRequest) (*http.Response, error) {
+	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
 	values := url.Values{}
 	values.Add("match[]", fmt.Sprintf("%s{job=\"%s\"}", request.MetricName, request.JobId)) // encode the input metric
 	reqUrl := fmt.Sprintf(
 		"https://%s/prometheus/api/v1/labels",
-		s.Context.GatewayConfig().Spec.Cortex.QueryFrontend.HTTPAddress,
+		cs.QueryFrontend().Address(),
 	)
-	resp, err := s.proxyCortexToPrometheus(ctx, request.Tenant, "GET", reqUrl, values, nil)
+	resp, err := s.proxyCortexToPrometheus(ctx, cs, request.Tenant, "GET", reqUrl, values, nil)
 	return resp, err
 }
 
@@ -917,23 +926,31 @@ func (s *CortexAdminService) parseCortexMetricLabels(resp *http.Response) ([]str
 }
 
 func (s *CortexAdminService) getCortexLabelValues(ctx context.Context, request *cortexadmin.LabelRequest, labelName string) (*http.Response, error) {
+	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
 	reqUrl := fmt.Sprintf(
 		"https://%s/prometheus/api/v1/label/%s/values",
-		s.Context.GatewayConfig().Spec.Cortex.QueryFrontend.HTTPAddress,
+		cs.QueryFrontend().Address(),
 		labelName,
 	)
-	resp, err := s.proxyCortexToPrometheus(ctx, request.Tenant, "GET", reqUrl, nil, nil)
+	resp, err := s.proxyCortexToPrometheus(ctx, cs, request.Tenant, "GET", reqUrl, nil, nil)
 	return resp, err
 }
 
 // The proxy to the prometheus API rules returns a response in the form:
 // https://github.com/cortexproject/cortex/blob/c0e4545fd26f33ca5cc3323ee48e4c2ccd182b83/pkg/ruler/api.go#L215
 func (s *CortexAdminService) listCortexRules(ctx context.Context, clusterId string) (*http.Response, error) {
+	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
 	reqUrl := fmt.Sprintf(
 		"https://%s/prometheus/api/v1/rules",
-		s.Context.GatewayConfig().Spec.Cortex.Ruler.HTTPAddress,
+		cs.Ruler().Address(),
 	)
-	resp, err := s.proxyCortexToPrometheus(ctx, clusterId, "GET", reqUrl, nil, nil)
+	resp, err := s.proxyCortexToPrometheus(ctx, cs, clusterId, "GET", reqUrl, nil, nil)
 	return resp, err
 }
 

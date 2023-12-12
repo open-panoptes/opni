@@ -133,10 +133,15 @@ func (tp TestPluginSet) LoadPlugins(ctx context.Context, loader *plugins.PluginL
 		go plugin.Serve(sc)
 		wg.Add(1)
 		go func() {
-			cc := plugins.ClientConfig(p.Metadata, scheme, plugins.WithReattachConfig(<-ch))
-			cc.TLSConfig = tlsConfig
 			defer wg.Done()
-			loader.LoadOne(ctx, p.Metadata, cc)
+			select {
+			case <-ctx.Done():
+				return
+			case conf := <-ch:
+				cc := plugins.ClientConfig(p.Metadata, scheme, plugins.WithReattachConfig(conf))
+				cc.TLSConfig = tlsConfig
+				loader.LoadOne(ctx, p.Metadata, cc)
+			}
 		}()
 	}
 	wg.Wait()

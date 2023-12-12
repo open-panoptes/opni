@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"path"
 	"strings"
 	sync "sync"
 
@@ -100,15 +99,19 @@ func (w *HealthStatusWriterManager) Close() {
 }
 
 // HandleTrackedConnection implements RemoteConnectionListener.
-func (w *HealthStatusWriterManager) HandleTrackedConnection(ctx context.Context, agentId string, leaseId string, _ *corev1.InstanceInfo) {
+func (w *HealthStatusWriterManager) HandleTrackedConnectionCreated(ctx context.Context, agentId string, leaseId string, _ *corev1.InstanceInfo) {
 	// see docs for NewHealthStatusWriter for details on context usage
-	hsw := NewHealthStatusWriter(context.WithoutCancel(ctx), kvutil.WithMessageCodec[*corev1.InstanceInfo](kvutil.WithKey(w.connectionsKv, path.Join(agentId, leaseId))), w.logger)
+	hsw := NewHealthStatusWriter(context.WithoutCancel(ctx), kvutil.WithMessageCodec[*corev1.InstanceInfo](kvutil.WithKey(w.connectionsKv, agentId)), w.logger)
 	agentBuffer := health.AsBuffer(w.agentHealthQueue(agentId), w.agentStatusQueue(agentId))
 	w.logger.With("id", agentId).Debug("handling new tracked agent connection")
 	go func() {
 		defer hsw.Close()
 		health.Copy(ctx, hsw, agentBuffer)
 	}()
+}
+
+func (w *HealthStatusWriterManager) HandleTrackedConnectionUpdated(ctx context.Context, agentId string, leaseId string, _ *corev1.InstanceInfo) {
+	w.logger.With("id", agentId).Debug("tracked connection updated")
 }
 
 type HealthStatusWriter struct {
@@ -281,12 +284,11 @@ func NewHealthStatusReader(ctx context.Context, kv storage.KeyValueStore, opts .
 		return nil, err
 	}
 
-	decodeKey := func(key string) (string, string, bool) {
-		parts := strings.Split(key, "/")
-		if len(parts) != 2 {
-			return "", "", false
+	decodeKey := func(key string) (string, bool) {
+		if strings.Contains(key, "/") {
+			return "", false // hack: ignore old style keys
 		}
-		return parts[0], parts[1], true
+		return key, true
 	}
 
 	go func() {
@@ -296,7 +298,7 @@ func NewHealthStatusReader(ctx context.Context, kv storage.KeyValueStore, opts .
 		for event := range events {
 			switch event.EventType {
 			case storage.WatchEventPut:
-				id, _, ok := decodeKey(event.Current.Key())
+				id, ok := decodeKey(event.Current.Key())
 				if !ok {
 					// fmt.Println("could not decode key")
 					continue
@@ -326,7 +328,7 @@ func NewHealthStatusReader(ctx context.Context, kv storage.KeyValueStore, opts .
 					}
 				}
 			case storage.WatchEventDelete:
-				id, _, ok := decodeKey(event.Previous.Key())
+				id, ok := decodeKey(event.Previous.Key())
 				if !ok {
 					// fmt.Println("could not decode key")
 					continue

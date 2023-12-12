@@ -3,6 +3,8 @@ import * as CortexOpsTypes from '@pkg/opni/generated/github.com/rancher/opni/plu
 import * as StorageTypes from '@pkg/opni/generated/github.com/rancher/opni/internal/cortex/config/storage/storage_pb';
 import * as ManagementService from '@pkg/opni/generated/github.com/rancher/opni/pkg/apis/management/v1/management_svc';
 import * as ManagementTypes from '@pkg/opni/generated/github.com/rancher/opni/pkg/apis/management/v1/management_pb';
+import * as ConfigService from '@pkg/opni/generated/github.com/rancher/opni/pkg/config/v1/config_server_svc';
+import * as ConfigTypes from '@pkg/opni/generated/github.com/rancher/opni/pkg/config/v1/config_server_pb';
 import * as CoreTypes from '@pkg/opni/generated/github.com/rancher/opni/pkg/apis/core/v1/core_pb';
 import * as DriverUtilTypes from '@pkg/opni/generated/github.com/rancher/opni/pkg/plugins/driverutil/types_pb';
 import * as CapabilityTypes from '@pkg/opni/generated/github.com/rancher/opni/pkg/apis/capability/v1/capability_pb';
@@ -17,6 +19,11 @@ export const CortexOps = {
 export const Management = {
   service: ManagementService,
   types:   ManagementTypes,
+};
+
+export const Config = {
+  service: ConfigService,
+  types:   ConfigTypes,
 };
 
 export const DriverUtil = { types: DriverUtilTypes };

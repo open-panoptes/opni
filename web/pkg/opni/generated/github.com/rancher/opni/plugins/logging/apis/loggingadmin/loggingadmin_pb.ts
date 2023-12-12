@@ -45,6 +45,11 @@ export class OpensearchClusterV2 extends Message<OpensearchClusterV2> {
    */
   s3?: OpensearchS3Settings;
 
+  /**
+   * @generated from field: optional string podIPRegex = 8;
+   */
+  podIPRegex?: string;
+
   constructor(data?: PartialMessage<OpensearchClusterV2>) {
     super();
     proto3.util.initPartial(data, this);
@@ -60,6 +65,7 @@ export class OpensearchClusterV2 extends Message<OpensearchClusterV2> {
     { no: 5, name: "dashboards", kind: "message", T: DashboardsDetails, opt: true },
     { no: 6, name: "dataRetention", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 7, name: "s3", kind: "message", T: OpensearchS3Settings, opt: true },
+    { no: 8, name: "podIPRegex", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): OpensearchClusterV2 {

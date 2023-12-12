@@ -81,7 +81,6 @@ func (s *CapabilityBackendService) info() *capabilityv1.Details {
 		Name:             wellknown.CapabilityMetrics,
 		Source:           "plugin_metrics",
 		AvailableDrivers: drivers.ClusterDrivers.List(),
-		EnabledDriver:    s.Context.GatewayConfig().Spec.Cortex.Management.ClusterDriver,
 	}
 }
 
@@ -351,7 +350,7 @@ type UninstallTaskRunner struct {
 func NewUninstallTaskRunner(ctx types.ServiceContext) (*UninstallTaskRunner, error) {
 	return &UninstallTaskRunner{
 		sc:              ctx,
-		cortexClientSet: ctx.Memoize(cortex.NewClientSet(ctx.GatewayConfig())),
+		cortexClientSet: ctx.Memoize(cortex.NewClientSet(ctx.ClusterDriver())),
 	}, nil
 }
 
@@ -433,7 +432,7 @@ func (a *UninstallTaskRunner) OnTaskCompleted(ctx context.Context, ti task.Activ
 }
 
 func (a *UninstallTaskRunner) deleteTenant(ctx context.Context, clusterId string) error {
-	endpoint := fmt.Sprintf("https://%s/purger/delete_tenant", a.sc.GatewayConfig().Spec.Cortex.Purger.HTTPAddress)
+	endpoint := fmt.Sprintf("https://%s/purger/delete_tenant", a.sc.ClusterDriver().GetCortexServiceConfig().Purger.HTTPAddress)
 	deleteReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, nil)
 	if err != nil {
 		return err
@@ -461,7 +460,7 @@ func (a *UninstallTaskRunner) deleteTenant(ctx context.Context, clusterId string
 }
 
 func (a *UninstallTaskRunner) tenantDeleteStatus(ctx context.Context, clusterId string) (*purger.DeleteTenantStatusResponse, error) {
-	endpoint := fmt.Sprintf("https://%s/purger/delete_tenant_status", a.sc.GatewayConfig().Spec.Cortex.Purger.HTTPAddress)
+	endpoint := fmt.Sprintf("https://%s/purger/delete_tenant_status", a.sc.ClusterDriver().GetCortexServiceConfig().Purger.HTTPAddress)
 
 	statusReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {

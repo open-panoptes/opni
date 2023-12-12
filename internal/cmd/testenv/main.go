@@ -46,11 +46,12 @@ import (
 
 	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
 	"github.com/rancher/opni/plugins/alerting/apis/alertops"
-	_ "github.com/rancher/opni/plugins/alerting/test"
+
+	// _ "github.com/rancher/opni/plugins/alerting/test"
 	_ "github.com/rancher/opni/plugins/example/test"
-	_ "github.com/rancher/opni/plugins/logging/test"
+	// _ "github.com/rancher/opni/plugins/logging/test"
 	_ "github.com/rancher/opni/plugins/metrics/test"
-	_ "github.com/rancher/opni/plugins/slo/test"
+	// _ "github.com/rancher/opni/plugins/slo/test"
 )
 
 func main() {
@@ -247,6 +248,7 @@ func main() {
 			}
 			opts := []dashboard.ServerOption{
 				dashboard.WithLocalAuthenticator(&localauth.TestLocalAuthenticator{}),
+				dashboard.WithLogger(environment.Logger.WithGroup("dashboard")),
 			}
 			if noEmbeddedWebAssets {
 				absPath, err := filepath.Abs("web/")
@@ -258,7 +260,8 @@ func main() {
 				opts = append(opts, dashboard.WithAssetsFS(fs))
 			}
 			dashboardSrv, err := dashboard.NewServer(
-				&environment.GatewayConfig().Spec.Management,
+				environment.Context(),
+				environment.GatewayObject().ConfigManager(),
 				environment.PluginLoader(),
 				environment.GatewayObject(),
 				opts...)

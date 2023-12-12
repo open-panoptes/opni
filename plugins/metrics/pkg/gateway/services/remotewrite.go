@@ -36,7 +36,7 @@ type RemoteWriteServer struct {
 var _ remotewrite.RemoteWriteServer = (*RemoteWriteServer)(nil)
 
 func (s *RemoteWriteServer) Activate() error {
-	s.cortexClientSet = s.Context.Memoize(cortex.NewClientSet(s.Context.GatewayConfig()))
+	s.cortexClientSet = s.Context.Memoize(cortex.NewClientSet(s.Context.ClusterDriver()))
 	s.interceptors = map[string]cortex.RequestInterceptor{
 		"local": cortex.NewFederatingInterceptor(cortex.InterceptorConfig{
 			Metrics:     s.Context.Metrics(),
@@ -131,9 +131,13 @@ func (s *RemoteWriteServer) SyncRules(ctx context.Context, payload *remotewrite.
 			).Error("error syncing rules to cortex")
 		}
 	}()
+	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
 	url := fmt.Sprintf(
 		"https://%s/api/v1/rules/%s",
-		s.Context.GatewayConfig().Spec.Cortex.Ruler.HTTPAddress,
+		cs.Ruler().Address(),
 		"synced", // set the namespace to synced to differentiate from user rules
 	)
 
@@ -148,10 +152,7 @@ func (s *RemoteWriteServer) SyncRules(ctx context.Context, payload *remotewrite.
 	for k, v := range payload.Headers {
 		req.Header.Add(k, v)
 	}
-	cs, err := cortex.AcquireClientSet(ctx, s.cortexClientSet)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
-	}
+
 	resp, err := cs.HTTP().Do(req)
 	if err != nil {
 		return nil, err

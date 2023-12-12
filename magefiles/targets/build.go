@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/magefile/mage/mg"
@@ -32,6 +33,22 @@ func (Build) Archives(ctx context.Context) error {
 	defer tr.End()
 
 	return buildArchive("./...")
+}
+
+// Same as 'build:archives' but with debug symbols enabled
+func (Build) ArchivesDebug(ctx context.Context) error {
+	_, tr := Tracer.Start(ctx, "target.build.archives")
+	defer tr.End()
+
+	return buildArchive("./...", "-gcflags", "all=-N -l")
+}
+
+// Same as 'build:archives' but with race detection enabled
+func (Build) ArchivesRace(ctx context.Context) error {
+	_, tr := Tracer.Start(ctx, "target.build.archives")
+	defer tr.End()
+
+	return buildArchive("./...", "-race")
 }
 
 // Builds the custom linter plugin
@@ -71,12 +88,14 @@ type buildOpts struct {
 	Output   string
 	Tags     []string
 	Debug    bool
+	Race     bool
 	Compress bool
 }
 
 func buildMainPackage(opts buildOpts) error {
 	tag, _ := os.LookupEnv("BUILD_VERSION")
 	tag = strings.TrimSpace(tag)
+	cgoEnabled := "0"
 
 	version := "unversioned"
 	if tag != "" {
@@ -91,7 +110,14 @@ func buildMainPackage(opts buildOpts) error {
 			"-ldflags", fmt.Sprintf("-w -s -X github.com/rancher/opni/pkg/versions.Version=%s", version),
 			"-trimpath",
 		)
+	} else {
+		args = append(args, "-gcflags", "all=-N -l")
 	}
+	if opts.Race {
+		args = append(args, "-race")
+		cgoEnabled = "1"
+	}
+
 	args = append(args, "-o", opts.Output)
 	if len(opts.Tags) > 0 {
 		args = append(args, fmt.Sprintf("-tags=%s", strings.Join(opts.Tags, ",")))
@@ -106,7 +132,7 @@ func buildMainPackage(opts buildOpts) error {
 
 	args = append(args, opts.Path)
 
-	err = sh.RunWith(map[string]string{"CGO_ENABLED": "0"}, args[0], args[1:]...)
+	err = sh.RunWith(map[string]string{"CGO_ENABLED": cgoEnabled}, args[0], args[1:]...)
 	if err != nil {
 		return err
 	}
@@ -141,8 +167,12 @@ func buildMainPackage(opts buildOpts) error {
 	return err
 }
 
-func buildArchive(path string) error {
+func buildArchive(path string, buildFlags ...string) error {
+	cgoEnabled := "0"
+	if slices.Contains(buildFlags, "-race") {
+		cgoEnabled = "1"
+	}
 	return sh.RunWith(map[string]string{
-		"CGO_ENABLED": "0",
-	}, mg.GoCmd(), "build", verboseFlag, "-buildmode=archive", "-trimpath", "-tags=nomsgpack", path)
+		"CGO_ENABLED": cgoEnabled,
+	}, mg.GoCmd(), append(append([]string{"build", verboseFlag, "-buildmode=archive", "-trimpath", "-tags=nomsgpack"}, buildFlags...), path)...)
 }

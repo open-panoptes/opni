@@ -12,7 +12,7 @@ import (
 
 var _ = Describe("Typed Reactive Messages", Label("unit"), func() {
 	It("should create typed messages", func(ctx SpecContext) {
-		rv := &reactive.ReactiveValue{}
+		rv := reactive.NewReactiveValue(nil)
 
 		actual := &ext.Sample2FieldMsg{
 			Field1: 100,
@@ -20,7 +20,7 @@ var _ = Describe("Typed Reactive Messages", Label("unit"), func() {
 		}
 
 		val := protoreflect.ValueOf(actual.ProtoReflect())
-		rv.Update(1, val, make(chan struct{}))
+		rv.Update(1, val, make(chan struct{}), true)
 		Expect(rv.Value()).To(testutil.ProtoValueEqual(val))
 
 		typedRv := reactive.Message[*ext.Sample2FieldMsg](rv)
@@ -48,18 +48,18 @@ var _ = Describe("Typed Reactive Messages", Label("unit"), func() {
 		check = func(m *ext.Sample2FieldMsg) {
 			Expect(m).To(testutil.ProtoEqual(actual2))
 		}
-		rv.Update(2, protoreflect.ValueOf(actual2.ProtoReflect()), make(chan struct{}))
+		rv.Update(2, protoreflect.ValueOf(actual2.ProtoReflect()), make(chan struct{}), true)
 
 		Eventually(typedW).Should(Receive(testutil.ProtoEqual(actual2)))
 		Expect(called).To(BeTrue(), "watch func was not called")
 	})
 
 	It("should create typed scalars", func(ctx SpecContext) {
-		rv := &reactive.ReactiveValue{}
+		rv := reactive.NewReactiveValue(nil)
 
 		actual := int32(100)
 
-		rv.Update(1, protoreflect.ValueOf(actual), make(chan struct{}))
+		rv.Update(1, protoreflect.ValueOf(actual), make(chan struct{}), true)
 		Expect(rv.Value().Int()).To(Equal(int64(100))) // note the type conversion by Int()
 
 		typedRv := reactive.Scalar[int32](rv)
@@ -83,32 +83,9 @@ var _ = Describe("Typed Reactive Messages", Label("unit"), func() {
 		check = func(m int32) {
 			Expect(m).To(Equal(actual2))
 		}
-		rv.Update(2, protoreflect.ValueOf(actual2), make(chan struct{}))
+		rv.Update(2, protoreflect.ValueOf(actual2), make(chan struct{}), true)
 
 		Eventually(typedW).Should(Receive(Equal(actual2)))
 		Expect(called).To(BeTrue(), "watch func was not called")
-	})
-
-	It("should handle slow watch receivers the same way untyped values do", func(ctx SpecContext) {
-		rv := &reactive.ReactiveValue{}
-		typedRv := reactive.Scalar[int32](rv)
-
-		w := rv.Watch(ctx)
-		typedW := typedRv.Watch(ctx)
-
-		Expect(w).To(HaveLen(0))
-		Expect(typedW).To(HaveLen(0))
-		rv.Update(1, protoreflect.ValueOf(int32(100)), make(chan struct{}))
-		Eventually(w).Should(HaveLen(1))
-		Eventually(typedW).Should(HaveLen(1))
-		rv.Update(2, protoreflect.ValueOf(int32(200)), make(chan struct{}))
-		Consistently(w).Should(HaveLen(1))
-		Consistently(typedW).Should(HaveLen(1))
-		rv.Update(3, protoreflect.ValueOf(int32(300)), make(chan struct{}))
-		Consistently(w).Should(HaveLen(1))
-		Consistently(typedW).Should(HaveLen(1))
-
-		Expect(<-w).To(testutil.ProtoValueEqual(protoreflect.ValueOf(int32(300))))
-		Expect(<-typedW).To(Equal(int32(300)))
 	})
 })

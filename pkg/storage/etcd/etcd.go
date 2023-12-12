@@ -13,10 +13,11 @@ import (
 	"go.uber.org/zap"
 
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
+	"github.com/rancher/opni/pkg/config/adapt"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/config/v1beta1"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/storage"
-	"github.com/rancher/opni/pkg/util"
 )
 
 var (
@@ -64,13 +65,17 @@ func WithPrefix(prefix string) EtcdStoreOption {
 	}
 }
 
-func NewEtcdClient(ctx context.Context, conf *v1beta1.EtcdStorageSpec) (*clientv3.Client, error) {
+func NewEtcdClient(ctx context.Context, conf *configv1.EtcdSpec, lg *slog.Logger) (*clientv3.Client, error) {
 	var tlsConfig *tls.Config
 	if conf.Certs != nil {
 		var err error
-		tlsConfig, err = util.LoadClientMTLSConfig(*conf.Certs)
+		tlsConfig, err = conf.Certs.AsTlsConfig()
 		if err != nil {
-			return nil, fmt.Errorf("failed to load client TLS config: %w", err)
+			if errors.Is(err, configv1.ErrInsecure) {
+				lg.Warn(err.Error())
+			} else {
+				return nil, fmt.Errorf("failed to load client TLS config: %w", err)
+			}
 		}
 	}
 	clientConfig := clientv3.Config{
@@ -86,11 +91,11 @@ func NewEtcdClient(ctx context.Context, conf *v1beta1.EtcdStorageSpec) (*clientv
 	return cli, err
 }
 
-func NewEtcdStore(ctx context.Context, conf *v1beta1.EtcdStorageSpec, opts ...EtcdStoreOption) (*EtcdStore, error) {
+func NewEtcdStore(ctx context.Context, conf *configv1.EtcdSpec, opts ...EtcdStoreOption) (*EtcdStore, error) {
 	options := EtcdStoreOptions{}
 	options.apply(opts...)
 	lg := logger.New(logger.WithLogLevel(slog.LevelWarn)).WithGroup("etcd")
-	cli, err := NewEtcdClient(ctx, conf)
+	cli, err := NewEtcdClient(ctx, conf, lg)
 	if err != nil {
 		return nil, err
 	}
@@ -140,9 +145,16 @@ func (e *EtcdStore) LockManager(prefix string) storage.LockManager {
 }
 
 func init() {
-	storage.RegisterStoreBuilder(v1beta1.StorageTypeEtcd, func(args ...any) (any, error) {
+	storage.RegisterStoreBuilder(configv1.StorageBackend_Etcd.String(), func(args ...any) (any, error) {
 		ctx := args[0].(context.Context)
-		conf := args[1].(*v1beta1.EtcdStorageSpec)
+
+		var conf *configv1.EtcdSpec
+		switch spec := args[1].(type) {
+		case *v1beta1.EtcdStorageSpec:
+			conf = adapt.V1ConfigOf[*configv1.EtcdSpec](spec)
+		case *configv1.EtcdSpec:
+			conf = spec
+		}
 
 		var opts []EtcdStoreOption
 		for _, arg := range args[2:] {

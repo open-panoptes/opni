@@ -3,17 +3,20 @@ package reactive_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/samber/lo"
+	"google.golang.org/protobuf/reflect/protopath"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"github.com/rancher/opni/pkg/config/reactive"
 	"github.com/rancher/opni/pkg/plugins/driverutil"
+	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/storage/inmemory"
 	"github.com/rancher/opni/pkg/test/testdata/plugins/ext"
 	"github.com/rancher/opni/pkg/test/testutil"
@@ -24,12 +27,13 @@ import (
 	"github.com/rancher/opni/pkg/util/protorand"
 )
 
-var _ = Describe("Reactive Controller", Label("unit"), func() {
+var _ = Describe("Reactive Controller", Label("unit"), Ordered, func() {
 	var ctrl *reactive.Controller[*ext.SampleConfiguration]
-	defaultStore := inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
-	activeStore := inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
+	var defaultStore, activeStore storage.ValueStoreT[*ext.SampleConfiguration]
 
 	BeforeEach(func() {
+		defaultStore = inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
+		activeStore = inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
 		ctrl = reactive.NewController(driverutil.NewDefaultingConfigTracker(defaultStore, activeStore, flagutil.LoadDefaults))
 		ctx, ca := context.WithCancel(context.Background())
 		Expect(ctrl.Start(ctx)).To(Succeed())
@@ -100,8 +104,11 @@ var _ = Describe("Reactive Controller", Label("unit"), func() {
 
 			Expect(errors.Join(recvFailures...)).To(BeNil())
 
-			for _, c := range ws {
-				Expect(c).To(HaveLen(0), "expected all watchers to be read")
+			for i, c := range ws {
+				if len(c) > 0 {
+					Expect(c).To(HaveLen(0),
+						fmt.Sprintf("expected all watchers to be read; channel for key %s has %d unread elements", allPaths[i].String(), len(c)))
+				}
 			}
 		}
 
@@ -142,7 +149,7 @@ var _ = Describe("Reactive Controller", Label("unit"), func() {
 
 		By("verifying that both watches received an update")
 		// some fields have a limited set of possible values
-		updatedFields := fieldmask.Diff(spec, spec2).Paths
+		updatedFields := fieldmask.Diff(spec.ProtoReflect(), spec2.ProtoReflect()).Paths
 		pathsToCheck := map[string]struct{}{}
 		for _, path := range updatedFields {
 			parts := strings.Split(path, ".")
@@ -165,15 +172,48 @@ var _ = Describe("Reactive Controller", Label("unit"), func() {
 	When("a reactive message is watched before a value is set", func() {
 		It("should receive the value when it is set", func(ctx SpecContext) {
 			msg := &ext.SampleConfiguration{}
-			rm := ctrl.Reactive(msg.ProtoPath().StringField())
-			w := rm.Watch(ctx)
-			Expect(len(w)).To(BeZero())
+			rm1 := ctrl.Reactive(msg.ProtoPath().StringField())
+			rm2 := ctrl.Reactive(msg.ProtoPath().MessageField().Field5().Field3())
+			w1 := rm1.Watch(ctx)
+			w2 := rm2.Watch(ctx)
+			w2_2 := rm2.Watch(ctx)
+			Expect(len(w1)).To(BeZero())
+			Expect(len(w2)).To(BeZero())
+			Expect(len(w2_2)).To(BeZero())
 
+			spec := &ext.SampleConfiguration{
+				StringField: lo.ToPtr("foo"),
+				MessageField: &ext.SampleMessage{
+					Field5: &ext.Sample5FieldMsg{
+						Field3: 1234,
+					},
+				},
+			}
+			err := activeStore.Put(ctx, spec)
+			Expect(err).NotTo(HaveOccurred())
+
+			var v protoreflect.Value
+			Eventually(w1).Should(Receive(&v))
+			Expect(v).To(testutil.ProtoValueEqual(protoreflect.ValueOfString("foo")))
+
+			Eventually(w2).Should(Receive(&v))
+			Expect(v).To(testutil.ProtoValueEqual(protoreflect.ValueOfInt32(1234)))
+			Eventually(w2_2).Should(Receive(&v))
+			Expect(v).To(testutil.ProtoValueEqual(protoreflect.ValueOfInt32(1234)))
+		})
+	})
+
+	When("a reactive message is watched after a value is set", func() {
+		It("should receive the value immediately", func(ctx SpecContext) {
 			spec := &ext.SampleConfiguration{
 				StringField: lo.ToPtr("foo"),
 			}
 			err := activeStore.Put(ctx, spec)
 			Expect(err).NotTo(HaveOccurred())
+
+			msg := &ext.SampleConfiguration{}
+			rm := ctrl.Reactive(msg.ProtoPath().StringField())
+			w := rm.Watch(ctx)
 
 			var v protoreflect.Value
 			Eventually(w).Should(Receive(&v))
@@ -181,11 +221,14 @@ var _ = Describe("Reactive Controller", Label("unit"), func() {
 		})
 	})
 
-	When("the active store has an existing value on creation", func() {
+	When("the active store has an existing value on controller creation", func() {
 		It("should start with the existing revision and value", func() {
 			spec := &ext.SampleConfiguration{
 				StringField: lo.ToPtr("foo"),
 			}
+			defaultStore := inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
+			activeStore := inmemory.NewValueStore[*ext.SampleConfiguration](util.ProtoClone)
+
 			err := activeStore.Put(context.Background(), spec)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -208,6 +251,8 @@ var _ = Describe("Reactive Controller", Label("unit"), func() {
 			msg := &ext.SampleConfiguration{}
 			rm1 := ctrl.Reactive(msg.ProtoPath().StringField())
 			rm2 := ctrl.Reactive(msg.ProtoPath().StringField())
+			Expect(rm1).To(Equal(rm2)) // the underlying reactive value should be the same
+
 			w1 := rm1.Watch(ctx)
 			w2 := rm2.Watch(ctx)
 
@@ -225,4 +270,31 @@ var _ = Describe("Reactive Controller", Label("unit"), func() {
 		})
 	})
 
+	When("a value is changed", func() {
+		When("it only has watchers on parent paths", func() {
+			It("should update the parent reactive message", func(ctx SpecContext) {
+				msg := &ext.SampleConfiguration{}
+				rm := ctrl.Reactive(protopath.Path(msg.ProtoPath().MessageField()))
+				w := rm.Watch(ctx)
+
+				spec := &ext.SampleConfiguration{
+					MessageField: &ext.SampleMessage{
+						Field1: &ext.Sample1FieldMsg{
+							Field1: 1234,
+						},
+					},
+				}
+				err := activeStore.Put(ctx, util.ProtoClone(spec))
+				Expect(err).NotTo(HaveOccurred())
+
+				var v protoreflect.Value
+				Eventually(w).Should(Receive(&v))
+				Expect(v).To(testutil.ProtoValueEqual(protoreflect.ValueOfMessage((&ext.SampleMessage{
+					Field1: &ext.Sample1FieldMsg{
+						Field1: 1234,
+					},
+				}).ProtoReflect())))
+			})
+		})
+	})
 })

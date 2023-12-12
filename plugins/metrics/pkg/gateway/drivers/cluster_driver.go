@@ -19,6 +19,9 @@ type ClusterDriver interface {
 	ShouldDisableNode(*corev1.Reference) error
 
 	PartialCortexOpsServer
+
+	GetCortexServiceConfig() CortexServiceConfig
+	GetGrafanaServiceConfig() GrafanaServiceConfig
 }
 
 type PartialCortexOpsServer interface {
@@ -27,3 +30,36 @@ type PartialCortexOpsServer interface {
 }
 
 var ClusterDrivers = driverutil.NewCache[ClusterDriver]()
+
+type CortexServiceConfig struct {
+	Distributor   HttpGrpcConfig
+	Ingester      HttpGrpcConfig
+	StoreGateway  HttpGrpcConfig
+	Ruler         HttpGrpcConfig
+	QueryFrontend HttpGrpcConfig
+	Alertmanager  HttpConfig
+	Compactor     HttpConfig
+	Querier       HttpConfig
+	Purger        HttpConfig
+	Certs         MTLSConfig
+}
+
+type HttpGrpcConfig struct {
+	HTTPAddress string
+	GRPCAddress string
+}
+
+type HttpConfig struct {
+	HTTPAddress string
+}
+
+type MTLSConfig struct {
+	ServerCA   string
+	ClientCA   string
+	ClientCert string
+	ClientKey  string
+}
+
+type GrafanaServiceConfig struct {
+	HTTPAddress string
+}

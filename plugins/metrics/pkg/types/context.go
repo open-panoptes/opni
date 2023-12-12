@@ -6,8 +6,7 @@ import (
 
 	"github.com/rancher/opni/pkg/agent"
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/auth"
-	"github.com/rancher/opni/pkg/config/v1beta1"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	streamext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/stream"
 	"github.com/rancher/opni/pkg/plugins/apis/system"
 	"github.com/rancher/opni/pkg/storage"
@@ -27,9 +26,9 @@ type PluginContext interface {
 	ManagementClient() managementv1.ManagementClient
 	KeyValueStoreClient() system.KeyValueStoreClient
 	StreamClient() grpc.ClientConnInterface
+	GatewayConfigClient() configv1.GatewayConfigClient
 	ClusterDriver() drivers.ClusterDriver
-	GatewayConfig() *v1beta1.GatewayConfig
-	AuthMiddlewares() map[string]auth.Middleware
+	// AuthMiddlewares() map[string]auth.Middleware
 	ExtensionClient() system.ExtensionClientInterface
 }
 

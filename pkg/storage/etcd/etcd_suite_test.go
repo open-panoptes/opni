@@ -12,6 +12,7 @@ import (
 	"github.com/rancher/opni/pkg/test"
 	. "github.com/rancher/opni/pkg/test/conformance/storage"
 	_ "github.com/rancher/opni/pkg/test/setup"
+	"github.com/rancher/opni/pkg/test/testlog"
 	"github.com/rancher/opni/pkg/test/testruntime"
 	"github.com/rancher/opni/pkg/util/future"
 	"github.com/samber/lo"
@@ -43,22 +44,22 @@ var _ = BeforeSuite(func() {
 		)
 		Expect(err).To(Succeed())
 
-		cli, err := etcd.NewEtcdClient(context.Background(), env.EtcdConfig())
+		cli, err := etcd.NewEtcdClient(context.Background(), env.EtcdConfig(), testlog.Log)
 		Expect(err).To(Succeed())
 
 		lm := etcd.NewEtcdLockManager(cli, "test", logger.NewNop())
 		lmF.Set(lm)
 
-		x, err := etcd.NewEtcdClient(context.Background(), env.EtcdConfig())
+		x, err := etcd.NewEtcdClient(context.Background(), env.EtcdConfig(), testlog.Log)
 		Expect(err).To(Succeed())
 		lmX := etcd.NewEtcdLockManager(x, "test", logger.NewNop())
 
-		y, err := etcd.NewEtcdClient(context.Background(), env.EtcdConfig())
+		y, err := etcd.NewEtcdClient(context.Background(), env.EtcdConfig(), testlog.Log)
 		Expect(err).To(Succeed())
 		lmY := etcd.NewEtcdLockManager(y, "test", logger.NewNop())
 		Expect(err).To(Succeed())
 
-		z, err := etcd.NewEtcdClient(context.Background(), env.EtcdConfig())
+		z, err := etcd.NewEtcdClient(context.Background(), env.EtcdConfig(), testlog.Log)
 		Expect(err).To(Succeed())
 		lmZ := etcd.NewEtcdLockManager(z, "test", logger.NewNop())
 

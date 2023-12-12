@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -10,6 +11,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/util"
+	"github.com/samber/lo"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
@@ -67,7 +69,7 @@ func NewKeyValueStoreUI[T proto.Message](events <-chan storage.WatchEvent[storag
 				{Title: "Value"},
 			}),
 			help:   help.New(),
-			kvs:    make(map[string]string),
+			kvs:    make(map[string]lo.Tuple2[int64, string]),
 			events: events,
 		},
 	}
@@ -76,7 +78,7 @@ func NewKeyValueStoreUI[T proto.Message](events <-chan storage.WatchEvent[storag
 type keyValueStoreModel[T proto.Message] struct {
 	table  table.Model
 	help   help.Model
-	kvs    map[string]string
+	kvs    map[string]lo.Tuple2[int64, string]
 	events <-chan storage.WatchEvent[storage.KeyRevision[[]byte]]
 	size   tea.WindowSizeMsg
 }
@@ -125,16 +127,17 @@ func (m keyValueStoreModel[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				panic(err)
 			}
 			str, _ := protojson.Marshal(t)
-			m.kvs[string(msg.Current.Key())] = string(str)
+			m.kvs[string(msg.Current.Key())] = lo.T2(msg.Current.Revision(), string(str))
 		case storage.WatchEventDelete:
 			delete(m.kvs, string(msg.Previous.Key()))
 		}
 		rows := make([]table.Row, 0, len(m.kvs))
-		for k, v := range m.kvs {
-			rows = append(rows, table.Row{k, "-", v})
+		for k, t := range m.kvs {
+			rev, v := t.Unpack()
+			rows = append(rows, table.Row{k, fmt.Sprint(rev), v})
 		}
 		sort.Slice(rows, func(i, j int) bool {
-			return rows[i][0] < rows[j][0]
+			return rows[i][2] < rows[j][2]
 		})
 		m.table.SetRows(rows)
 		m.resizeColumns()

@@ -588,6 +588,33 @@ func (in *Value) DeepCopy() *Value {
 	return proto.Clone(in).(*Value)
 }
 
+func (in *ReactiveWatchRequest) DeepCopyInto(out *ReactiveWatchRequest) {
+	out.Reset()
+	proto.Merge(out, in)
+}
+
+func (in *ReactiveWatchRequest) DeepCopy() *ReactiveWatchRequest {
+	return proto.Clone(in).(*ReactiveWatchRequest)
+}
+
+func (in *ReactiveEvents) DeepCopyInto(out *ReactiveEvents) {
+	out.Reset()
+	proto.Merge(out, in)
+}
+
+func (in *ReactiveEvents) DeepCopy() *ReactiveEvents {
+	return proto.Clone(in).(*ReactiveEvents)
+}
+
+func (in *ReactiveEvent) DeepCopyInto(out *ReactiveEvent) {
+	out.Reset()
+	proto.Merge(out, in)
+}
+
+func (in *ReactiveEvent) DeepCopy() *ReactiveEvent {
+	return proto.Clone(in).(*ReactiveEvent)
+}
+
 func (in *Reference) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("Reference", pflag.ExitOnError)
 	fs.SortFlags = true

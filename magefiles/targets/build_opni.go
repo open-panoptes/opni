@@ -21,6 +21,36 @@ func (Build) Opni(ctx context.Context) error {
 	})
 }
 
+// Same as 'build:opni' but with debug symbols enabled
+func (Build) OpniDebug(ctx context.Context) error {
+	mg.CtxDeps(ctx, Build.Archives)
+
+	_, tr := Tracer.Start(ctx, "target.build.opni")
+	defer tr.End()
+
+	return buildMainPackage(buildOpts{
+		Path:   "./cmd/opni",
+		Output: "bin/opni",
+		Debug:  true,
+		Tags:   []string{"nomsgpack"},
+	})
+}
+
+// Same as 'build:opni' but with race detection enabled
+func (Build) OpniRace(ctx context.Context) error {
+	mg.CtxDeps(ctx, Build.Archives)
+
+	_, tr := Tracer.Start(ctx, "target.build.opni")
+	defer tr.End()
+
+	return buildMainPackage(buildOpts{
+		Path:   "./cmd/opni",
+		Output: "bin/opni",
+		Race:   true,
+		Tags:   []string{"nomsgpack"},
+	})
+}
+
 // Builds the opni-minimal binary
 func (Build) OpniMinimal(ctx context.Context) error {
 	_, tr := Tracer.Start(ctx, "target.build.opni-minimal")

@@ -107,7 +107,7 @@ message AzureConfig {
     }
   ];
   // Deprecated: Azure storage MSI resource. It will be set automatically by Azure SDK.
-  optional string msi_resource = 6 [deprecated = true];
+  optional string msi_resource = 6 [deprecated = true, (cli.flag) = {secret: true}];
   // Azure storage MSI resource managed identity client Id. If not supplied default Azure credential will be used. Set it to empty if you need to authenticate via Azure Workload Identity.
   optional string user_assigned_id = 7;
   HttpConfig      http             = 8;

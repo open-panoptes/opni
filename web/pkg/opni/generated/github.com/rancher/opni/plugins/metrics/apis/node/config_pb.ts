@@ -6,7 +6,8 @@ import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialM
 import { Duration, FieldMask, Message, proto3 } from "@bufbuild/protobuf";
 import { Reference, Revision } from "../../../../pkg/apis/core/v1/core_pb";
 import { RulesSpec } from "../../../../pkg/config/v1beta1/agent_config_pb";
-import { Target } from "../../../../pkg/plugins/driverutil/types_pb";
+import { Action, Target } from "../../../../pkg/plugins/driverutil/types_pb";
+import { Violations } from "../../../../../../../buf/validate/expression_pb";
 
 /**
  * @generated from enum node.metrics.config.ConfigStatus
@@ -415,12 +416,17 @@ export class ResetRequest extends Message<ResetRequest> {
   node?: Reference;
 
   /**
-   * @generated from field: google.protobuf.FieldMask mask = 2;
+   * @generated from field: core.Revision revision = 2;
+   */
+  revision?: Revision;
+
+  /**
+   * @generated from field: google.protobuf.FieldMask mask = 3;
    */
   mask?: FieldMask;
 
   /**
-   * @generated from field: node.metrics.config.MetricsCapabilityConfig patch = 3;
+   * @generated from field: node.metrics.config.MetricsCapabilityConfig patch = 4;
    */
   patch?: MetricsCapabilityConfig;
 
@@ -433,8 +439,9 @@ export class ResetRequest extends Message<ResetRequest> {
   static readonly typeName = "node.metrics.config.ResetRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "node", kind: "message", T: Reference },
-    { no: 2, name: "mask", kind: "message", T: FieldMask },
-    { no: 3, name: "patch", kind: "message", T: MetricsCapabilityConfig },
+    { no: 2, name: "revision", kind: "message", T: Revision },
+    { no: 3, name: "mask", kind: "message", T: FieldMask },
+    { no: 4, name: "patch", kind: "message", T: MetricsCapabilityConfig },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ResetRequest {
@@ -541,6 +548,138 @@ export class SetRequest extends Message<SetRequest> {
 
   static equals(a: SetRequest | PlainMessage<SetRequest> | undefined, b: SetRequest | PlainMessage<SetRequest> | undefined): boolean {
     return proto3.util.equals(SetRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message node.metrics.config.DryRunRequest
+ */
+export class DryRunRequest extends Message<DryRunRequest> {
+  /**
+   * Only used for active config requests
+   *
+   * @generated from field: core.Reference node = 1;
+   */
+  node?: Reference;
+
+  /**
+   * @generated from field: driverutil.Target target = 2;
+   */
+  target = Target.ActiveConfiguration;
+
+  /**
+   * @generated from field: driverutil.Action action = 3;
+   */
+  action = Action.NoAction;
+
+  /**
+   * Set
+   *
+   * @generated from field: node.metrics.config.MetricsCapabilityConfig spec = 4;
+   */
+  spec?: MetricsCapabilityConfig;
+
+  /**
+   * Reset
+   *
+   * @generated from field: core.Revision revision = 5;
+   */
+  revision?: Revision;
+
+  /**
+   * Reset
+   *
+   * @generated from field: node.metrics.config.MetricsCapabilityConfig patch = 6;
+   */
+  patch?: MetricsCapabilityConfig;
+
+  /**
+   * Reset
+   *
+   * @generated from field: google.protobuf.FieldMask mask = 7;
+   */
+  mask?: FieldMask;
+
+  constructor(data?: PartialMessage<DryRunRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "node.metrics.config.DryRunRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "node", kind: "message", T: Reference },
+    { no: 2, name: "target", kind: "enum", T: proto3.getEnumType(Target) },
+    { no: 3, name: "action", kind: "enum", T: proto3.getEnumType(Action) },
+    { no: 4, name: "spec", kind: "message", T: MetricsCapabilityConfig },
+    { no: 5, name: "revision", kind: "message", T: Revision },
+    { no: 6, name: "patch", kind: "message", T: MetricsCapabilityConfig },
+    { no: 7, name: "mask", kind: "message", T: FieldMask },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): DryRunRequest {
+    return new DryRunRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): DryRunRequest {
+    return new DryRunRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): DryRunRequest {
+    return new DryRunRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: DryRunRequest | PlainMessage<DryRunRequest> | undefined, b: DryRunRequest | PlainMessage<DryRunRequest> | undefined): boolean {
+    return proto3.util.equals(DryRunRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message node.metrics.config.DryRunResponse
+ */
+export class DryRunResponse extends Message<DryRunResponse> {
+  /**
+   * @generated from field: node.metrics.config.MetricsCapabilityConfig current = 1;
+   */
+  current?: MetricsCapabilityConfig;
+
+  /**
+   * @generated from field: node.metrics.config.MetricsCapabilityConfig modified = 2;
+   */
+  modified?: MetricsCapabilityConfig;
+
+  /**
+   * @generated from field: buf.validate.Violations validationErrors = 3;
+   */
+  validationErrors?: Violations;
+
+  constructor(data?: PartialMessage<DryRunResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "node.metrics.config.DryRunResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "current", kind: "message", T: MetricsCapabilityConfig },
+    { no: 2, name: "modified", kind: "message", T: MetricsCapabilityConfig },
+    { no: 3, name: "validationErrors", kind: "message", T: Violations },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): DryRunResponse {
+    return new DryRunResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): DryRunResponse {
+    return new DryRunResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): DryRunResponse {
+    return new DryRunResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: DryRunResponse | PlainMessage<DryRunResponse> | undefined, b: DryRunResponse | PlainMessage<DryRunResponse> | undefined): boolean {
+    return proto3.util.equals(DryRunResponse, a, b);
   }
 }
 

@@ -11,7 +11,7 @@ $dark      : #B6B6C2;
 //light border and buttons
 $medium    : #DCDEE7;
 
-//light inputs 
+//light inputs
 $light     : #EEEFF4;
 
 //light sidebar and box
@@ -84,7 +84,7 @@ $selected: rgba(#A453B9, .5);
   --link-banner-bg          : #{rgba($link, 0.15)};
   --link-light-bg           : #{rgba($link, 0.05)};
 
-  
+
   .text-link {
     color: var(--link) !important;
   }
@@ -297,7 +297,7 @@ $selected: rgba(#A453B9, .5);
       background: var(--error-active-bg);
       }
   }
-  
+
 
   --body-bg                    : #{$lightest};
   --body-text                  : #{$darkest};
@@ -414,7 +414,7 @@ $selected: rgba(#A453B9, .5);
   --tabbed-sidebar-bg          : #{$lighter};
   --tabbed-container-bg        : #{mix($light, $lighter, 15%)};
 
-  --yaml-editor-bg             : #{$lighter};
+  --yaml-editor-bg             : #{$darkest};
 
   --diff-border                : var(--border);
   --diff-header-bg             : var(--nav-bg);

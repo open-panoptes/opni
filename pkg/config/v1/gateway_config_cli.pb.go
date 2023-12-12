@@ -4,359 +4,16 @@
 package configv1
 
 import (
-	context "context"
-	errors "errors"
-	cli "github.com/rancher/opni/internal/codegen/cli"
-	v1 "github.com/rancher/opni/pkg/apis/core/v1"
-	cliutil "github.com/rancher/opni/pkg/opni/cliutil"
-	driverutil "github.com/rancher/opni/pkg/plugins/driverutil"
 	storage "github.com/rancher/opni/pkg/storage"
 	flagutil "github.com/rancher/opni/pkg/util/flagutil"
 	lo "github.com/samber/lo"
-	cobra "github.com/spf13/cobra"
 	pflag "github.com/spf13/pflag"
 	errdetails "google.golang.org/genproto/googleapis/rpc/errdetails"
-	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	strings "strings"
 )
-
-type (
-	contextKey_GatewayConfig_type      struct{}
-	contextInjector_GatewayConfig_type struct{}
-)
-
-var (
-	contextKey_GatewayConfig     contextKey_GatewayConfig_type
-	GatewayConfigContextInjector contextInjector_GatewayConfig_type
-)
-
-func (contextInjector_GatewayConfig_type) NewClient(cc grpc.ClientConnInterface) GatewayConfigClient {
-	return NewGatewayConfigClient(cc)
-}
-
-func (contextInjector_GatewayConfig_type) UnderlyingConn(client GatewayConfigClient) grpc.ClientConnInterface {
-	return client.(*gatewayConfigClient).cc
-}
-
-func (contextInjector_GatewayConfig_type) ContextWithClient(ctx context.Context, client GatewayConfigClient) context.Context {
-	return context.WithValue(ctx, contextKey_GatewayConfig, client)
-}
-
-func (contextInjector_GatewayConfig_type) ClientFromContext(ctx context.Context) (GatewayConfigClient, bool) {
-	client, ok := ctx.Value(contextKey_GatewayConfig).(GatewayConfigClient)
-	return client, ok
-}
-
-var extraCmds_GatewayConfig []*cobra.Command
-
-func addExtraGatewayConfigCmd(custom *cobra.Command) {
-	extraCmds_GatewayConfig = append(extraCmds_GatewayConfig, custom)
-}
-
-func BuildGatewayConfigCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:               "config",
-		Short:             `Gateway configuration management`,
-		Args:              cobra.NoArgs,
-		ValidArgsFunction: cobra.NoFileCompletions,
-	}
-
-	cliutil.AddSubcommands(cmd, append([]*cobra.Command{
-		BuildGatewayConfigGetDefaultConfigurationCmd(),
-		BuildGatewayConfigSetDefaultConfigurationCmd(),
-		BuildGatewayConfigGetConfigurationCmd(),
-		BuildGatewayConfigSetConfigurationCmd(),
-		BuildGatewayConfigResetDefaultConfigurationCmd(),
-		BuildGatewayConfigResetConfigurationCmd(),
-		BuildGatewayConfigConfigurationHistoryCmd(),
-	}, extraCmds_GatewayConfig...)...)
-	cli.AddOutputFlag(cmd)
-	return cmd
-}
-
-func BuildGatewayConfigGetDefaultConfigurationCmd() *cobra.Command {
-	in := &driverutil.GetRequest{}
-	cmd := &cobra.Command{
-		Use:               "get-default",
-		Short:             "",
-		Args:              cobra.NoArgs,
-		ValidArgsFunction: cobra.NoFileCompletions,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			client, ok := GatewayConfigContextInjector.ClientFromContext(cmd.Context())
-			if !ok {
-				cmd.PrintErrln("failed to get client from context")
-				return nil
-			}
-			if in == nil {
-				return errors.New("no input provided")
-			}
-			response, err := client.GetDefaultConfiguration(cmd.Context(), in)
-			if err != nil {
-				return err
-			}
-			cli.RenderOutput(cmd, response)
-			return nil
-		},
-	}
-	cmd.Flags().AddFlagSet(in.FlagSet())
-	return cmd
-}
-
-func BuildGatewayConfigSetDefaultConfigurationCmd() *cobra.Command {
-	in := &SetRequest{}
-	cmd := &cobra.Command{
-		Use:               "set-default",
-		Short:             "",
-		Args:              cobra.NoArgs,
-		ValidArgsFunction: cobra.NoFileCompletions,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			client, ok := GatewayConfigContextInjector.ClientFromContext(cmd.Context())
-			if !ok {
-				cmd.PrintErrln("failed to get client from context")
-				return nil
-			}
-			if cmd.Flags().Lookup("interactive").Value.String() == "true" {
-				if curValue, err := client.GetDefaultConfiguration(cmd.Context(), &driverutil.GetRequest{}); err == nil {
-					in.Spec = curValue
-				}
-				if edited, err := cliutil.EditInteractive(in.Spec); err != nil {
-					return err
-				} else {
-					in.Spec = edited
-				}
-			} else if fileName := cmd.Flags().Lookup("file").Value.String(); fileName != "" {
-				if in.Spec == nil {
-					cliutil.InitializeField(&in.Spec)
-				}
-				if err := cliutil.LoadFromFile(in.Spec, fileName); err != nil {
-					return err
-				}
-			}
-			if in == nil {
-				return errors.New("no input provided")
-			}
-			_, err := client.SetDefaultConfiguration(cmd.Context(), in)
-			if err != nil {
-				return err
-			}
-			return nil
-		},
-	}
-	cmd.Flags().StringP("file", "f", "", "path to a file containing the config, or - to read from stdin")
-	cmd.Flags().BoolP("interactive", "i", false, "edit the config interactively in an editor")
-	cmd.MarkFlagsMutuallyExclusive("file", "interactive")
-	cmd.MarkFlagFilename("file")
-	return cmd
-}
-
-func BuildGatewayConfigGetConfigurationCmd() *cobra.Command {
-	in := &driverutil.GetRequest{}
-	cmd := &cobra.Command{
-		Use:               "get",
-		Short:             "",
-		Args:              cobra.NoArgs,
-		ValidArgsFunction: cobra.NoFileCompletions,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			client, ok := GatewayConfigContextInjector.ClientFromContext(cmd.Context())
-			if !ok {
-				cmd.PrintErrln("failed to get client from context")
-				return nil
-			}
-			if in == nil {
-				return errors.New("no input provided")
-			}
-			response, err := client.GetConfiguration(cmd.Context(), in)
-			if err != nil {
-				return err
-			}
-			cli.RenderOutput(cmd, response)
-			return nil
-		},
-	}
-	cmd.Flags().AddFlagSet(in.FlagSet())
-	return cmd
-}
-
-func BuildGatewayConfigSetConfigurationCmd() *cobra.Command {
-	in := &SetRequest{}
-	cmd := &cobra.Command{
-		Use:               "set",
-		Short:             "",
-		Args:              cobra.NoArgs,
-		ValidArgsFunction: cobra.NoFileCompletions,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			client, ok := GatewayConfigContextInjector.ClientFromContext(cmd.Context())
-			if !ok {
-				cmd.PrintErrln("failed to get client from context")
-				return nil
-			}
-			if cmd.Flags().Lookup("interactive").Value.String() == "true" {
-				if curValue, err := client.GetConfiguration(cmd.Context(), &driverutil.GetRequest{}); err == nil {
-					in.Spec = curValue
-				}
-				if edited, err := cliutil.EditInteractive(in.Spec); err != nil {
-					return err
-				} else {
-					in.Spec = edited
-				}
-			} else if fileName := cmd.Flags().Lookup("file").Value.String(); fileName != "" {
-				if in.Spec == nil {
-					cliutil.InitializeField(&in.Spec)
-				}
-				if err := cliutil.LoadFromFile(in.Spec, fileName); err != nil {
-					return err
-				}
-			}
-			if in == nil {
-				return errors.New("no input provided")
-			}
-			_, err := client.SetConfiguration(cmd.Context(), in)
-			if err != nil {
-				return err
-			}
-			return nil
-		},
-	}
-	cmd.Flags().StringP("file", "f", "", "path to a file containing the config, or - to read from stdin")
-	cmd.Flags().BoolP("interactive", "i", false, "edit the config interactively in an editor")
-	cmd.MarkFlagsMutuallyExclusive("file", "interactive")
-	cmd.MarkFlagFilename("file")
-	return cmd
-}
-
-func BuildGatewayConfigResetDefaultConfigurationCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:               "reset-default",
-		Short:             "",
-		Args:              cobra.NoArgs,
-		ValidArgsFunction: cobra.NoFileCompletions,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			client, ok := GatewayConfigContextInjector.ClientFromContext(cmd.Context())
-			if !ok {
-				cmd.PrintErrln("failed to get client from context")
-				return nil
-			}
-			_, err := client.ResetDefaultConfiguration(cmd.Context(), &emptypb.Empty{})
-			if err != nil {
-				return err
-			}
-			return nil
-		},
-	}
-	return cmd
-}
-
-func BuildGatewayConfigResetConfigurationCmd() *cobra.Command {
-	in := &ResetRequest{}
-	cmd := &cobra.Command{
-		Use:               "reset",
-		Short:             "",
-		Args:              cobra.NoArgs,
-		ValidArgsFunction: cobra.NoFileCompletions,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			client, ok := GatewayConfigContextInjector.ClientFromContext(cmd.Context())
-			if !ok {
-				cmd.PrintErrln("failed to get client from context")
-				return nil
-			}
-			if cmd.Flags().Lookup("interactive").Value.String() == "true" {
-				if edited, err := cliutil.EditInteractive(in); err != nil {
-					return err
-				} else {
-					in = edited
-				}
-			} else if fileName := cmd.Flags().Lookup("file").Value.String(); fileName != "" {
-				if err := cliutil.LoadFromFile(in, fileName); err != nil {
-					return err
-				}
-			}
-			if in == nil {
-				return errors.New("no input provided")
-			}
-			_, err := client.ResetConfiguration(cmd.Context(), in)
-			if err != nil {
-				return err
-			}
-			return nil
-		},
-	}
-	cmd.Flags().StringP("file", "f", "", "path to a file containing the config, or - to read from stdin")
-	cmd.Flags().BoolP("interactive", "i", false, "edit the config interactively in an editor")
-	cmd.MarkFlagsMutuallyExclusive("file", "interactive")
-	cmd.MarkFlagFilename("file")
-	return cmd
-}
-
-func BuildGatewayConfigConfigurationHistoryCmd() *cobra.Command {
-	in := &driverutil.ConfigurationHistoryRequest{}
-	cmd := &cobra.Command{
-		Use:               "history",
-		Short:             "",
-		Args:              cobra.NoArgs,
-		ValidArgsFunction: cobra.NoFileCompletions,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			client, ok := GatewayConfigContextInjector.ClientFromContext(cmd.Context())
-			if !ok {
-				cmd.PrintErrln("failed to get client from context")
-				return nil
-			}
-			if in == nil {
-				return errors.New("no input provided")
-			}
-			response, err := client.ConfigurationHistory(cmd.Context(), in)
-			if err != nil {
-				return err
-			}
-			cli.RenderOutput(cmd, response)
-			return nil
-		},
-	}
-	cmd.Flags().AddFlagSet(in.FlagSet())
-	cmd.RegisterFlagCompletionFunc("target", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"ActiveConfiguration", "DefaultConfiguration"}, cobra.ShellCompDirectiveDefault
-	})
-	return cmd
-}
-
-func (in *SetRequest) FlagSet(prefix ...string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("SetRequest", pflag.ExitOnError)
-	fs.SortFlags = true
-	if in.Spec == nil {
-		in.Spec = &GatewayConfigSpec{}
-	}
-	fs.AddFlagSet(in.Spec.FlagSet(append(prefix, "spec")...))
-	return fs
-}
-
-func (in *SetRequest) RedactSecrets() {
-	if in == nil {
-		return
-	}
-	in.Spec.RedactSecrets()
-}
-
-func (in *SetRequest) UnredactSecrets(unredacted *SetRequest) error {
-	if in == nil {
-		return nil
-	}
-	var details []protoiface.MessageV1
-	if err := in.Spec.UnredactSecrets(unredacted.GetSpec()); storage.IsDiscontinuity(err) {
-		for _, sd := range status.Convert(err).Details() {
-			if info, ok := sd.(*errdetails.ErrorInfo); ok {
-				info.Metadata["field"] = "spec." + info.Metadata["field"]
-				details = append(details, info)
-			}
-		}
-	}
-	if len(details) == 0 {
-		return nil
-	}
-	return lo.Must(status.New(codes.InvalidArgument, "cannot unredact: missing values for secret fields").WithDetails(details...)).Err()
-}
 
 func (in *GatewayConfigSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("GatewayConfigSpec", pflag.ExitOnError)
@@ -381,10 +38,6 @@ func (in *GatewayConfigSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 		in.Dashboard = &DashboardServerSpec{}
 	}
 	fs.AddFlagSet(in.Dashboard.FlagSet(append(prefix, "dashboard")...))
-	if in.Storage == nil {
-		in.Storage = &StorageSpec{}
-	}
-	fs.AddFlagSet(in.Storage.FlagSet(append(prefix, "storage")...))
 	if in.Certs == nil {
 		in.Certs = &CertsSpec{}
 	}
@@ -405,6 +58,10 @@ func (in *GatewayConfigSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 		in.RateLimiting = &RateLimitingSpec{}
 	}
 	fs.AddFlagSet(in.RateLimiting.FlagSet(append(prefix, "rate-limiting")...))
+	if in.Auth == nil {
+		in.Auth = &AuthSpec{}
+	}
+	fs.AddFlagSet(in.Auth.FlagSet(append(prefix, "auth")...))
 	return fs
 }
 
@@ -412,8 +69,10 @@ func (in *GatewayConfigSpec) RedactSecrets() {
 	if in == nil {
 		return
 	}
+	in.Dashboard.RedactSecrets()
 	in.Storage.RedactSecrets()
 	in.Certs.RedactSecrets()
+	in.Auth.RedactSecrets()
 }
 
 func (in *GatewayConfigSpec) UnredactSecrets(unredacted *GatewayConfigSpec) error {
@@ -421,6 +80,14 @@ func (in *GatewayConfigSpec) UnredactSecrets(unredacted *GatewayConfigSpec) erro
 		return nil
 	}
 	var details []protoiface.MessageV1
+	if err := in.Dashboard.UnredactSecrets(unredacted.GetDashboard()); storage.IsDiscontinuity(err) {
+		for _, sd := range status.Convert(err).Details() {
+			if info, ok := sd.(*errdetails.ErrorInfo); ok {
+				info.Metadata["field"] = "dashboard." + info.Metadata["field"]
+				details = append(details, info)
+			}
+		}
+	}
 	if err := in.Storage.UnredactSecrets(unredacted.GetStorage()); storage.IsDiscontinuity(err) {
 		for _, sd := range status.Convert(err).Details() {
 			if info, ok := sd.(*errdetails.ErrorInfo); ok {
@@ -433,6 +100,14 @@ func (in *GatewayConfigSpec) UnredactSecrets(unredacted *GatewayConfigSpec) erro
 		for _, sd := range status.Convert(err).Details() {
 			if info, ok := sd.(*errdetails.ErrorInfo); ok {
 				info.Metadata["field"] = "certs." + info.Metadata["field"]
+				details = append(details, info)
+			}
+		}
+	}
+	if err := in.Auth.UnredactSecrets(unredacted.GetAuth()); storage.IsDiscontinuity(err) {
+		for _, sd := range status.Convert(err).Details() {
+			if info, ok := sd.(*errdetails.ErrorInfo); ok {
+				info.Metadata["field"] = "auth." + info.Metadata["field"]
 				details = append(details, info)
 			}
 		}
@@ -456,6 +131,7 @@ func (in *ManagementServerSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs.SortFlags = true
 	fs.Var(flagutil.StringPtrValue(flagutil.Ptr("0.0.0.0:11080"), &in.HttpListenAddress), strings.Join(append(prefix, "http-listen-address"), "."), "Address and port to serve the management http server on.")
 	fs.Var(flagutil.StringPtrValue(flagutil.Ptr("0.0.0.0:11090"), &in.GrpcListenAddress), strings.Join(append(prefix, "grpc-listen-address"), "."), "Address and port to serve the management grpc server on.")
+	fs.Var(flagutil.StringPtrValue(nil, &in.AdvertiseAddress), strings.Join(append(prefix, "advertise-address"), "."), "The advertise address for the management server.")
 	return fs
 }
 
@@ -463,6 +139,7 @@ func (in *RelayServerSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("RelayServerSpec", pflag.ExitOnError)
 	fs.SortFlags = true
 	fs.Var(flagutil.StringPtrValue(flagutil.Ptr("0.0.0.0:11190"), &in.GrpcListenAddress), strings.Join(append(prefix, "grpc-listen-address"), "."), "Address and port to serve the relay grpc server on.")
+	fs.Var(flagutil.StringPtrValue(nil, &in.AdvertiseAddress), strings.Join(append(prefix, "advertise-address"), "."), "The advertise address for the relay server.")
 	return fs
 }
 
@@ -477,9 +154,108 @@ func (in *DashboardServerSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("DashboardServerSpec", pflag.ExitOnError)
 	fs.SortFlags = true
 	fs.Var(flagutil.StringPtrValue(flagutil.Ptr("0.0.0.0:12080"), &in.HttpListenAddress), strings.Join(append(prefix, "http-listen-address"), "."), "Address and port to serve the web dashboard on.")
+	fs.Var(flagutil.StringPtrValue(nil, &in.AdvertiseAddress), strings.Join(append(prefix, "advertise-address"), "."), "The advertise address for the dashboard server.")
 	fs.Var(flagutil.StringPtrValue(nil, &in.Hostname), strings.Join(append(prefix, "hostname"), "."), "The hostname at which the dashboard is expected to be reachable.")
 	fs.StringSliceVar(&in.TrustedProxies, strings.Join(append(prefix, "trusted-proxies"), "."), nil, "List of trusted proxies for the dashboard's http server.")
+	if in.WebCerts == nil {
+		in.WebCerts = &CertsSpec{}
+	}
+	fs.AddFlagSet(in.WebCerts.FlagSet(append(prefix, "web-certs")...))
 	return fs
+}
+
+func (in *DashboardServerSpec) RedactSecrets() {
+	if in == nil {
+		return
+	}
+	in.WebCerts.RedactSecrets()
+}
+
+func (in *DashboardServerSpec) UnredactSecrets(unredacted *DashboardServerSpec) error {
+	if in == nil {
+		return nil
+	}
+	var details []protoiface.MessageV1
+	if err := in.WebCerts.UnredactSecrets(unredacted.GetWebCerts()); storage.IsDiscontinuity(err) {
+		for _, sd := range status.Convert(err).Details() {
+			if info, ok := sd.(*errdetails.ErrorInfo); ok {
+				info.Metadata["field"] = "webCerts." + info.Metadata["field"]
+				details = append(details, info)
+			}
+		}
+	}
+	if len(details) == 0 {
+		return nil
+	}
+	return lo.Must(status.New(codes.InvalidArgument, "cannot unredact: missing values for secret fields").WithDetails(details...)).Err()
+}
+
+func (in *CertsSpec) FlagSet(prefix ...string) *pflag.FlagSet {
+	fs := pflag.NewFlagSet("CertsSpec", pflag.ExitOnError)
+	fs.SortFlags = true
+	fs.Var(flagutil.StringPtrValue(nil, &in.CaCert), strings.Join(append(prefix, "ca-cert"), "."), "Path to a PEM encoded CA certificate file. Mutually exclusive with caCertData.")
+	fs.Var(flagutil.StringPtrValue(nil, &in.CaCertData), strings.Join(append(prefix, "ca-cert-data"), "."), "\x1b[31m[secret]\x1b[0m PEM encoded CA certificate data. Mutually exclusive with caCert.")
+	fs.Var(flagutil.StringPtrValue(nil, &in.ServingCert), strings.Join(append(prefix, "serving-cert"), "."), "Path to a PEM encoded server certificate file. Mutually exclusive with servingCertData.")
+	fs.Var(flagutil.StringPtrValue(nil, &in.ServingCertData), strings.Join(append(prefix, "serving-cert-data"), "."), "\x1b[31m[secret]\x1b[0m PEM encoded server certificate data. Mutually exclusive with servingCert.")
+	fs.Var(flagutil.StringPtrValue(nil, &in.ServingKey), strings.Join(append(prefix, "serving-key"), "."), "Path to a PEM encoded server key file. Mutually exclusive with servingKeyData.")
+	fs.Var(flagutil.StringPtrValue(nil, &in.ServingKeyData), strings.Join(append(prefix, "serving-key-data"), "."), "\x1b[31m[secret]\x1b[0m String containing PEM encoded server key data. Mutually exclusive with servingKey.")
+	return fs
+}
+
+func (in *CertsSpec) RedactSecrets() {
+	if in == nil {
+		return
+	}
+	if in.GetCaCertData() != "" {
+		in.CaCertData = flagutil.Ptr("***")
+	}
+	if in.GetServingCertData() != "" {
+		in.ServingCertData = flagutil.Ptr("***")
+	}
+	if in.GetServingKeyData() != "" {
+		in.ServingKeyData = flagutil.Ptr("***")
+	}
+}
+
+func (in *CertsSpec) UnredactSecrets(unredacted *CertsSpec) error {
+	if in == nil {
+		return nil
+	}
+	var details []protoiface.MessageV1
+	if in.GetCaCertData() == "***" {
+		if unredacted.GetCaCertData() == "" {
+			details = append(details, &errdetails.ErrorInfo{
+				Reason:   "DISCONTINUITY",
+				Metadata: map[string]string{"field": "caCertData"},
+			})
+		} else {
+			*in.CaCertData = *unredacted.CaCertData
+		}
+	}
+	if in.GetServingCertData() == "***" {
+		if unredacted.GetServingCertData() == "" {
+			details = append(details, &errdetails.ErrorInfo{
+				Reason:   "DISCONTINUITY",
+				Metadata: map[string]string{"field": "servingCertData"},
+			})
+		} else {
+			*in.ServingCertData = *unredacted.ServingCertData
+		}
+	}
+	if in.GetServingKeyData() == "***" {
+		if unredacted.GetServingKeyData() == "" {
+			details = append(details, &errdetails.ErrorInfo{
+				Reason:   "DISCONTINUITY",
+				Metadata: map[string]string{"field": "servingKeyData"},
+			})
+		} else {
+			*in.ServingKeyData = *unredacted.ServingKeyData
+		}
+	}
+	if len(details) == 0 {
+		return nil
+	}
+	return lo.Must(status.New(codes.InvalidArgument, "cannot unredact: missing values for secret fields").WithDetails(details...)).Err()
 }
 
 func (in *StorageSpec) FlagSet(prefix ...string) *pflag.FlagSet {
@@ -651,74 +427,6 @@ func (in *JetStreamSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	return fs
 }
 
-func (in *CertsSpec) FlagSet(prefix ...string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("CertsSpec", pflag.ExitOnError)
-	fs.SortFlags = true
-	fs.Var(flagutil.StringPtrValue(nil, &in.CaCert), strings.Join(append(prefix, "ca-cert"), "."), "Path to a PEM encoded CA certificate file. Mutually exclusive with caCertData.")
-	fs.Var(flagutil.StringPtrValue(nil, &in.CaCertData), strings.Join(append(prefix, "ca-cert-data"), "."), "\x1b[31m[secret]\x1b[0m PEM encoded CA certificate data. Mutually exclusive with caCert.")
-	fs.Var(flagutil.StringPtrValue(nil, &in.ServingCert), strings.Join(append(prefix, "serving-cert"), "."), "Path to a PEM encoded server certificate file. Mutually exclusive with servingCertData.")
-	fs.Var(flagutil.StringPtrValue(nil, &in.ServingCertData), strings.Join(append(prefix, "serving-cert-data"), "."), "\x1b[31m[secret]\x1b[0m PEM encoded server certificate data. Mutually exclusive with servingCert.")
-	fs.Var(flagutil.StringPtrValue(nil, &in.ServingKey), strings.Join(append(prefix, "serving-key"), "."), "Path to a PEM encoded server key file. Mutually exclusive with servingKeyData.")
-	fs.Var(flagutil.StringPtrValue(nil, &in.ServingKeyData), strings.Join(append(prefix, "serving-key-data"), "."), "\x1b[31m[secret]\x1b[0m String containing PEM encoded server key data. Mutually exclusive with servingKey.")
-	return fs
-}
-
-func (in *CertsSpec) RedactSecrets() {
-	if in == nil {
-		return
-	}
-	if in.GetCaCertData() != "" {
-		in.CaCertData = flagutil.Ptr("***")
-	}
-	if in.GetServingCertData() != "" {
-		in.ServingCertData = flagutil.Ptr("***")
-	}
-	if in.GetServingKeyData() != "" {
-		in.ServingKeyData = flagutil.Ptr("***")
-	}
-}
-
-func (in *CertsSpec) UnredactSecrets(unredacted *CertsSpec) error {
-	if in == nil {
-		return nil
-	}
-	var details []protoiface.MessageV1
-	if in.GetCaCertData() == "***" {
-		if unredacted.GetCaCertData() == "" {
-			details = append(details, &errdetails.ErrorInfo{
-				Reason:   "DISCONTINUITY",
-				Metadata: map[string]string{"field": "caCertData"},
-			})
-		} else {
-			*in.CaCertData = *unredacted.CaCertData
-		}
-	}
-	if in.GetServingCertData() == "***" {
-		if unredacted.GetServingCertData() == "" {
-			details = append(details, &errdetails.ErrorInfo{
-				Reason:   "DISCONTINUITY",
-				Metadata: map[string]string{"field": "servingCertData"},
-			})
-		} else {
-			*in.ServingCertData = *unredacted.ServingCertData
-		}
-	}
-	if in.GetServingKeyData() == "***" {
-		if unredacted.GetServingKeyData() == "" {
-			details = append(details, &errdetails.ErrorInfo{
-				Reason:   "DISCONTINUITY",
-				Metadata: map[string]string{"field": "servingKeyData"},
-			})
-		} else {
-			*in.ServingKeyData = *unredacted.ServingKeyData
-		}
-	}
-	if len(details) == 0 {
-		return nil
-	}
-	return lo.Must(status.New(codes.InvalidArgument, "cannot unredact: missing values for secret fields").WithDetails(details...)).Err()
-}
-
 func (in *PluginsSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("PluginsSpec", pflag.ExitOnError)
 	fs.SortFlags = true
@@ -783,7 +491,6 @@ func (in *UpgradesSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 func (in *AgentUpgradesSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("AgentUpgradesSpec", pflag.ExitOnError)
 	fs.SortFlags = true
-	fs.Var(flagutil.EnumPtrValue(flagutil.Ptr(AgentUpgradesSpec_Kubernetes), &in.Driver), strings.Join(append(prefix, "driver"), "."), "Agent upgrade driver to use.")
 	if in.Kubernetes == nil {
 		in.Kubernetes = &KubernetesAgentUpgradeSpec{}
 	}
@@ -795,15 +502,12 @@ func (in *KubernetesAgentUpgradeSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("KubernetesAgentUpgradeSpec", pflag.ExitOnError)
 	fs.SortFlags = true
 	fs.Var(flagutil.EnumPtrValue(flagutil.Ptr(KubernetesAgentUpgradeSpec_Kubernetes), &in.ImageResolver), strings.Join(append(prefix, "image-resolver"), "."), "Agent image resolver to use.")
-	fs.Var(flagutil.StringPtrValue(nil, &in.Namespace), strings.Join(append(prefix, "namespace"), "."), "")
-	fs.Var(flagutil.StringPtrValue(nil, &in.RepoOverride), strings.Join(append(prefix, "repo-override"), "."), "")
 	return fs
 }
 
 func (in *PluginUpgradesSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet("PluginUpgradesSpec", pflag.ExitOnError)
 	fs.SortFlags = true
-	fs.Var(flagutil.EnumPtrValue(flagutil.Ptr(PluginUpgradesSpec_Binary), &in.Driver), strings.Join(append(prefix, "driver"), "."), "Plugin upgrade driver to use.")
 	if in.Binary == nil {
 		in.Binary = &BinaryPluginUpgradeSpec{}
 	}
@@ -826,12 +530,81 @@ func (in *RateLimitingSpec) FlagSet(prefix ...string) *pflag.FlagSet {
 	return fs
 }
 
-func (in *ResetRequest) FlagSet(prefix ...string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("ResetRequest", pflag.ExitOnError)
+func (in *AuthSpec) FlagSet(prefix ...string) *pflag.FlagSet {
+	fs := pflag.NewFlagSet("AuthSpec", pflag.ExitOnError)
 	fs.SortFlags = true
-	if in.Revision == nil {
-		in.Revision = &v1.Revision{}
+	fs.Var(flagutil.EnumPtrValue(flagutil.Ptr(AuthSpec_Basic), &in.Backend), strings.Join(append(prefix, "backend"), "."), "Auth backend to use.")
+	if in.Openid == nil {
+		in.Openid = &OpenIDAuthSpec{}
 	}
-	fs.AddFlagSet(in.Revision.FlagSet(prefix...))
+	fs.AddFlagSet(in.Openid.FlagSet(append(prefix, "openid")...))
 	return fs
+}
+
+func (in *AuthSpec) RedactSecrets() {
+	if in == nil {
+		return
+	}
+	in.Openid.RedactSecrets()
+}
+
+func (in *AuthSpec) UnredactSecrets(unredacted *AuthSpec) error {
+	if in == nil {
+		return nil
+	}
+	var details []protoiface.MessageV1
+	if err := in.Openid.UnredactSecrets(unredacted.GetOpenid()); storage.IsDiscontinuity(err) {
+		for _, sd := range status.Convert(err).Details() {
+			if info, ok := sd.(*errdetails.ErrorInfo); ok {
+				info.Metadata["field"] = "openid." + info.Metadata["field"]
+				details = append(details, info)
+			}
+		}
+	}
+	if len(details) == 0 {
+		return nil
+	}
+	return lo.Must(status.New(codes.InvalidArgument, "cannot unredact: missing values for secret fields").WithDetails(details...)).Err()
+}
+
+func (in *OpenIDAuthSpec) FlagSet(prefix ...string) *pflag.FlagSet {
+	fs := pflag.NewFlagSet("OpenIDAuthSpec", pflag.ExitOnError)
+	fs.SortFlags = true
+	fs.Var(flagutil.StringPtrValue(nil, &in.Issuer), strings.Join(append(prefix, "issuer"), "."), "The OP's Issuer identifier. This must exactly match the issuer URL")
+	fs.Var(flagutil.StringPtrValue(nil, &in.CaCertData), strings.Join(append(prefix, "ca-cert-data"), "."), "Optional PEM-encoded CA certificate data for the issuer.")
+	fs.Var(flagutil.StringPtrValue(nil, &in.ClientId), strings.Join(append(prefix, "client-id"), "."), "The RP's client ID.")
+	fs.Var(flagutil.StringPtrValue(nil, &in.ClientSecret), strings.Join(append(prefix, "client-secret"), "."), "\x1b[31m[secret]\x1b[0m The RP's client secret.")
+	fs.Var(flagutil.StringPtrValue(flagutil.Ptr("sub"), &in.IdentifyingClaim), strings.Join(append(prefix, "identifying-claim"), "."), "IdentifyingClaim is the claim that will be used to identify the user")
+	fs.StringSliceVar(&in.Scopes, strings.Join(append(prefix, "scopes"), "."), nil, "Scope specifies optional requested permissions.")
+	return fs
+}
+
+func (in *OpenIDAuthSpec) RedactSecrets() {
+	if in == nil {
+		return
+	}
+	if in.GetClientSecret() != "" {
+		in.ClientSecret = flagutil.Ptr("***")
+	}
+}
+
+func (in *OpenIDAuthSpec) UnredactSecrets(unredacted *OpenIDAuthSpec) error {
+	if in == nil {
+		return nil
+	}
+	var details []protoiface.MessageV1
+	if in.GetClientSecret() == "***" {
+		if unredacted.GetClientSecret() == "" {
+			details = append(details, &errdetails.ErrorInfo{
+				Reason:   "DISCONTINUITY",
+				Metadata: map[string]string{"field": "clientSecret"},
+			})
+		} else {
+			*in.ClientSecret = *unredacted.ClientSecret
+		}
+	}
+	if len(details) == 0 {
+		return nil
+	}
+	return lo.Must(status.New(codes.InvalidArgument, "cannot unredact: missing values for secret fields").WithDetails(details...)).Err()
 }

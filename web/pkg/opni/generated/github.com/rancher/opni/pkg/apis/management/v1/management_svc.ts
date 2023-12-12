@@ -2,13 +2,39 @@
 // @generated from file github.com/rancher/opni/pkg/apis/management/v1/management.proto (package management, syntax proto3)
 /* eslint-disable */
 
-import { APIExtensionInfoList, CapabilityList, CertsInfoResponse, CreateBootstrapTokenRequest, DashboardSettings, EditClusterRequest, GatewayConfig, ListClustersRequest, UpdateConfigRequest, WatchClustersRequest, WatchEvent } from "./management_pb";
-import { AvailablePermissions, BackendRole, BackendRoleRequest, BootstrapToken, BootstrapTokenList, CapabilityType, CapabilityTypeList, Cluster, ClusterHealthStatus, ClusterList, HealthStatus, Reference, Role, RoleBinding, RoleBindingList, RoleList, TaskStatus } from "../../core/v1/core_pb";
+import { APIExtensionInfoList, CapabilityList, CertsInfoResponse, CreateBootstrapTokenRequest, DashboardSettings, EditClusterRequest, ListClustersRequest, LocalPasswordResponse, WatchClustersRequest, WatchEvent } from "./management_pb";
 import { axios } from "@pkg/opni/utils/axios";
+import { AvailablePermissions, BackendRole, BackendRoleRequest, BootstrapToken, BootstrapTokenList, CapabilityType, CapabilityTypeList, Cluster, ClusterHealthStatus, ClusterList, HealthStatus, Reference, ReferenceList, Role, RoleBinding, RoleBindingList, RoleList, TaskStatus } from "../../core/v1/core_pb";
 import { Socket } from "@pkg/opni/utils/socket";
 import { EVENT_CONNECT_ERROR, EVENT_CONNECTED, EVENT_CONNECTING, EVENT_DISCONNECT_ERROR, EVENT_MESSAGE } from "@shell/utils/socket";
 import { Empty } from "@bufbuild/protobuf";
 import { CancelUninstallRequest, InstallRequest, InstallResponse, NodeCapabilityStatus, StatusRequest, UninstallRequest, UninstallStatusRequest } from "../../capability/v1/capability_pb";
+
+
+export async function CreateLocalPassword(): Promise<LocalPasswordResponse> {
+  try {
+    
+    const rawResponse = (await axios.request({
+      method: 'get',
+      responseType: 'arraybuffer',
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'Accept': 'application/octet-stream',
+      },
+      url: `/opni-api/LocalPassword`
+    })).data;
+
+    const response = LocalPasswordResponse.fromBinary(new Uint8Array(rawResponse));
+    console.info('Here is the response for a request to LocalPassword-CreateLocalPassword:', response);
+    return response;
+  } catch (ex: any) {
+    if (ex?.response?.data) {
+      const s = String.fromCharCode.apply(null, Array.from(new Uint8Array(ex?.response?.data)));
+      console.error(s);
+    }
+    throw ex;
+  }
+}
 
 
 export async function CreateBootstrapToken(input: CreateBootstrapTokenRequest): Promise<BootstrapToken> {
@@ -583,6 +609,94 @@ export async function ListBackendRoles(input: CapabilityType): Promise<RoleList>
 }
 
 
+export async function AddAdminRoleBinding(input: Reference): Promise<void> {
+  try {
+    
+    if (input) {
+      console.info('Here is the input for a request to Management-AddAdminRoleBinding:', input);
+    }
+  
+    const rawResponse = (await axios.request({
+      method: 'put',
+      responseType: 'arraybuffer',
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'Accept': 'application/octet-stream',
+      },
+      url: `/opni-api/Management/rbac/mgmt/user/${input.id}`,
+    data: input?.toBinary() as ArrayBuffer
+    })).data;
+
+    const response = rawResponse;
+    console.info('Here is the response for a request to Management-AddAdminRoleBinding:', response);
+    return response;
+  } catch (ex: any) {
+    if (ex?.response?.data) {
+      const s = String.fromCharCode.apply(null, Array.from(new Uint8Array(ex?.response?.data)));
+      console.error(s);
+    }
+    throw ex;
+  }
+}
+
+
+export async function RemoveAdminRoleBinding(input: Reference): Promise<void> {
+  try {
+    
+    if (input) {
+      console.info('Here is the input for a request to Management-RemoveAdminRoleBinding:', input);
+    }
+  
+    const rawResponse = (await axios.request({
+      method: 'delete',
+      responseType: 'arraybuffer',
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'Accept': 'application/octet-stream',
+      },
+      url: `/opni-api/Management/rbac/mgmt/user/${input.id}`,
+    data: input?.toBinary() as ArrayBuffer
+    })).data;
+
+    const response = rawResponse;
+    console.info('Here is the response for a request to Management-RemoveAdminRoleBinding:', response);
+    return response;
+  } catch (ex: any) {
+    if (ex?.response?.data) {
+      const s = String.fromCharCode.apply(null, Array.from(new Uint8Array(ex?.response?.data)));
+      console.error(s);
+    }
+    throw ex;
+  }
+}
+
+
+export async function ListAdminRoleBinding(): Promise<ReferenceList> {
+  try {
+    
+    const rawResponse = (await axios.request({
+      method: 'get',
+      responseType: 'arraybuffer',
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'Accept': 'application/octet-stream',
+      },
+      url: `/opni-api/Management/rbac/mgmt/user`
+    })).data;
+
+    const response = ReferenceList.fromBinary(new Uint8Array(rawResponse));
+    console.info('Here is the response for a request to Management-ListAdminRoleBinding:', response);
+    return response;
+  } catch (ex: any) {
+    if (ex?.response?.data) {
+      const s = String.fromCharCode.apply(null, Array.from(new Uint8Array(ex?.response?.data)));
+      console.error(s);
+    }
+    throw ex;
+  }
+}
+
+
 export async function CreateRoleBinding(input: RoleBinding): Promise<void> {
   try {
     
@@ -748,63 +862,6 @@ export async function APIExtensions(): Promise<APIExtensionInfoList> {
 
     const response = APIExtensionInfoList.fromBinary(new Uint8Array(rawResponse));
     console.info('Here is the response for a request to Management-APIExtensions:', response);
-    return response;
-  } catch (ex: any) {
-    if (ex?.response?.data) {
-      const s = String.fromCharCode.apply(null, Array.from(new Uint8Array(ex?.response?.data)));
-      console.error(s);
-    }
-    throw ex;
-  }
-}
-
-
-export async function GetConfig(): Promise<GatewayConfig> {
-  try {
-    
-    const rawResponse = (await axios.request({
-      method: 'get',
-      responseType: 'arraybuffer',
-      headers: {
-        'Content-Type': 'application/octet-stream',
-        'Accept': 'application/octet-stream',
-      },
-      url: `/opni-api/Management/config`
-    })).data;
-
-    const response = GatewayConfig.fromBinary(new Uint8Array(rawResponse));
-    console.info('Here is the response for a request to Management-GetConfig:', response);
-    return response;
-  } catch (ex: any) {
-    if (ex?.response?.data) {
-      const s = String.fromCharCode.apply(null, Array.from(new Uint8Array(ex?.response?.data)));
-      console.error(s);
-    }
-    throw ex;
-  }
-}
-
-
-export async function UpdateConfig(input: UpdateConfigRequest): Promise<void> {
-  try {
-    
-    if (input) {
-      console.info('Here is the input for a request to Management-UpdateConfig:', input);
-    }
-  
-    const rawResponse = (await axios.request({
-      method: 'put',
-      responseType: 'arraybuffer',
-      headers: {
-        'Content-Type': 'application/octet-stream',
-        'Accept': 'application/octet-stream',
-      },
-      url: `/opni-api/Management/config`,
-    data: input?.toBinary() as ArrayBuffer
-    })).data;
-
-    const response = rawResponse;
-    console.info('Here is the response for a request to Management-UpdateConfig:', response);
     return response;
   } catch (ex: any) {
     if (ex?.response?.data) {
