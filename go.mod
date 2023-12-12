@@ -98,7 +98,7 @@ require (
 	github.com/prometheus/procfs v0.11.1
 	github.com/prometheus/prometheus v0.47.2-0.20231009162353-f6d9c84fde6b
 	github.com/pulumi/pulumi/sdk/v3 v3.68.0
-	github.com/qmuntal/stateless v1.6.3
+	github.com/qmuntal/stateless v1.6.8
 	github.com/rancher/charts-build-scripts v0.0.0-00010101000000-000000000000
 	github.com/rancher/kubernetes-provider-detector v0.1.5
 	github.com/rancher/wrangler v1.1.1-0.20230419173538-80fdf092be3b
@@ -157,16 +157,16 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.28.3
-	k8s.io/apiextensions-apiserver v0.28.3
-	k8s.io/apimachinery v0.28.3
+	k8s.io/api v0.28.4
+	k8s.io/apiextensions-apiserver v0.28.4
+	k8s.io/apimachinery v0.28.4
 	k8s.io/cli-runtime v0.28.2
-	k8s.io/client-go v0.28.3
-	k8s.io/component-base v0.28.3
+	k8s.io/client-go v0.28.4
+	k8s.io/component-base v0.28.4
 	k8s.io/kubectl v0.28.2
 	sigs.k8s.io/controller-runtime v0.16.3
 	sigs.k8s.io/node-feature-discovery-operator v0.2.1-0.20230131182250-99b8584e2745
-	sigs.k8s.io/yaml v1.3.0
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
@@ -564,7 +564,7 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	helm.sh/helm/v3 v3.12.0 // indirect
-	k8s.io/apiserver v0.28.3 // indirect
+	k8s.io/apiserver v0.28.4 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
 	k8s.io/utils v0.0.0-20230711102312-30195339c3c7 // indirect
