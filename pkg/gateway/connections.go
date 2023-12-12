@@ -31,10 +31,12 @@ import (
 type TrackedConnectionListener interface {
 	// Called when a new agent connection to any gateway instance is tracked.
 	// The provided context will be canceled when the tracked connection is deleted.
-	// If a tracked connection is updated, this method will be called again with
-	// the same context, agentId, and leaseId, but updated instanceInfo.
 	// Implementations of this method MUST NOT block.
-	HandleTrackedConnection(ctx context.Context, agentId string, holder string, instanceInfo *corev1.InstanceInfo)
+	HandleTrackedConnectionCreated(ctx context.Context, agentId string, holder string, instanceInfo *corev1.InstanceInfo)
+	// Called when the instance info for a previously tracked connection is updated.
+	// The context, agentId, and holder will be the same values that were passed to
+	// the corresponding HandleTrackedConnectionCreated call.
+	HandleTrackedConnectionUpdated(ctx context.Context, agentId string, holder string, instanceInfo *corev1.InstanceInfo)
 }
 
 const controllingInstanceAnnotation = "controlling-instance"
@@ -143,7 +145,7 @@ func (ct *ConnectionTracker) AddTrackedConnectionListener(listener TrackedConnec
 
 	ct.connListeners = append(ct.connListeners, listener)
 	for _, conn := range ct.activeConnections {
-		listener.HandleTrackedConnection(conn.trackingContext, conn.agentId, conn.holder, conn.instanceInfo)
+		listener.HandleTrackedConnectionCreated(conn.trackingContext, conn.agentId, conn.holder, conn.instanceInfo)
 	}
 }
 
@@ -318,7 +320,7 @@ func (ct *ConnectionTracker) handleConnUpdate(
 		conn.revision = event.Current.Revision()
 		conn.instanceInfo = info
 		for _, listener := range ct.connListeners {
-			listener.HandleTrackedConnection(conn.trackingContext, agentId, holder, info)
+			listener.HandleTrackedConnectionUpdated(conn.trackingContext, agentId, holder, info)
 		}
 		return false
 	}
@@ -354,7 +356,7 @@ func (ct *ConnectionTracker) handleConnCreate(
 	}
 	ct.activeConnections[agentId] = conn
 	for _, listener := range ct.connListeners {
-		listener.HandleTrackedConnection(ctx, agentId, holder, info)
+		listener.HandleTrackedConnectionCreated(ctx, agentId, holder, info)
 	}
 }
 

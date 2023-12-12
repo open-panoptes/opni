@@ -84,6 +84,7 @@ type Server struct {
 	dashboardSettings *DashboardSettingsManager
 	localAuth         local.LocalAuthenticator
 	director          StreamDirector
+	pluginsLoaded     chan struct{}
 
 	apiExtMu      sync.RWMutex
 	apiExtensions []apiExtension
@@ -138,6 +139,7 @@ func NewServer(
 			kv:     cds.StorageBackend().KeyValueStore("dashboard"),
 			logger: lg,
 		},
+		pluginsLoaded: make(chan struct{}),
 	}
 	m.director = m.configureApiExtensionDirector(ctx, pluginLoader)
 
@@ -188,6 +190,10 @@ func NewServer(
 				"capability", info.Name,
 			).Info("added capability rbac backend")
 		}
+	}))
+
+	pluginLoader.Hook(hooks.OnLoadingCompleted(func(int) {
+		close(m.pluginsLoaded)
 	}))
 
 	m.localAuth = local.NewLocalAuthenticator(m.coreDataSource.StorageBackend().KeyValueStore(authutil.AuthNamespace))
@@ -265,13 +271,13 @@ func (m *Server) listenAndServeGrpc(ctx context.Context) error {
 			"address", listener.Addr().String(),
 		).Info("management gRPC server starting")
 		done = make(chan struct{})
-		go func() {
+		go func(done chan struct{}) {
 			err := server.Serve(listener)
 			mu.Lock()
 			serveError = err
 			close(done)
 			mu.Unlock()
-		}()
+		}(done)
 	})
 	<-ctx.Done()
 	mu.Lock()
@@ -331,10 +337,16 @@ func (m *Server) listenAndServeHttp(ctx context.Context) error {
 		stopServer = sync.OnceFunc(func() {
 			server.Close()
 		})
-		m.configureManagementHttpApi(ctx, server, grpcAddr, gwmux)
-		m.configureHttpApiExtensions(server, gwmux)
 		router.Any("/*any", gin.WrapF(gwmux.ServeHTTP))
+		m.configureManagementHttpApi(ctx, server, grpcAddr, gwmux)
 		go func(server *http.Server) {
+			// important: wait for plugins that may have api extensions to load,
+			// otherwise the server will be started before adding them to the router
+			select {
+			case <-m.pluginsLoaded:
+			case <-ctx.Done():
+			}
+			m.configureHttpApiExtensions(server, gwmux)
 			if err := server.Serve(listener); err != nil {
 				if !errors.Is(err, http.ErrServerClosed) {
 					m.logger.With(logger.Err(err)).Warn("management HTTP server exited with error")

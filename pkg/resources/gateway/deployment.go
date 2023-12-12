@@ -136,8 +136,10 @@ func (r *Reconciler) deployment(extraAnnotations map[string]string) ([]resources
 									MountPath: "/var/lib/opni/plugin-cache",
 								},
 								{
-									Name:      "local-agent-key",
-									MountPath: "/run/opni/keyring",
+									Name:        "local-agent-key",
+									MountPath:   "/run/opni/keyring/session-attribute.json",
+									SubPathExpr: "session-attribute.json",
+									ReadOnly:    true,
 								},
 							},
 							Ports: append(append(publicPorts, internalPorts...), adminDashboardPorts...),

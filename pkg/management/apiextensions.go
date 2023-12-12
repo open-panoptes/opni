@@ -22,6 +22,7 @@ import (
 	"github.com/jhump/protoreflect/grpcreflect"
 	gsync "github.com/kralicky/gpkg/sync"
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/health"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/plugins"
@@ -184,23 +185,29 @@ func (m *Server) configureManagementHttpApi(ctx context.Context, server *http.Se
 	}
 	stub := grpcdynamic.NewStub(cc)
 
-	desc, err := grpcreflect.LoadServiceDescriptor(&managementv1.Management_ServiceDesc)
-	if err != nil {
-		return fmt.Errorf("failed to load service descriptor: %w", err)
+	for _, builtin := range []*grpc.ServiceDesc{
+		&managementv1.Management_ServiceDesc,
+		&configv1.GatewayConfig_ServiceDesc,
+	} {
+		desc, err := grpcreflect.LoadServiceDescriptor(builtin)
+		if err != nil {
+			return fmt.Errorf("failed to load service descriptor: %w", err)
+		}
+		rules := loadHttpRuleDescriptors(desc)
+
+		status := &health.ServingStatus{} // local server, which is always serving
+		status.Set(healthpb.HealthCheckResponse_SERVING)
+		m.configureServiceStubHandlers(server, mux, stub, desc, rules, status)
 	}
-
-	rules := loadHttpRuleDescriptors(desc)
-
-	status := &health.ServingStatus{} // local server, which is always serving
-	status.Set(healthpb.HealthCheckResponse_SERVING)
-	m.configureServiceStubHandlers(server, mux, stub, desc, rules, status)
 	return nil
 }
 
 func (m *Server) configureHttpApiExtensions(server *http.Server, mux *runtime.ServeMux) {
 	m.apiExtMu.RLock()
 	defer m.apiExtMu.RUnlock()
+	m.logger.Log(context.Background(), slog.LevelDebug-1, "configuring http api extensions", "extensions", len(m.apiExtensions))
 	for _, ext := range m.apiExtensions {
+		m.logger.Log(context.Background(), slog.LevelDebug-1, "configuring http api extension", "service", ext.serviceDesc.GetName())
 		stub := grpcdynamic.NewStub(ext.clientConn)
 		svcDesc := ext.serviceDesc
 		httpRules := ext.httpRules
@@ -217,6 +224,8 @@ func (m *Server) configureServiceStubHandlers(
 	svcStatus *health.ServingStatus,
 ) {
 	lg := m.logger
+
+	lg.Log(context.Background(), slog.LevelDebug-1, "configuring service stub handlers", "service", svcDesc.GetName(), "rules", len(httpRules))
 
 	for _, rule := range httpRules {
 		var method string
@@ -240,6 +249,10 @@ func (m *Server) configureServiceStubHandlers(
 		}
 
 		qualifiedPath := fmt.Sprintf("/%s%s", svcDesc.GetName(), path)
+		lg.With(
+			"method", method,
+			"path", qualifiedPath,
+		).Log(context.Background(), slog.LevelDebug-1, "configuring http handler")
 
 		if err := mux.HandlePath(method, qualifiedPath, newHandler(server, stub, svcDesc, mux, rule, svcStatus, path)); err != nil {
 			lg.With(
@@ -248,10 +261,10 @@ func (m *Server) configureServiceStubHandlers(
 				"path", qualifiedPath,
 			).Error("failed to configure http handler")
 		} else {
-			// lg.With(
-			// 	"method", method,
-			// 	"path", qualifiedPath,
-			// ).Debug("configured http handler")
+			lg.With(
+				"method", method,
+				"path", qualifiedPath,
+			).Log(context.Background(), slog.LevelDebug-1, "configured http handler")
 		}
 	}
 }
