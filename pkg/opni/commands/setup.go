@@ -3,16 +3,14 @@
 package commands
 
 import (
-	"strings"
 	"sync"
 
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
 	"github.com/rancher/opni/pkg/clients"
-	"github.com/rancher/opni/pkg/config"
-	"github.com/rancher/opni/pkg/config/v1beta1"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/opni/cliutil"
 	"github.com/rancher/opni/pkg/tracing"
+	"github.com/rancher/opni/pkg/util/flagutil"
 	"github.com/spf13/cobra"
 )
 
@@ -40,16 +38,9 @@ func managementPreRunE(cmd *cobra.Command, _ []string) (err error) {
 		tracing.Configure("cli")
 		address := cmd.Flag("address").Value.String()
 		if address == "" {
-			path, err := config.FindConfig()
-			if err == nil {
-				objects := cliutil.LoadConfigObjectsOrDie(path, lg)
-				objects.Visit(func(obj *v1beta1.GatewayConfig) {
-					address = strings.TrimPrefix(obj.Spec.Management.GRPCListenAddress, "tcp://")
-				})
-			}
-		}
-		if address == "" {
-			address = managementv1.DefaultManagementSocket()
+			var mgmtConfig configv1.ManagementServerSpec
+			flagutil.LoadDefaults(&mgmtConfig)
+			address = mgmtConfig.GetGrpcListenAddress()
 		}
 		managementListenAddress = address
 		mgmtClient, err = clients.NewManagementClient(cmd.Context(), clients.WithAddress(address))

@@ -16,6 +16,7 @@ import (
 	capabilityv1 "github.com/rancher/opni/pkg/apis/capability/v1"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
+	"github.com/rancher/opni/pkg/capabilities/wellknown"
 	"github.com/rancher/opni/pkg/metrics"
 	"github.com/rancher/opni/pkg/metrics/compat"
 	"github.com/rancher/opni/pkg/test"
@@ -38,7 +39,7 @@ var _ = Describe("Tenant Impersonation", Ordered, Label("integration"), func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		compressed := snappy.Encode(nil, wrData)
-		return client.Store(context.Background(), compressed)
+		return client.Store(context.Background(), compressed, 0)
 	}
 	var queryVec = func(tenants []string, promql string) (model.Vector, error) {
 		resp, err := cortexAdminClient.Query(context.Background(), &cortexadmin.QueryRequest{
@@ -89,19 +90,15 @@ var _ = Describe("Tenant Impersonation", Ordered, Label("integration"), func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(cortexops.WaitForReady(env.Context(), cortexOpsClient)).To(Succeed())
 
-		_, err = mgmtClient.InstallCapability(context.Background(), &managementv1.CapabilityInstallRequest{
-			Name: "metrics",
-			Target: &capabilityv1.InstallRequest{
-				Cluster: &corev1.Reference{Id: "agent1"},
-			},
+		_, err = mgmtClient.InstallCapability(context.Background(), &capabilityv1.InstallRequest{
+			Capability: &corev1.Reference{Id: wellknown.CapabilityMetrics},
+			Agent:      &corev1.Reference{Id: "agent1"},
 		})
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = mgmtClient.InstallCapability(context.Background(), &managementv1.CapabilityInstallRequest{
-			Name: "metrics",
-			Target: &capabilityv1.InstallRequest{
-				Cluster: &corev1.Reference{Id: "agent2"},
-			},
+		_, err = mgmtClient.InstallCapability(context.Background(), &capabilityv1.InstallRequest{
+			Capability: &corev1.Reference{Id: wellknown.CapabilityMetrics},
+			Agent:      &corev1.Reference{Id: "agent2"},
 		})
 		Expect(err).NotTo(HaveOccurred())
 

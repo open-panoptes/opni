@@ -1,0 +1,79 @@
+package inmemory
+
+import (
+	"context"
+	"sync"
+
+	"github.com/rancher/opni/pkg/storage"
+	"github.com/rancher/opni/pkg/storage/lock"
+	"github.com/rancher/opni/pkg/util"
+)
+
+type LockManager struct {
+	lockMap util.LockMap[string, *sync.Mutex]
+}
+
+// NewLockManager returns a new in-memory lock manager.
+func NewLockManager() *LockManager {
+	return &LockManager{
+		lockMap: util.NewLockMap[string, *sync.Mutex](),
+	}
+}
+
+// NewLockManagerBroker returns a new in-memory lock manager broker.
+func NewLockManagerBroker() *LockManagerBroker {
+	return &LockManagerBroker{
+		lockManagers: map[string]*LockManager{},
+	}
+}
+
+type LockManagerBroker struct {
+	mu           sync.Mutex
+	lockManagers map[string]*LockManager
+}
+
+// LockManager implements storage.LockManagerBroker.
+func (lmb *LockManagerBroker) LockManager(name string) storage.LockManager {
+	lmb.mu.Lock()
+	defer lmb.mu.Unlock()
+	if _, ok := lmb.lockManagers[name]; !ok {
+		lmb.lockManagers[name] = NewLockManager()
+	}
+	return lmb.lockManagers[name]
+}
+
+func (lm *LockManager) NewLock(key string, _ ...lock.LockOption) storage.Lock {
+	return &Lock{
+		mu: lm.lockMap.Get(key),
+	}
+}
+
+type Lock struct {
+	key string
+	mu  *sync.Mutex
+}
+
+// Key implements storage.Lock.
+func (l *Lock) Key() string {
+	return l.key
+}
+
+// Lock implements storage.Lock.
+func (l *Lock) Lock(_ context.Context) (chan struct{}, error) {
+	l.mu.Lock()
+	return make(chan struct{}), nil
+}
+
+// TryLock implements storage.Lock.
+func (l *Lock) TryLock(_ context.Context) (bool, chan struct{}, error) {
+	ok := l.mu.TryLock()
+	return ok, make(chan struct{}), nil
+}
+
+// Unlock implements storage.Lock.
+func (l *Lock) Unlock() error {
+	l.mu.Unlock()
+	return nil
+}
+
+var _ storage.Lock = (*Lock)(nil)

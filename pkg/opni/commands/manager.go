@@ -7,9 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	opensearchcontrollers "github.com/Opster/opensearch-k8s-operator/opensearch-operator/controllers"
 	upgraderesponder "github.com/longhorn/upgrade-responder/client"
 	"github.com/rancher/opni/controllers"
 	"github.com/rancher/opni/pkg/features"
@@ -21,7 +23,6 @@ import (
 	"github.com/rancher/opni/pkg/versions"
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	opensearchcontrollers "opensearch.opster.io/controllers"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
@@ -169,6 +170,15 @@ func BuildManagerCmd() *cobra.Command {
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "OpenSearchCluster")
 			return err
+		}
+
+		if err = (&opensearchcontrollers.OpensearchRoleReconciler{
+			Client:   mgr.GetClient(),
+			Scheme:   mgr.GetScheme(),
+			Recorder: mgr.GetEventRecorderFor("role-controller"),
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "OpensearchRole")
+			os.Exit(1)
 		}
 
 		// +kubebuilder:scaffold:builder

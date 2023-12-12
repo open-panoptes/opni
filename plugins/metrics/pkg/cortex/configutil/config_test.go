@@ -7,6 +7,7 @@ import (
 	"github.com/go-kit/log"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/rancher/opni/internal/cortex/config/querier"
 	v1 "github.com/rancher/opni/pkg/apis/storage/v1"
 	"github.com/rancher/opni/plugins/metrics/apis/cortexops"
 	"github.com/rancher/opni/plugins/metrics/pkg/cortex/configutil"
@@ -90,6 +91,12 @@ var _ = Describe("Config", Label("unit"), func() {
 						AlertmanagerURL: "http://localhost:9093",
 					},
 				}),
+				[]configutil.CortexConfigOverrider{
+					configutil.NewOverrider(func(t *querier.Config) bool {
+						t.MaxSubquerySteps = lo.ToPtr[int64](1000)
+						return true
+					}),
+				},
 			)...,
 		)
 		Expect(err).NotTo(HaveOccurred())
@@ -98,5 +105,13 @@ var _ = Describe("Config", Label("unit"), func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(loadAndValidateConfig(yamlData)).To(Succeed())
+	})
+	It("should marshal uint64 fields as numbers, not strings", func() {
+		cc := cortex.Config{}
+		err := configutil.LoadFromAPI(&cc.Querier, &querier.Config{
+			MaxSubquerySteps: lo.ToPtr[int64](1000),
+		})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cc.Querier.MaxSubQuerySteps).To(Equal(int64(1000)))
 	})
 })

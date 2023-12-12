@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"os"
 
+	opnicorev1 "github.com/rancher/opni/apis/core/v1"
 	opnicorev1beta1 "github.com/rancher/opni/apis/core/v1beta1"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	"github.com/rancher/opni/pkg/plugins/driverutil"
 	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/storage/crds"
-	"github.com/rancher/opni/pkg/util/flagutil"
 	"github.com/rancher/opni/pkg/util/k8sutil"
 	"github.com/rancher/opni/plugins/metrics/apis/cortexops"
-	"github.com/rancher/opni/plugins/metrics/pkg/cortex/configutil"
 	"github.com/rancher/opni/plugins/metrics/pkg/gateway/drivers"
 	"github.com/samber/lo"
 	"google.golang.org/grpc/codes"
@@ -27,10 +26,9 @@ import (
 )
 
 type OpniManagerClusterDriverOptions struct {
-	K8sClient          client.WithWatch                                            `option:"k8sClient"`
-	MonitoringCluster  types.NamespacedName                                        `option:"monitoringCluster"`
-	GatewayRef         types.NamespacedName                                        `option:"gatewayRef"`
-	DefaultConfigStore storage.ValueStoreT[*cortexops.CapabilityBackendConfigSpec] `option:"defaultConfigStore"`
+	K8sClient         client.WithWatch     `option:"k8sClient"`
+	MonitoringCluster types.NamespacedName `option:"monitoringCluster"`
+	GatewayRef        types.NamespacedName `option:"gatewayRef"`
 }
 
 func (k OpniManagerClusterDriverOptions) newMonitoringCluster() *opnicorev1beta1.MonitoringCluster {
@@ -42,8 +40,8 @@ func (k OpniManagerClusterDriverOptions) newMonitoringCluster() *opnicorev1beta1
 	}
 }
 
-func (k OpniManagerClusterDriverOptions) newGateway() *opnicorev1beta1.Gateway {
-	return &opnicorev1beta1.Gateway{
+func (k OpniManagerClusterDriverOptions) newGateway() *opnicorev1.Gateway {
+	return &opnicorev1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k.GatewayRef.Name,
 			Namespace: k.GatewayRef.Namespace,
@@ -54,8 +52,7 @@ func (k OpniManagerClusterDriverOptions) newGateway() *opnicorev1beta1.Gateway {
 type OpniManager struct {
 	cortexops.UnsafeCortexOpsServer
 	OpniManagerClusterDriverOptions
-	*driverutil.BaseConfigServer[*cortexops.ResetRequest, *cortexops.ConfigurationHistoryResponse, *cortexops.CapabilityBackendConfigSpec]
-	configTracker *driverutil.DefaultingConfigTracker[*cortexops.CapabilityBackendConfigSpec]
+	activeStore storage.ValueStoreT[*cortexops.CapabilityBackendConfigSpec]
 }
 
 type methods struct {
@@ -84,9 +81,10 @@ func (m methods) FillObjectFromConfig(obj *opnicorev1beta1.MonitoringCluster, co
 	obj.Spec.Gateway.Name = m.controllerRef.GetName()
 }
 
-func NewOpniManagerClusterDriver(options OpniManagerClusterDriverOptions) (*OpniManager, error) {
+func NewOpniManagerClusterDriver(ctx context.Context, options OpniManagerClusterDriverOptions) (*OpniManager, error) {
 	if options.K8sClient == nil {
 		s := scheme.Scheme
+		opnicorev1.AddToScheme(s)
 		opnicorev1beta1.AddToScheme(s)
 		c, err := k8sutil.NewK8sClient(k8sutil.ClientOptions{
 			Scheme: s,
@@ -98,12 +96,9 @@ func NewOpniManagerClusterDriver(options OpniManagerClusterDriverOptions) (*Opni
 		}
 		options.K8sClient = c
 	}
-	if options.DefaultConfigStore == nil {
-		return nil, fmt.Errorf("missing required option: DefaultConfigStore")
-	}
 
 	gateway := options.newGateway()
-	err := options.K8sClient.Get(context.TODO(), options.GatewayRef, gateway)
+	err := options.K8sClient.Get(ctx, options.GatewayRef, gateway)
 	if err != nil {
 		return nil, err
 	}
@@ -111,15 +106,9 @@ func NewOpniManagerClusterDriver(options OpniManagerClusterDriverOptions) (*Opni
 		controllerRef: gateway,
 	}, crds.WithClient(options.K8sClient))
 
-	configSrv := driverutil.NewBaseConfigServer[
-		*cortexops.ResetRequest,
-		*cortexops.ConfigurationHistoryResponse,
-	](options.DefaultConfigStore, activeStore, flagutil.LoadDefaults)
-
 	return &OpniManager{
-		BaseConfigServer:                configSrv,
+		activeStore:                     activeStore,
 		OpniManagerClusterDriverOptions: options,
-		configTracker:                   configSrv.Tracker(),
 	}, nil
 }
 
@@ -179,6 +168,10 @@ func (k *OpniManager) ListPresets(context.Context, *emptypb.Empty) (*cortexops.P
 	}, nil
 }
 
+func (k *OpniManager) ActiveConfigStore() storage.ValueStoreT[*cortexops.CapabilityBackendConfigSpec] {
+	return k.activeStore
+}
+
 // Status implements cortexops.CortexOpsServer.
 func (k *OpniManager) Status(ctx context.Context, _ *emptypb.Empty) (*driverutil.InstallStatus, error) {
 	status := &driverutil.InstallStatus{
@@ -202,9 +195,6 @@ func (k *OpniManager) Status(ctx context.Context, _ *emptypb.Empty) (*driverutil
 			status.InstallState = driverutil.InstallState_Installed
 		}
 		mcStatus := cluster.Status.Cortex
-		if err != nil {
-			return nil, err
-		}
 		status.Version = mcStatus.Version
 		if cluster.GetDeletionTimestamp() != nil {
 			status.InstallState = driverutil.InstallState_Uninstalling
@@ -239,20 +229,57 @@ func (k *OpniManager) ShouldDisableNode(_ *corev1.Reference) error {
 	}
 }
 
-func (k *OpniManager) DryRun(ctx context.Context, req *cortexops.DryRunRequest) (*cortexops.DryRunResponse, error) {
-	res, err := k.configTracker.DryRun(ctx, req)
-	if err != nil {
-		return nil, err
+func (k *OpniManager) GetCortexServiceConfig() drivers.CortexServiceConfig {
+	return drivers.CortexServiceConfig{
+		Distributor: drivers.HttpGrpcConfig{
+			HTTPAddress: "cortex-distributor:8080",
+			GRPCAddress: "cortex-distributor-headless:9095",
+		},
+		Ingester: drivers.HttpGrpcConfig{
+			HTTPAddress: "cortex-ingester:8080",
+			GRPCAddress: "cortex-ingester-headless:9095",
+		},
+		StoreGateway: drivers.HttpGrpcConfig{
+			HTTPAddress: "cortex-store-gateway:8080",
+			GRPCAddress: "cortex-store-gateway-headless:9095",
+		},
+		Ruler: drivers.HttpGrpcConfig{
+			HTTPAddress: "cortex-ruler:8080",
+			GRPCAddress: "cortex-ruler-headless:9095",
+		},
+		QueryFrontend: drivers.HttpGrpcConfig{
+			HTTPAddress: "cortex-query-frontend:8080",
+			GRPCAddress: "cortex-query-frontend-headless:9095",
+		},
+		Alertmanager: drivers.HttpConfig{
+			HTTPAddress: "cortex-alertmanager:8080",
+		},
+		Compactor: drivers.HttpConfig{
+			HTTPAddress: "cortex-compactor:8080",
+		},
+		Querier: drivers.HttpConfig{
+			HTTPAddress: "cortex-querier:8080",
+		},
+		Purger: drivers.HttpConfig{
+			HTTPAddress: "cortex-purger:8080",
+		},
+		Certs: drivers.MTLSConfig{
+			ServerCA:   "/run/cortex/certs/server/ca.crt",
+			ClientCA:   "/run/cortex/certs/client/ca.crt",
+			ClientCert: "/run/cortex/certs/client/tls.crt",
+			ClientKey:  "/run/cortex/certs/client/tls.key",
+		},
 	}
-	return &cortexops.DryRunResponse{
-		Current:          res.Current,
-		Modified:         res.Modified,
-		ValidationErrors: configutil.ValidateConfiguration(res.Modified),
-	}, nil
+}
+
+func (k *OpniManager) GetGrafanaServiceConfig() drivers.GrafanaServiceConfig {
+	return drivers.GrafanaServiceConfig{
+		HTTPAddress: "grafana-service:3000",
+	}
 }
 
 func init() {
-	drivers.ClusterDrivers.Register("opni-manager", func(_ context.Context, opts ...driverutil.Option) (drivers.ClusterDriver, error) {
+	drivers.ClusterDrivers.Register("opni-manager", func(ctx context.Context, opts ...driverutil.Option) (drivers.ClusterDriver, error) {
 		options := OpniManagerClusterDriverOptions{
 			MonitoringCluster: types.NamespacedName{
 				Namespace: os.Getenv("POD_NAMESPACE"),
@@ -267,6 +294,6 @@ func init() {
 			return nil, err
 		}
 
-		return NewOpniManagerClusterDriver(options)
+		return NewOpniManagerClusterDriver(ctx, options)
 	})
 }

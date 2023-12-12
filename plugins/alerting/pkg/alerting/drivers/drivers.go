@@ -17,12 +17,18 @@ type ClusterDriver interface {
 	// node will be set to disabled instead, and the error will be logged.
 	ShouldDisableNode(*corev1.Reference) error
 	GetDefaultReceiver() *config.WebhookConfig
+	GetAlertingServiceConfig() AlertingServiceConfig
 }
 
-var Drivers = driverutil.NewDriverCache[ClusterDriver]()
+var Drivers = driverutil.NewCache[ClusterDriver]()
 
 type NoopClusterDriver struct {
 	alertops.UnimplementedAlertingAdminServer
+}
+
+// GetAlertingServiceConfig implements ClusterDriver.
+func (d *NoopClusterDriver) GetAlertingServiceConfig() AlertingServiceConfig {
+	return AlertingServiceConfig{}
 }
 
 func (d *NoopClusterDriver) ShouldDisableNode(*corev1.Reference) error {
@@ -36,6 +42,17 @@ func (d *NoopClusterDriver) GetRuntimeOptions() shared.AlertingClusterOptions {
 
 func (d *NoopClusterDriver) GetDefaultReceiver() *config.WebhookConfig {
 	return &config.WebhookConfig{}
+}
+
+type AlertingServiceConfig struct {
+	Certs MTLSConfig
+}
+
+type MTLSConfig struct {
+	ServerCA   string
+	ClientCA   string
+	ClientCert string
+	ClientKey  string
 }
 
 func init() {

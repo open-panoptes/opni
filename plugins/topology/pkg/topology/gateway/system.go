@@ -1,20 +1,20 @@
 package gateway
 
 import (
-	"context"
 	"os"
 
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
+	"github.com/rancher/opni/pkg/config/adapt"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/config/v1beta1"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/machinery"
 	"github.com/rancher/opni/pkg/plugins/apis/system"
+	"github.com/rancher/opni/pkg/plugins/driverutil"
 	"github.com/rancher/opni/pkg/task"
 	natsutil "github.com/rancher/opni/pkg/util/nats"
-	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/emptypb"
 
 	_ "github.com/rancher/opni/pkg/storage/etcd"
 	_ "github.com/rancher/opni/pkg/storage/jetstream"
@@ -22,34 +22,28 @@ import (
 
 func (p *Plugin) UseManagementAPI(client managementv1.ManagementClient) {
 	p.mgmtClient.Set(client)
-	cfg, err := client.GetConfig(
-		context.Background(),
-		&emptypb.Empty{},
-		grpc.WaitForReady(true),
-	)
-	if err != nil {
-		p.logger.With(logger.Err(err)).Error("failed to get config")
-		os.Exit(1)
-	}
 
-	objectList, err := machinery.LoadDocuments(cfg.Documents)
+	<-p.ctx.Done()
+}
+
+func (p *Plugin) UseConfigAPI(client configv1.GatewayConfigClient) {
+	config, err := client.GetConfiguration(p.ctx, &driverutil.GetRequest{})
 	if err != nil {
-		p.logger.With(logger.Err(err)).Error("failed to load config")
+		p.logger.With(logger.Err(err)).Error("failed to get gateway configuration")
+		return
+	}
+	p.gatewayConfig.Set(&v1beta1.GatewayConfig{
+		Spec: *adapt.V1BetaConfigOf[*v1beta1.GatewayConfigSpec](config),
+	})
+	backend, err := machinery.ConfigureStorageBackendV1(p.ctx, config.Storage)
+	if err != nil {
+		p.logger.With(
+			"err", err,
+		).Error("failed to configure storage backend")
 		os.Exit(1)
 	}
-	machinery.LoadAuthProviders(p.ctx, objectList)
-	objectList.Visit(func(config *v1beta1.GatewayConfig) {
-		backend, err := machinery.ConfigureStorageBackend(p.ctx, &config.Spec.Storage)
-		if err != nil {
-			p.logger.With(
-				"err", err,
-			).Error("failed to configure storage backend")
-			os.Exit(1)
-		}
-		p.storageBackend.Set(backend)
-		p.gatewayConfig.Set(config)
-		p.configureTopologyManagement()
-	})
+	p.storageBackend.Set(backend)
+	p.configureTopologyManagement()
 	<-p.ctx.Done()
 }
 

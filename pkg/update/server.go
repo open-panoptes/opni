@@ -68,7 +68,8 @@ func (s *UpdateServer) SyncManifest(ctx context.Context, manifest *controlv1.Upd
 	s.handlerMu.RLock()
 	handler, ok := s.updateHandlers[strategy]
 	if !ok {
-		return nil, status.Errorf(codes.Unimplemented, "no handler for update strategy: %q", strategy)
+		s.handlerMu.RUnlock()
+		return nil, status.Errorf(codes.Unavailable, "no handler for update strategy: %q", strategy)
 	}
 	s.handlerMu.RUnlock()
 
@@ -119,7 +120,7 @@ func (s *UpdateServer) StreamServerInterceptor() grpc.StreamServerInterceptor {
 			}
 			handler, ok := s.updateHandlers[strategy[0]]
 			if !ok {
-				return status.Errorf(codes.Unimplemented, "no handler for update strategy: %q", strategy[0])
+				return status.Errorf(codes.Unavailable, "no handler for update strategy: %q", strategy[0])
 			}
 
 			expected, err := handler.CalculateExpectedManifest(stream.Context(), updateType)

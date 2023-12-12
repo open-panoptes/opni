@@ -1,8 +1,6 @@
 package slo
 
 import (
-	"os"
-
 	alertingv1 "github.com/rancher/opni/pkg/apis/alerting/v1"
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
 	"github.com/rancher/opni/pkg/plugins/apis/system"
@@ -28,12 +26,10 @@ func (p *Plugin) UseKeyValueStore(client system.KeyValueStoreClient) {
 func (p *Plugin) UseAPIExtensions(intf system.ExtensionClientInterface) {
 	cc, err := intf.GetClientConn(p.ctx, "CortexAdmin", "AlertEndpoints")
 	if err != nil {
-		p.logger.Error("failed to get cortex admin client", "error", err)
 		if p.ctx.Err() != nil {
 			// Plugin is shutting down, don't exit
 			return
 		}
-		os.Exit(1)
 	}
 	adminClient := cortexadmin.NewCortexAdminClient(cc)
 	alertingEndpointClient := alertingv1.NewAlertEndpointsClient(cc)
@@ -45,4 +41,5 @@ func (p *Plugin) UseAPIExtensions(intf system.ExtensionClientInterface) {
 		NewSLOMonitoringStore(p, p.logger),
 		NewMonitoringServiceBackend(p, p.logger),
 	)
+	<-p.ctx.Done()
 }

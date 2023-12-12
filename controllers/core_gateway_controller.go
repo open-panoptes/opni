@@ -5,11 +5,14 @@ package controllers
 import (
 	"context"
 
+	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/go-logr/logr"
-	corev1beta1 "github.com/rancher/opni/apis/core/v1beta1"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	apicorev1 "github.com/rancher/opni/apis/core/v1"
 	"github.com/rancher/opni/pkg/resources/gateway"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,7 +41,7 @@ type CoreGatewayReconciler struct {
 
 func (r *CoreGatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	lg := r.logger
-	mc := &corev1beta1.Gateway{}
+	mc := &apicorev1.Gateway{}
 	err := r.Get(ctx, req.NamespacedName, mc)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -63,9 +66,20 @@ func (r *CoreGatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Client = mgr.GetClient()
 	r.scheme = mgr.GetScheme()
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1beta1.Gateway{}).
+		For(&apicorev1.Gateway{}).
 		Owns(&appsv1.Deployment{}).
+		Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.ConfigMap{}).
+		Owns(&corev1.Secret{}).
 		Owns(&corev1.Service{}).
+		Owns(&corev1.ServiceAccount{}).
+		Owns(&rbacv1.Role{}).
+		Owns(&rbacv1.RoleBinding{}).
+		Owns(&rbacv1.ClusterRole{}).
+		Owns(&rbacv1.ClusterRoleBinding{}).
+		Owns(&monitoringv1.ServiceMonitor{}).
+		Owns(&cmv1.Certificate{}).
+		Owns(&cmv1.Issuer{}).
+		Owns(&cmv1.ClusterIssuer{}).
 		Complete(r)
 }

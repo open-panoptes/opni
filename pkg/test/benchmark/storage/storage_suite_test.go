@@ -6,10 +6,12 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/storage/etcd"
 	"github.com/rancher/opni/pkg/storage/jetstream"
 	"github.com/rancher/opni/pkg/test"
 	_ "github.com/rancher/opni/pkg/test/setup"
+	"github.com/rancher/opni/pkg/test/testlog"
 	"github.com/rancher/opni/pkg/test/testruntime"
 	"github.com/rancher/opni/pkg/util/future"
 )
@@ -28,21 +30,24 @@ var _ = BeforeSuite(func() {
 		env.Start(
 			test.WithEnableGateway(false),
 			test.WithEnableEtcd(true),
-			test.WithEnableJetstream(false),
+			test.WithEnableJetstream(true),
 		)
 
 		lmsE := make([]*etcd.EtcdLockManager, 7)
 		for i := 0; i < 7; i++ {
-			l, err := etcd.NewEtcdLockManager(context.Background(), env.EtcdConfig(),
-				etcd.WithPrefix("test"),
-			)
+			cli, err := etcd.NewEtcdClient(context.Background(), env.EtcdConfig(), testlog.Log)
+			Expect(err).To(Succeed())
+
+			l := etcd.NewEtcdLockManager(cli, "test", logger.NewNop())
 			Expect(err).NotTo(HaveOccurred())
 			lmsE[i] = l
 		}
 		lmsJ := make([]*jetstream.LockManager, 7)
 		for i := 0; i < 7; i++ {
-			j, err := jetstream.NewJetstreamLockManager(context.Background(), env.JetStreamConfig())
-			Expect(err).NotTo(HaveOccurred())
+			js, err := jetstream.AcquireJetstreamConn(context.Background(), env.JetStreamConfig(), logger.New().WithGroup("js"))
+			Expect(err).To(Succeed())
+
+			j := jetstream.NewLockManager(context.Background(), js, "test", logger.NewNop())
 			lmsJ[i] = j
 		}
 
@@ -52,6 +57,7 @@ var _ = BeforeSuite(func() {
 	})
 })
 
-// Manually enable benchmarks
-var _ = XDescribe("Etcd lock manager", Ordered, Serial, Label("integration", "slow"), LockManagerBenchmark("etcd", lmsEtcdF))
-var _ = XDescribe("Jetstream lock manager", Ordered, Serial, Label("integration", "slow"), LockManagerBenchmark("jetstream", lmsJetstreamF))
+// Manually enable benchmarks by commenting out
+
+// var _ = Describe("Etcd lock manager", Ordered, Serial, Label("integration", "slow"), LockManagerBenchmark("etcd", lmsEtcdF))
+// var _ = Describe("Jetstream lock manager", Ordered, Serial, Label("integration", "slow"), LockManagerBenchmark("jetstream", lmsJetstreamF))

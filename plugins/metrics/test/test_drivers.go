@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"path"
 	"runtime/debug"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -21,16 +20,17 @@ import (
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/plugins/driverutil"
 	"github.com/rancher/opni/pkg/rules"
+	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/storage/inmemory"
 	"github.com/rancher/opni/pkg/test"
 	"github.com/rancher/opni/pkg/util"
-	"github.com/rancher/opni/pkg/util/flagutil"
 	"github.com/rancher/opni/pkg/util/notifier"
 	"github.com/rancher/opni/plugins/metrics/apis/cortexops"
 	"github.com/rancher/opni/plugins/metrics/apis/node"
 	"github.com/rancher/opni/plugins/metrics/apis/remoteread"
 	metrics_agent_drivers "github.com/rancher/opni/plugins/metrics/pkg/agent/drivers"
 	"github.com/rancher/opni/plugins/metrics/pkg/cortex/configutil"
+	"github.com/rancher/opni/plugins/metrics/pkg/gateway/drivers"
 	metrics_drivers "github.com/rancher/opni/plugins/metrics/pkg/gateway/drivers"
 	"github.com/samber/lo"
 	"google.golang.org/grpc/codes"
@@ -97,19 +97,22 @@ func (l *installStatusLocker) Use(f func(*driverutil.InstallStatus)) {
 
 type TestEnvMetricsClusterDriver struct {
 	cortexops.UnsafeCortexOpsServer
-	*driverutil.BaseConfigServer[*cortexops.ResetRequest, *cortexops.ConfigurationHistoryResponse, *cortexops.CapabilityBackendConfigSpec]
 
 	status     atomic.Pointer[installStatusLocker]
 	configLock sync.RWMutex
 
-	cortexCtx          context.Context
 	cortexCancel       context.CancelFunc
 	cortexCmdCtx       context.Context
 	stopCortexCmdAfter func()
 
 	Env             *test.Environment
 	ResourceVersion string
-	configTracker   *driverutil.DefaultingConfigTracker[*cortexops.CapabilityBackendConfigSpec]
+	activeStore     storage.ValueStoreT[*cortexops.CapabilityBackendConfigSpec]
+}
+
+// ActiveConfigStore implements drivers.ClusterDriver.
+func (d *TestEnvMetricsClusterDriver) ActiveConfigStore() storage.ValueStoreT[*cortexops.CapabilityBackendConfigSpec] {
+	return d.activeStore
 }
 
 // ListPresets implements cortexops.CortexOpsServer.
@@ -147,27 +150,11 @@ func (d *TestEnvMetricsClusterDriver) ListPresets(context.Context, *emptypb.Empt
 	}, nil
 }
 
-// DryRun implements cortexops.CortexOpsServer.
-func (d *TestEnvMetricsClusterDriver) DryRun(ctx context.Context, req *cortexops.DryRunRequest) (*cortexops.DryRunResponse, error) {
-	res, err := d.configTracker.DryRun(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return &cortexops.DryRunResponse{
-		Current:          res.Current,
-		Modified:         res.Modified,
-		ValidationErrors: configutil.ValidateConfiguration(res.Modified),
-	}, nil
-}
-
-var _ cortexops.CortexOpsServer = (*TestEnvMetricsClusterDriver)(nil)
-
 func NewTestEnvMetricsClusterDriver(env *test.Environment) *TestEnvMetricsClusterDriver {
 	d := &TestEnvMetricsClusterDriver{
 		Env: env,
 	}
 	d.status.Store(&installStatusLocker{})
-	defaultStore := inmemory.NewValueStore[*cortexops.CapabilityBackendConfigSpec](util.ProtoClone)
 	activeStore := inmemory.NewValueStore[*cortexops.CapabilityBackendConfigSpec](util.ProtoClone)
 	updateC, err := activeStore.Watch(env.Context())
 	if err != nil {
@@ -185,13 +172,8 @@ func NewTestEnvMetricsClusterDriver(env *test.Environment) *TestEnvMetricsCluste
 			go d.onActiveConfigChanged(prevValue, curValue)
 		}
 	}()
-	configSrv := driverutil.NewBaseConfigServer[
-		*cortexops.ResetRequest,
-		*cortexops.ConfigurationHistoryResponse,
-	](defaultStore, activeStore, flagutil.LoadDefaults)
 
-	d.BaseConfigServer = configSrv
-	d.configTracker = configSrv.Tracker()
+	d.activeStore = activeStore
 	return d
 }
 
@@ -279,11 +261,11 @@ func (d *TestEnvMetricsClusterDriver) onActiveConfigChanged(old, new *cortexops.
 			},
 		)
 
-		errs := configutil.ValidateConfiguration(new, overriders...)
+		errs := configutil.CollectValidationErrorLogs(new.CortexConfig, overriders...)
 		if len(errs) > 0 {
 			currentStatus.Use(func(s *driverutil.InstallStatus) {
 				for _, err := range errs {
-					s.Warnings = append(s.Warnings, fmt.Sprintf("%s: %s", strings.ToLower(err.Severity.String()), err.Message))
+					s.Warnings = append(s.Warnings, err.Error())
 				}
 			})
 		}
@@ -370,6 +352,57 @@ func (d *TestEnvMetricsClusterDriver) Status(context.Context, *emptypb.Empty) (o
 	return
 }
 
+func (d *TestEnvMetricsClusterDriver) GetCortexServiceConfig() drivers.CortexServiceConfig {
+	ports := d.Env.GetPorts()
+	tempDir := d.Env.GetTempDirectory()
+	return drivers.CortexServiceConfig{
+		Distributor: drivers.HttpGrpcConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+			GRPCAddress: fmt.Sprintf("localhost:%d", ports.CortexGRPC),
+		},
+		Ingester: drivers.HttpGrpcConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+			GRPCAddress: fmt.Sprintf("localhost:%d", ports.CortexGRPC),
+		},
+		StoreGateway: drivers.HttpGrpcConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+			GRPCAddress: fmt.Sprintf("localhost:%d", ports.CortexGRPC),
+		},
+		Ruler: drivers.HttpGrpcConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+			GRPCAddress: fmt.Sprintf("localhost:%d", ports.CortexGRPC),
+		},
+		QueryFrontend: drivers.HttpGrpcConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+			GRPCAddress: fmt.Sprintf("localhost:%d", ports.CortexGRPC),
+		},
+		Alertmanager: drivers.HttpConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+		},
+		Compactor: drivers.HttpConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+		},
+		Querier: drivers.HttpConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+		},
+		Purger: drivers.HttpConfig{
+			HTTPAddress: fmt.Sprintf("localhost:%d", ports.CortexHTTP),
+		},
+		Certs: drivers.MTLSConfig{
+			ServerCA:   path.Join(tempDir, "cortex/root.crt"),
+			ClientCA:   path.Join(tempDir, "cortex/root.crt"),
+			ClientCert: path.Join(tempDir, "cortex/client.crt"),
+			ClientKey:  path.Join(tempDir, "cortex/client.key"),
+		},
+	}
+}
+
+func (k *TestEnvMetricsClusterDriver) GetGrafanaServiceConfig() drivers.GrafanaServiceConfig {
+	return drivers.GrafanaServiceConfig{
+		HTTPAddress: "localhost:3000",
+	}
+}
+
 type TestEnvPrometheusNodeDriver struct {
 	env *test.Environment
 
@@ -389,7 +422,7 @@ func (d *TestEnvPrometheusNodeDriver) ConfigureRuleGroupFinder(config *v1beta1.R
 var _ metrics_agent_drivers.MetricsNodeDriver = (*TestEnvPrometheusNodeDriver)(nil)
 
 // ConfigureNode implements drivers.MetricsNodeDriver
-func (d *TestEnvPrometheusNodeDriver) ConfigureNode(nodeId string, conf *node.MetricsCapabilityConfig) error {
+func (d *TestEnvPrometheusNodeDriver) ConfigureNode(nodeId string, conf *node.MetricsCapabilityStatus) error {
 	lg := d.env.Logger.With(
 		"node", nodeId,
 		"driver", "prometheus",
@@ -400,7 +433,8 @@ func (d *TestEnvPrometheusNodeDriver) ConfigureNode(nodeId string, conf *node.Me
 	defer d.prometheusMu.Unlock()
 
 	exists := d.prometheusCtx != nil && d.prometheusCancel != nil
-	shouldExist := conf.Enabled && conf.GetSpec().GetPrometheus() != nil
+	shouldExist := conf.Enabled && conf.GetSpec().GetPrometheus() != nil &&
+		conf.GetSpec().GetDriver() == node.MetricsCapabilityConfig_Prometheus
 
 	if exists && !shouldExist {
 		lg.Info("stopping prometheus")
@@ -448,7 +482,7 @@ type TestEnvOtelNodeDriver struct {
 }
 
 // ConfigureNode implements drivers.MetricsNodeDriver.
-func (d *TestEnvOtelNodeDriver) ConfigureNode(nodeId string, conf *node.MetricsCapabilityConfig) error {
+func (d *TestEnvOtelNodeDriver) ConfigureNode(nodeId string, conf *node.MetricsCapabilityStatus) error {
 	lg := d.env.Logger.With(
 		"node", nodeId,
 		"driver", "otel",
@@ -464,7 +498,8 @@ func (d *TestEnvOtelNodeDriver) ConfigureNode(nodeId string, conf *node.MetricsC
 	defer d.otelMu.Unlock()
 
 	exists := d.otelCtx != nil && d.otelCancel != nil
-	shouldExist := conf.Enabled && conf.GetSpec().GetOtel() != nil
+	shouldExist := conf.Enabled && conf.GetSpec().GetOtel() != nil &&
+		conf.GetSpec().GetDriver() == node.MetricsCapabilityConfig_OpenTelemetry
 
 	if exists && !shouldExist {
 		lg.Info("stopping otel")

@@ -7,7 +7,9 @@ import (
 	"io"
 	"log/slog"
 	"path/filepath"
+	"reflect"
 	"runtime"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -86,7 +88,7 @@ func (h *colorHandler) clone() *colorHandler {
 		colorEnabled: h.colorEnabled,
 		timeFormat:   h.timeFormat,
 		attrsPrefix:  h.attrsPrefix,
-		groups:       h.groups,
+		groups:       slices.Clone(h.groups),
 		groupPrefix:  h.groupPrefix,
 		w:            h.w,
 	}
@@ -335,6 +337,10 @@ func (h *colorHandler) appendValue(buf *buffer, v slog.Value, shouldQuote bool) 
 		case slog.Level:
 			h.appendLevel(buf, cv)
 		case encoding.TextMarshaler:
+			if reflect.ValueOf(cv).IsNil() {
+				h.appendString(buf, "nil", shouldQuote)
+				break
+			}
 			data, err := cv.MarshalText()
 			if err != nil {
 				break

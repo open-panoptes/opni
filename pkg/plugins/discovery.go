@@ -87,7 +87,7 @@ PLUGINS:
 					dc.Logger.With(
 						"plugin", path,
 						"filter", i,
-					).Debug("plugin ignored due to filter")
+					).Info("plugin ignored due to filter")
 				}
 				continue PLUGINS
 			}

@@ -3,9 +3,7 @@
 package commands
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -16,20 +14,19 @@ import (
 	channelzcmd "github.com/kazegusuri/channelzcli/cmd"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/clients"
-	"github.com/rancher/opni/pkg/config/v1beta1"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/keyring"
 	"github.com/rancher/opni/pkg/machinery"
 	"github.com/rancher/opni/pkg/opni/cliutil"
+	"github.com/rancher/opni/pkg/plugins/driverutil"
 	"github.com/rancher/opni/pkg/storage"
+	"github.com/rancher/opni/pkg/tui"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
-	"go.etcd.io/etcd/etcdctl/v3/ctlv3"
 	channelzgrpc "google.golang.org/grpc/channelz/grpc_channelz_v1"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"sigs.k8s.io/yaml"
 )
 
 func BuildDebugCmd() *cobra.Command {
@@ -37,136 +34,13 @@ func BuildDebugCmd() *cobra.Command {
 		Use:   "debug",
 		Short: "Various debugging commands",
 	}
-	debugCmd.AddCommand(BuildDebugReloadCmd())
-	debugCmd.AddCommand(BuildDebugGetConfigCmd())
-	debugCmd.AddCommand(BuildDebugEtcdctlCmd())
 	debugCmd.AddCommand(BuildDebugChannelzCmd())
 	debugCmd.AddCommand(BuildDebugDashboardSettingsCmd())
 	debugCmd.AddCommand(BuildDebugImportAgentCmd())
+	debugCmd.AddCommand(BuildDebugKvCmd())
 	ConfigureManagementCommand(debugCmd)
+	ConfigureGatewayConfigCmd(debugCmd)
 	return debugCmd
-}
-
-func BuildDebugGetConfigCmd() *cobra.Command {
-	var format string
-	debugGetConfigCmd := &cobra.Command{
-		Use:   "get-config",
-		Short: "Print the current gateway config to stdout",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := mgmtClient.GetConfig(cmd.Context(), &emptypb.Empty{})
-			if err != nil {
-				return err
-			}
-			if len(config.Documents) == 0 {
-				lg.Warn("server returned no configuration")
-				return nil
-			}
-			for _, doc := range config.Documents {
-				switch format {
-				case "json":
-					buf := new(bytes.Buffer)
-					err := json.Indent(buf, doc.Json, "", "  ")
-					if err != nil {
-						return err
-					}
-					fmt.Println(buf.String())
-				case "yaml":
-					data, err := yaml.JSONToYAML(doc.Json)
-					if err != nil {
-						return err
-					}
-					fmt.Println(string(data))
-				default:
-					return fmt.Errorf("unknown format: %s", format)
-				}
-			}
-			return nil
-		},
-	}
-	debugGetConfigCmd.Flags().StringVarP(&format, "format", "f", "yaml", "Output format (yaml|json)")
-	return debugGetConfigCmd
-}
-
-func BuildDebugReloadCmd() *cobra.Command {
-	debugReloadCmd := &cobra.Command{
-		Use:   "reload",
-		Short: "Signal the gateway to reload and apply any config updates",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := mgmtClient.GetConfig(cmd.Context(), &emptypb.Empty{})
-			if err != nil {
-				return err
-			}
-			docsNoSchema := []*managementv1.ConfigDocument{}
-			for _, doc := range config.Documents {
-				docsNoSchema = append(docsNoSchema, &managementv1.ConfigDocument{
-					Json: doc.Json,
-				})
-			}
-			_, err = mgmtClient.UpdateConfig(cmd.Context(), &managementv1.UpdateConfigRequest{
-				Documents: docsNoSchema,
-			})
-			return err
-		},
-	}
-	return debugReloadCmd
-}
-
-func BuildDebugEtcdctlCmd() *cobra.Command {
-	debugEtcdctlCmd := &cobra.Command{
-		Use:                "etcdctl",
-		Short:              "embedded auto-configured etcdctl",
-		Long:               "To specify a gateway address, use the OPNI_ADDRESS environment variable.",
-		DisableFlagParsing: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			addr := os.Getenv("OPNI_ADDRESS")
-			var gatewayConfig *v1beta1.GatewayConfig
-			if addr != "" {
-				c, err := clients.NewManagementClient(cmd.Context(), clients.WithAddress(addr))
-				if err == nil {
-					mgmtClient = c
-				} else {
-					lg.Warn(fmt.Sprintf("failed to create management client: %v", err))
-				}
-			}
-			conf, err := mgmtClient.GetConfig(cmd.Context(), &emptypb.Empty{})
-			if err != nil {
-				return err
-			}
-			objects, err := machinery.LoadDocuments(conf.Documents)
-			if err != nil {
-				return err
-			}
-			objects.Visit(
-				func(config *v1beta1.GatewayConfig) {
-					if gatewayConfig == nil {
-						gatewayConfig = config
-					}
-				},
-			)
-			if gatewayConfig == nil {
-				return fmt.Errorf("no gateway config found")
-			}
-			if gatewayConfig.Spec.Storage.Type != v1beta1.StorageTypeEtcd {
-				return fmt.Errorf("storage type is not etcd")
-			}
-			endpoints := gatewayConfig.Spec.Storage.Etcd.Endpoints
-			argv := []string{"etcdctl", fmt.Sprintf("--endpoints=%s", strings.Join(endpoints, ","))}
-			if gatewayConfig.Spec.Storage.Etcd.Certs != nil {
-				cert := gatewayConfig.Spec.Storage.Etcd.Certs.ClientCert
-				key := gatewayConfig.Spec.Storage.Etcd.Certs.ClientKey
-				ca := gatewayConfig.Spec.Storage.Etcd.Certs.ServerCA
-				argv = append(argv,
-					fmt.Sprintf("--cacert=%s", ca),
-					fmt.Sprintf("--cert=%s", cert),
-					fmt.Sprintf("--key=%s", key),
-				)
-			}
-
-			os.Args = append(argv, args...)
-			return ctlv3.Start()
-		},
-	}
-	return debugEtcdctlCmd
 }
 
 func BuildDebugChannelzCmd() *cobra.Command {
@@ -407,25 +281,16 @@ func BuildDebugImportAgentCmd() *cobra.Command {
 				return fmt.Errorf("failed to unmarshal keyring: %w", err)
 			}
 
-			resp, err := mgmtClient.GetConfig(cmd.Context(), &emptypb.Empty{})
-			if err != nil {
-				return fmt.Errorf("failed to get config: %w", err)
-			}
-			objects, err := machinery.LoadDocuments(resp.Documents)
-			if err != nil {
-				return fmt.Errorf("failed to load config: %w", err)
-			}
-			var gatewayConf *v1beta1.GatewayConfig
-			ok := objects.Visit(func(gc *v1beta1.GatewayConfig) {
-				if gatewayConf == nil {
-					gatewayConf = gc
-				}
-			})
+			client, ok := configv1.GatewayConfigContextInjector.ClientFromContext(cmd.Context())
 			if !ok {
-				return fmt.Errorf("gateway config not found")
+				return fmt.Errorf("gateway config client not found in context")
+			}
+			gatewayConf, err := client.GetConfiguration(cmd.Context(), &driverutil.GetRequest{})
+			if err != nil {
+				return fmt.Errorf("failed to get gateway configuration: %w", err)
 			}
 
-			backend, err := machinery.ConfigureStorageBackend(cmd.Context(), &gatewayConf.Spec.Storage)
+			backend, err := machinery.ConfigureStorageBackendV1(cmd.Context(), gatewayConf.GetStorage())
 			if err != nil {
 				return fmt.Errorf("failed to configure storage backend: %w", err)
 			}
@@ -459,6 +324,64 @@ func BuildDebugImportAgentCmd() *cobra.Command {
 	cmd.MarkFlagRequired("id")
 	cmd.MarkFlagRequired("keyring")
 
+	return cmd
+}
+
+func BuildDebugKvCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "kv",
+		Short: "key-value store debug tools",
+	}
+
+	cmd.AddCommand(BuildDebugKvWatchCmd())
+	return cmd
+}
+
+func BuildDebugKvWatchCmd() *cobra.Command {
+	var namespace string
+	cmd := &cobra.Command{
+		Use:   "watch",
+		Short: "Watch the key-value store for changes",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, ok := configv1.GatewayConfigContextInjector.ClientFromContext(cmd.Context())
+			if !ok {
+				return fmt.Errorf("gateway config client not found in context")
+			}
+			gatewayConf, err := client.GetConfiguration(cmd.Context(), &driverutil.GetRequest{})
+			if err != nil {
+				return fmt.Errorf("failed to get gateway configuration: %w", err)
+			}
+
+			backend, err := machinery.ConfigureStorageBackendV1(cmd.Context(), gatewayConf.GetStorage())
+			if err != nil {
+				return fmt.Errorf("failed to configure storage backend: %w", err)
+			}
+
+			events, err := backend.KeyValueStore(namespace).Watch(cmd.Context(), "", storage.WithPrefix(), storage.WithRevision(0))
+			if err != nil {
+				return fmt.Errorf("failed to watch key-value store: %w", err)
+			}
+
+			switch namespace {
+			case "connections", "lock/connections":
+				ui := tui.NewKeyValueStoreUI[*corev1.InstanceInfo](events)
+				return ui.Run()
+			default:
+				return fmt.Errorf("unknown namespace: %s", namespace)
+			}
+		},
+	}
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "Prefix to watch")
+	cmd.RegisterFlagCompletionFunc("namespace", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) == 0 {
+			return []string{
+				"connections",
+				"lock/connections",
+			}, cobra.ShellCompDirectiveNoFileComp
+		}
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	})
+	cmd.MarkFlagRequired("namespace")
 	return cmd
 }
 

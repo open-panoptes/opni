@@ -28,7 +28,7 @@ spec:
         - hooks
         - wait-for-resource
         - "--namespace={{ include "opni.namespace" . }}"
-        - --version=v1beta1
+        - --version=v1
         - --group=core.opni.io
         - --resource=gateways
         - --jsonpath={.status.endpoints}

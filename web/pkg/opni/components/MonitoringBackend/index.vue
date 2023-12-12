@@ -9,6 +9,7 @@ import { Duration } from '@bufbuild/protobuf';
 import { Banner } from '@components/Banner';
 import Backend from '../Backend';
 import CapabilityTable from '../CapabilityTable';
+import { SetRequest } from '../../generated/github.com/rancher/opni/plugins/metrics/apis/cortexops/cortexops_pb';
 import Grafana from './Grafana';
 import StorageComponent from './Storage';
 
@@ -145,13 +146,6 @@ export default {
         }
       }
 
-      if (this.config.grafana.enabled) {
-        // check if hostname is set and not empty
-        if (!this.config.grafana.hostname || this.config.grafana.hostname === '') {
-          throw new Error('Grafana hostname is required');
-        }
-      }
-
       const newConfig = new CortexOps.types.CapabilityBackendConfigSpec(structuredClone(this.config));
 
       const dryRunRequest = new CortexOps.types.DryRunRequest({
@@ -166,7 +160,7 @@ export default {
         throw dryRun.validationErrors.map(e => e.message);
       }
 
-      await CortexOps.service.SetConfiguration(newConfig);
+      await CortexOps.service.SetConfiguration(new CortexOps.types.SetRequest({ spec: newConfig }));
       await CortexOps.service.Install();
     },
 
@@ -278,7 +272,7 @@ export default {
       this.$set(this.config.cortexConfig, 'storage', { ...(clone?.cortexConfig?.storage || {}) });
       this.$set(this.config.cortexConfig.storage, backendField, { ...(clone?.cortexConfig?.storage?.[backendField] || {}) });
       this.$set(this.config.cortexConfig.storage, 'backend', this.config.cortexConfig.storage?.backend || 'filesystem');
-      this.$set(this.config, 'grafana', this.config.grafana || { enabled: true, hostname: '' });
+      this.$set(this.config, 'grafana', this.config.grafana || { enabled: true });
       this.$set(this.config.cortexConfig, 'limits', this.config.cortexConfig.limits || { compactorBlocksRetentionPeriod: new Duration({ seconds: BigInt(2592000) }) });
 
       this.$set(this.config.cortexConfig.storage, 's3', this.config.cortexConfig.storage.s3 || { });

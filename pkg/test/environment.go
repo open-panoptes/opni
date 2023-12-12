@@ -51,13 +51,16 @@ import (
 	"github.com/rancher/opni/pkg/bootstrap"
 	"github.com/rancher/opni/pkg/caching"
 	"github.com/rancher/opni/pkg/clients"
-	"github.com/rancher/opni/pkg/config"
+	"github.com/rancher/opni/pkg/config/adapt"
 	"github.com/rancher/opni/pkg/config/meta"
+	"github.com/rancher/opni/pkg/config/reactive"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/config/v1beta1"
 	"github.com/rancher/opni/pkg/gateway"
 	"github.com/rancher/opni/pkg/ident"
 	"github.com/rancher/opni/pkg/keyring/ephemeral"
 	"github.com/rancher/opni/pkg/logger"
+	"github.com/rancher/opni/pkg/machinery"
 	"github.com/rancher/opni/pkg/management"
 	"github.com/rancher/opni/pkg/otel"
 	"github.com/rancher/opni/pkg/pkp"
@@ -65,6 +68,7 @@ import (
 	"github.com/rancher/opni/pkg/plugins/hooks"
 	pluginmeta "github.com/rancher/opni/pkg/plugins/meta"
 	"github.com/rancher/opni/pkg/slo/query"
+	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/test/freeport"
 	mock_ident "github.com/rancher/opni/pkg/test/mock/ident"
 	"github.com/rancher/opni/pkg/test/testdata"
@@ -73,6 +77,7 @@ import (
 	"github.com/rancher/opni/pkg/tokens"
 	"github.com/rancher/opni/pkg/trust"
 	"github.com/rancher/opni/pkg/util"
+	"github.com/rancher/opni/pkg/util/flagutil"
 	"github.com/rancher/opni/plugins/metrics/pkg/cortex/configutil"
 	"github.com/samber/lo"
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -87,9 +92,10 @@ import (
 
 	_ "github.com/rancher/opni/pkg/oci/noop"
 	_ "github.com/rancher/opni/pkg/storage/etcd"
+	"github.com/rancher/opni/pkg/storage/inmemory"
 	_ "github.com/rancher/opni/pkg/storage/jetstream"
+	"github.com/rancher/opni/pkg/storage/kvutil"
 	"github.com/rancher/opni/pkg/update/noop"
-	_ "github.com/rancher/opni/pkg/update/noop"
 )
 
 var (
@@ -107,6 +113,7 @@ type ServicePorts struct {
 	ManagementGRPC   int `env:"OPNI_MANAGEMENT_GRPC_PORT"`
 	ManagementHTTP   int `env:"OPNI_MANAGEMENT_HTTP_PORT"`
 	ManagementWeb    int `env:"OPNI_MANAGEMENT_WEB_PORT"`
+	ManagementRelay  int `env:"OPNI_MANAGEMENT_RELAY_PORT"`
 	CortexGRPC       int `env:"CORTEX_GRPC_PORT"`
 	CortexHTTP       int `env:"CORTEX_HTTP_PORT"`
 	TestEnvironment  int `env:"TEST_ENV_API_PORT"`
@@ -181,18 +188,27 @@ type Environment struct {
 	nodeConfigOverridesMu sync.Mutex
 	nodeConfigOverrides   map[string]*OverridePrometheusConfig
 
-	shutdownHooks []func()
+	pluginLoader *plugins.PluginLoader
+	gw           *gateway.Gateway
+
+	shutdownHooks        []func()
+	prePostShutdownHooks []func()
+	postShutdownHooks    []func()
 }
 
 type EnvironmentOptions struct {
-	enableEtcd             bool
-	enableJetstream        bool
-	enableGateway          bool
-	defaultAgentOpts       []StartAgentOption
-	defaultAgentVersion    string
-	enableDisconnectServer bool
-	enableNodeExporter     bool
-	storageBackend         v1beta1.StorageType
+	enableEtcd              bool
+	remoteEtcdPort          int
+	remoteJetStreamPort     int
+	remoteJetStreamSeedPath string
+	enableJetstream         bool
+	enableGateway           bool
+	defaultAgentOpts        []StartAgentOption
+	defaultAgentVersion     string
+	enableDisconnectServer  bool
+	enableNodeExporter      bool
+	inMemoryActiveStore     bool
+	storageBackend          v1beta1.StorageType
 }
 
 type EnvironmentOption func(*EnvironmentOptions)
@@ -245,6 +261,30 @@ func WithStorageBackend(backend v1beta1.StorageType) EnvironmentOption {
 	}
 }
 
+func WithRemoteEtcdPort(port int) EnvironmentOption {
+	return func(o *EnvironmentOptions) {
+		o.remoteEtcdPort = port
+	}
+}
+
+func WithRemoteJetStreamPort(port int) EnvironmentOption {
+	return func(o *EnvironmentOptions) {
+		o.remoteJetStreamPort = port
+	}
+}
+
+func WithRemoteJetStreamSeedPath(path string) EnvironmentOption {
+	return func(o *EnvironmentOptions) {
+		o.remoteJetStreamSeedPath = path
+	}
+}
+
+func WithInMemoryActiveStore(enable bool) EnvironmentOption {
+	return func(o *EnvironmentOptions) {
+		o.inMemoryActiveStore = enable
+	}
+}
+
 func defaultAgentVersion() string {
 	if v, ok := os.LookupEnv("TEST_ENV_DEFAULT_AGENT_VERSION"); ok {
 		return v
@@ -256,7 +296,7 @@ func defaultStorageBackend() v1beta1.StorageType {
 	if v, ok := os.LookupEnv("TEST_ENV_DEFAULT_STORAGE_BACKEND"); ok {
 		return v1beta1.StorageType(v)
 	}
-	return "jetstream"
+	return "etcd"
 }
 
 func FindTestBin() (string, error) {
@@ -303,6 +343,8 @@ func (e *Environment) Start(opts ...EnvironmentOption) error {
 	// TODO : bootstrap with otelcollector
 	options := EnvironmentOptions{
 		enableEtcd:             false,
+		remoteEtcdPort:         0,
+		remoteJetStreamPort:    0,
 		enableJetstream:        true,
 		enableNodeExporter:     false,
 		enableGateway:          true,
@@ -320,13 +362,21 @@ func (e *Environment) Start(opts ...EnvironmentOption) error {
 		}
 	}
 
-	if options.storageBackend == "etcd" && !options.enableEtcd {
+	if options.storageBackend == "etcd" && (!options.enableEtcd && options.remoteEtcdPort == 0) {
 		options.enableEtcd = true
-	} else if options.storageBackend == "jetstream" && !options.enableJetstream {
+	} else if options.storageBackend == "jetstream" && (!options.enableJetstream && options.remoteJetStreamPort == 0) {
 		options.enableJetstream = true
 	}
+	if options.enableEtcd && options.remoteEtcdPort != 0 {
+		options.enableEtcd = false
+	}
+	if options.enableJetstream && options.remoteJetStreamPort != 0 {
+		options.enableJetstream = false
+	}
 
-	e.Logger = testlog.Log.WithGroup("env")
+	if e.Logger == nil {
+		e.Logger = testlog.Log.WithGroup("env")
+	}
 	e.nodeConfigOverrides = make(map[string]*OverridePrometheusConfig)
 
 	e.EnvironmentOptions = options
@@ -353,12 +403,12 @@ func (e *Environment) Start(opts ...EnvironmentOption) error {
 	if err != nil {
 		return err
 	}
-	if options.enableEtcd {
+	if options.enableEtcd || options.remoteEtcdPort != 0 {
 		if err := os.Mkdir(path.Join(e.tempDir, "etcd"), 0700); err != nil {
 			return err
 		}
 	}
-	if options.enableJetstream {
+	if options.enableJetstream || options.remoteJetStreamPort != 0 {
 		if err := os.MkdirAll(path.Join(e.tempDir, "jetstream/data"), 0700); err != nil {
 			return err
 		}
@@ -449,10 +499,14 @@ http_server_config:
 
 	if options.enableEtcd {
 		e.startEtcd()
+	} else {
+		e.ports.Etcd = options.remoteEtcdPort
 	}
 
 	if options.enableJetstream {
 		e.startJetstream()
+	} else {
+		e.ports.Jetstream = options.remoteJetStreamPort
 	}
 
 	if options.enableNodeExporter {
@@ -543,6 +597,14 @@ func (e *Environment) Stop(cause ...string) error {
 			}()
 		}
 		wg.Wait()
+
+		for _, h := range e.prePostShutdownHooks {
+			h()
+		}
+
+		for _, h := range e.postShutdownHooks {
+			h()
+		}
 	}
 	if e.embeddedJS != nil {
 		e.embeddedJS.Shutdown()
@@ -616,13 +678,15 @@ func (e *Environment) startJetstream() {
 		fmt.Sprintf("--port=%d", e.ports.Jetstream),
 	}
 	jetstreamBin := path.Join(e.TestBin, "nats-server")
-	cmd := exec.CommandContext(e.ctx, jetstreamBin, defaultArgs...)
+	cctx, ca := context.WithCancel(context.WithoutCancel(e.ctx))
+	cmd := exec.CommandContext(cctx, jetstreamBin, defaultArgs...)
 	plugins.ConfigureSysProcAttr(cmd)
 	session, err := testutil.StartCmd(cmd)
 	if err != nil {
 		if !errors.Is(e.ctx.Err(), context.Canceled) {
 			panic(err)
 		} else {
+			ca()
 			return
 		}
 	}
@@ -634,7 +698,9 @@ func (e *Environment) startJetstream() {
 		panic("failed to write jetstream auth config")
 	}
 	lg.Info("Waiting for jetstream to start...")
-	e.addShutdownHook(func() {
+	e.postShutdownHooks = append(e.postShutdownHooks, func() {
+		ginkgo.GinkgoHelper()
+		ca()
 		session.Wait()
 	})
 	for e.ctx.Err() == nil {
@@ -767,7 +833,8 @@ func (e *Environment) startEtcd() {
 		fmt.Sprintf("--data-dir=%s", path.Join(e.tempDir, "etcd")),
 	}
 	etcdBin := path.Join(e.TestBin, "etcd")
-	cmd := exec.CommandContext(e.ctx, etcdBin, defaultArgs...)
+	cctx, ca := context.WithCancel(context.WithoutCancel(e.ctx))
+	cmd := exec.CommandContext(cctx, etcdBin, defaultArgs...)
 	cmd.Env = []string{"ALLOW_NONE_AUTHENTICATION=yes"}
 	plugins.ConfigureSysProcAttr(cmd)
 	session, err := testutil.StartCmd(cmd)
@@ -775,12 +842,15 @@ func (e *Environment) startEtcd() {
 		if !errors.Is(e.ctx.Err(), context.Canceled) {
 			panic(err)
 		} else {
+			ca()
 			return
 		}
 	}
 
 	lg.Info("Waiting for etcd to start...")
-	e.addShutdownHook(func() {
+	e.postShutdownHooks = append(e.postShutdownHooks, func() {
+		ginkgo.GinkgoHelper()
+		ca()
 		session.Wait()
 	})
 	for e.ctx.Err() == nil {
@@ -1586,9 +1656,10 @@ func (e *Environment) NewGatewayConfig() *v1beta1.GatewayConfig {
 			GRPCListenAddress:    fmt.Sprintf("localhost:%d", e.ports.GatewayGRPC),
 			MetricsListenAddress: fmt.Sprintf("localhost:%d", e.ports.GatewayMetrics),
 			Management: v1beta1.ManagementSpec{
-				GRPCListenAddress: fmt.Sprintf("tcp://localhost:%d", e.ports.ManagementGRPC),
-				HTTPListenAddress: fmt.Sprintf(":%d", e.ports.ManagementHTTP),
-				WebListenAddress:  fmt.Sprintf("localhost:%d", e.ports.ManagementWeb),
+				GRPCListenAddress:  fmt.Sprintf("tcp://localhost:%d", e.ports.ManagementGRPC),
+				HTTPListenAddress:  fmt.Sprintf(":%d", e.ports.ManagementHTTP),
+				WebListenAddress:   fmt.Sprintf("localhost:%d", e.ports.ManagementWeb),
+				RelayListenAddress: fmt.Sprintf("tcp://localhost:%d", e.ports.ManagementRelay),
 				// WebCerts: v1beta1.CertsSpec{
 				// 	CACertData:      dashboardCertData,
 				// 	ServingCertData: dashboardCertData,
@@ -1655,19 +1726,18 @@ func (e *Environment) NewGatewayConfig() *v1beta1.GatewayConfig {
 					ClientKey:  path.Join(e.tempDir, "cortex/client.key"),
 				},
 			},
+			RateLimit: &v1beta1.RateLimitSpec{
+				Rate:  10,
+				Burst: 50,
+			},
 			Storage: lo.Switch[v1beta1.StorageType, v1beta1.StorageSpec](e.storageBackend).
 				Case(v1beta1.StorageTypeEtcd, v1beta1.StorageSpec{
 					Type: v1beta1.StorageTypeEtcd,
-					Etcd: &v1beta1.EtcdStorageSpec{
-						Endpoints: []string{fmt.Sprintf("http://localhost:%d", e.ports.Etcd)},
-					},
+					Etcd: adapt.V1BetaConfigOf[*v1beta1.EtcdStorageSpec](e.etcdConfig()),
 				}).
 				Case(v1beta1.StorageTypeJetStream, v1beta1.StorageSpec{
-					Type: v1beta1.StorageTypeJetStream,
-					JetStream: &v1beta1.JetStreamStorageSpec{
-						Endpoint:     fmt.Sprintf("nats://localhost:%d", e.ports.Jetstream),
-						NkeySeedPath: path.Join(e.tempDir, "jetstream", "seed", "nats-auth.conf"),
-					},
+					Type:      v1beta1.StorageTypeJetStream,
+					JetStream: adapt.V1BetaConfigOf[*v1beta1.JetStreamStorageSpec](e.jetstreamConfig()),
 				}).
 				DefaultF(func() v1beta1.StorageSpec {
 					panic("unknown storage backend")
@@ -1794,6 +1864,14 @@ func (e *Environment) NewStreamConnection(pins []string) (grpc.ClientConnInterfa
 	return ts.Serve()
 }
 
+func (e *Environment) PluginLoader() *plugins.PluginLoader {
+	return e.pluginLoader
+}
+
+func (e *Environment) GatewayObject() *gateway.Gateway {
+	return e.gw
+}
+
 func (e *Environment) NewManagementClient(opts ...EnvClientOption) managementv1.ManagementClient {
 	options := EnvClientOptions{
 		dialOptions: []grpc.DialOption{},
@@ -1819,7 +1897,7 @@ func (e *Environment) NewManagementClient(opts ...EnvClientOption) managementv1.
 	return c
 }
 
-func (e *Environment) ManagementClientConn() grpc.ClientConnInterface {
+func (e *Environment) ManagementClientConn() *grpc.ClientConn {
 	if !e.enableGateway {
 		panic("gateway disabled")
 	}
@@ -1858,45 +1936,80 @@ func (e *Environment) PrometheusAPIEndpoint() string {
 	return fmt.Sprintf("https://localhost:%d/prometheus/api/v1", e.ports.GatewayHTTP)
 }
 
+func (e *Environment) loadPlugins() {
+
+}
+
 func (e *Environment) startGateway() {
 	if !e.enableGateway {
 		panic("gateway disabled")
 	}
 	lg := e.Logger
 	e.gatewayConfig = e.NewGatewayConfig()
-	pluginLoader := plugins.NewPluginLoader()
+	e.pluginLoader = plugins.NewPluginLoader()
 
-	lifecycler := config.NewLifecycler(meta.ObjectList{e.gatewayConfig, &v1beta1.AuthProvider{
-		TypeMeta: meta.TypeMeta{
-			APIVersion: "v1beta1",
-			Kind:       "AuthProvider",
-		},
-		ObjectMeta: meta.ObjectMeta{
-			Name: "test",
-		},
-		Spec: v1beta1.AuthProviderSpec{
-			Type: "test",
-		},
-	}})
-	g := gateway.NewGateway(e.ctx, e.gatewayConfig, pluginLoader,
-		gateway.WithLifecycler(lifecycler),
+	cfgv1 := adapt.V1ConfigOf[*configv1.GatewayConfigSpec](&e.gatewayConfig.Spec)
+
+	storageBackend, err := machinery.ConfigureStorageBackendV1(e.ctx, cfgv1.GetStorage())
+	if err != nil {
+		panic(err)
+	}
+	e.prePostShutdownHooks = append(e.prePostShutdownHooks, storageBackend.Close)
+
+	var activeStore storage.ValueStoreT[*configv1.GatewayConfigSpec]
+	if e.inMemoryActiveStore {
+		activeStore = inmemory.NewValueStore[*configv1.GatewayConfigSpec](util.ProtoClone)
+	} else {
+		activeStore = kvutil.WithMessageCodec[*configv1.GatewayConfigSpec](
+			kvutil.WithKey(storageBackend.KeyValueStore("gateway"), "config"))
+	}
+
+	defaultStore := inmemory.NewValueStore[*configv1.GatewayConfigSpec](util.ProtoClone)
+	defaultStore.Put(e.ctx, cfgv1)
+
+	mgr := configv1.NewGatewayConfigManager(
+		defaultStore, activeStore,
+		flagutil.LoadDefaults,
+		configv1.WithControllerOptions(
+			reactive.WithLogger(lg.WithGroup("config")),
+			reactive.WithDiffMode(reactive.DiffFull),
+		),
+	)
+	if err := mgr.Start(e.ctx); err != nil {
+		panic(fmt.Errorf("failed to start config manager: %w", err))
+	}
+
+	if ac, err := mgr.Tracker().ActiveStore().Get(context.Background()); err != nil {
+		if storage.IsNotFound(err) {
+			lg.Info("no previous configuration found, creating from defaults")
+			_, err := mgr.SetConfiguration(context.Background(), &configv1.SetRequest{})
+			if err != nil {
+				panic(fmt.Errorf("failed to set configuration: %w", err))
+			}
+		}
+	} else {
+		lg.Info("loaded existing configuration", "rev", ac.GetRevision().GetRevision())
+	}
+
+	e.gw = gateway.NewGateway(e.ctx, mgr, storageBackend, e.pluginLoader,
+		gateway.WithLogger(lg.WithGroup("gateway")),
 		gateway.WithExtraUpdateHandlers(noop.NewSyncServer()),
 	)
 
-	m := management.NewServer(e.ctx, &e.gatewayConfig.Spec.Management, g, pluginLoader,
-		management.WithCapabilitiesDataSource(g),
-		management.WithHealthStatusDataSource(g),
-		management.WithLifecycler(lifecycler),
+	m := management.NewServer(e.ctx, e.gw, mgr, e.pluginLoader,
+		management.WithCapabilitiesDataSource(e.gw.CapabilitiesDataSource()),
+		management.WithHealthStatusDataSource(e.gw),
 	)
-	g.MustRegisterCollector(m)
+
+	e.gw.MustRegisterCollector(m)
 
 	doneLoadingPlugins := make(chan struct{})
-	pluginLoader.Hook(hooks.OnLoadingCompleted(func(numLoaded int) {
+	e.pluginLoader.Hook(hooks.OnLoadingCompleted(func(numLoaded int) {
 		lg.Info(fmt.Sprintf("loaded %d plugins", numLoaded))
 		close(doneLoadingPlugins)
 	}))
 	lg.Info("Loading gateway plugins...")
-	globalTestPlugins.LoadPlugins(e.ctx, pluginLoader, pluginmeta.ModeGateway)
+	globalTestPlugins.LoadPlugins(e.ctx, e.pluginLoader, pluginmeta.ModeGateway)
 
 	select {
 	case <-doneLoadingPlugins:
@@ -1908,7 +2021,7 @@ func (e *Environment) startGateway() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := g.ListenAndServe(e.ctx)
+		err := e.gw.ListenAndServe(e.ctx)
 		if errors.Is(err, context.Canceled) {
 			lg.Info("gateway server stopped")
 		} else if err != nil {
@@ -1931,7 +2044,7 @@ func (e *Environment) startGateway() {
 	started := false
 	for i := 0; i < 100; i++ {
 		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s/healthz",
-			e.gatewayConfig.Spec.MetricsListenAddress), nil)
+			cfgv1.Health.GetHttpListenAddress()), nil)
 		resp, err := http.DefaultClient.Do(req)
 		if err == nil {
 			resp.Body.Close()
@@ -1997,6 +2110,7 @@ func WithListenPort(port int) StartAgentOption {
 
 func (e *Environment) BootstrapNewAgent(id string, opts ...StartAgentOption) error {
 	cc := e.ManagementClientConn()
+	defer cc.Close()
 
 	client := managementv1.NewManagementClient(cc)
 	token, err := client.CreateBootstrapToken(context.Background(), &managementv1.CreateBootstrapTokenRequest{
@@ -2015,7 +2129,10 @@ func (e *Environment) BootstrapNewAgent(id string, opts ...StartAgentOption) err
 	_, errC := e.StartAgent(id, token, []string{fp}, opts...)
 	select {
 	case err := <-errC:
-		return err
+		if err != nil {
+			return err
+		}
+		return WaitForAgentReady(e.ctx, client, id)
 	case <-e.ctx.Done():
 		return e.ctx.Err()
 	}
@@ -2094,16 +2211,11 @@ func (e *Environment) StartAgent(id string, token *corev1.BootstrapToken, pins [
 			Storage: lo.Switch[v1beta1.StorageType, v1beta1.StorageSpec](e.storageBackend).
 				Case(v1beta1.StorageTypeEtcd, v1beta1.StorageSpec{
 					Type: v1beta1.StorageTypeEtcd,
-					Etcd: &v1beta1.EtcdStorageSpec{
-						Endpoints: []string{fmt.Sprintf("http://127.0.0.1:%d", e.ports.Etcd)},
-					},
+					Etcd: adapt.V1BetaConfigOf[*v1beta1.EtcdStorageSpec](e.etcdConfig()),
 				}).
 				Case(v1beta1.StorageTypeJetStream, v1beta1.StorageSpec{
-					Type: v1beta1.StorageTypeJetStream,
-					JetStream: &v1beta1.JetStreamStorageSpec{
-						Endpoint:     fmt.Sprintf("nats://127.0.0.1:%d", e.ports.Jetstream),
-						NkeySeedPath: path.Join(e.tempDir, "jetstream", "seed", "nats-auth.conf"),
-					},
+					Type:      v1beta1.StorageTypeJetStream,
+					JetStream: adapt.V1BetaConfigOf[*v1beta1.JetStreamStorageSpec](e.jetstreamConfig()),
 				}).
 				DefaultF(func() v1beta1.StorageSpec {
 					panic("unknown storage backend")
@@ -2209,32 +2321,40 @@ func (e *Environment) StartAgent(id string, token *corev1.BootstrapToken, pins [
 	return agentCtx, errC
 }
 
+func WaitForAgentReady(ctx context.Context, client managementv1.ManagementClient, id string) error {
+	ctx, ca := context.WithCancel(ctx)
+	defer ca()
+	hs, err := client.WatchClusterHealthStatus(ctx, &emptypb.Empty{})
+	if err != nil {
+		return err
+	}
+	var lastErr error
+	for {
+		event, err := hs.Recv()
+		if err != nil {
+			if lastErr == nil {
+				lastErr = err
+			}
+			break
+		}
+		if event.GetCluster().GetId() == id {
+			if !event.GetHealthStatus().GetStatus().GetConnected() {
+				lastErr = fmt.Errorf("agent %q not connected", id)
+			} else if !event.GetHealthStatus().GetHealth().GetReady() {
+				lastErr = fmt.Errorf("agent %q not ready", id)
+			} else {
+				lastErr = nil
+				break
+			}
+		}
+	}
+	return lastErr
+}
+
 func (e *Environment) GetAgent(id string) RunningAgent {
 	e.runningAgentsMu.Lock()
 	defer e.runningAgentsMu.Unlock()
 	return e.runningAgents[id]
-}
-
-func (e *Environment) GatewayTLSConfig() *tls.Config {
-	pool := x509.NewCertPool()
-	switch {
-	case e.gatewayConfig.Spec.Certs.CACert != nil:
-		data, err := os.ReadFile(*e.gatewayConfig.Spec.Certs.CACert)
-		if err != nil {
-			panic("gateway panic")
-		}
-		if !pool.AppendCertsFromPEM(data) {
-			panic("failed to load gateway CA cert")
-		}
-	case e.gatewayConfig.Spec.Certs.CACertData != nil:
-		if !pool.AppendCertsFromPEM(e.gatewayConfig.Spec.Certs.CACertData) {
-			panic("failed to load gateway CA cert")
-		}
-	}
-	return &tls.Config{
-		MinVersion: tls.VersionTLS12,
-		RootCAs:    pool,
-	}
 }
 
 func (e *Environment) GatewayClientTLSConfig() *tls.Config {
@@ -2328,22 +2448,36 @@ func (e *Environment) EtcdClient() (*clientv3.Client, error) {
 	})
 }
 
-func (e *Environment) EtcdConfig() *v1beta1.EtcdStorageSpec {
+func (e *Environment) EtcdConfig() *configv1.EtcdSpec {
 	if !e.enableEtcd {
 		panic("etcd disabled")
 	}
-	return &v1beta1.EtcdStorageSpec{
+	return e.etcdConfig()
+}
+
+func (e *Environment) etcdConfig() *configv1.EtcdSpec {
+	return &configv1.EtcdSpec{
 		Endpoints: []string{fmt.Sprintf("http://localhost:%d", e.ports.Etcd)},
 	}
 }
 
-func (e *Environment) JetStreamConfig() *v1beta1.JetStreamStorageSpec {
+func (e *Environment) JetStreamConfig() *configv1.JetStreamSpec {
 	if !e.enableJetstream {
 		panic("JetStream disabled")
 	}
-	return &v1beta1.JetStreamStorageSpec{
-		Endpoint:     fmt.Sprintf("http://localhost:%d", e.ports.Jetstream),
-		NkeySeedPath: path.Join(e.tempDir, "jetstream", "seed", "nats-auth.conf"),
+	return e.jetstreamConfig()
+}
+
+func (e *Environment) jetstreamConfig() *configv1.JetStreamSpec {
+	if e.remoteJetStreamSeedPath != "" {
+		return &configv1.JetStreamSpec{
+			Endpoint:     lo.ToPtr(fmt.Sprintf("http://localhost:%d", e.ports.Jetstream)),
+			NkeySeedPath: &e.remoteJetStreamSeedPath,
+		}
+	}
+	return &configv1.JetStreamSpec{
+		Endpoint:     lo.ToPtr(fmt.Sprintf("http://localhost:%d", e.ports.Jetstream)),
+		NkeySeedPath: lo.ToPtr(path.Join(e.tempDir, "jetstream", "seed", "nats-auth.conf")),
 	}
 }
 
@@ -2400,15 +2534,26 @@ func (e *Environment) StartGrafana(extraDockerArgs ...string) {
 				"-p", "3000:3000",
 				"--net=host",
 				"-e", "GF_INSTALL_PLUGINS=grafana-polystat-panel,marcusolsson-treemap-panel,michaeldmoore-multistat-panel",
+				"-e", "GF_LOG_LEVEL=debug",
 				"-e", "GF_ALERTING_ENABLED=false",
+				"-e", "GF_USERS_ALLOW_SIGN_UP=false",
+				"-e", "GF_USERS_AUTO_ASSIGN_ORG=true",
+				"-e", "GF_USERS_AUTO_ASSIGN_ORG_ID=1",
+				"-e", "GF_USERS_AUTO_ASSIGN_ORG_ROLE=Admin",
+				"-e", "GF_AUTH_BASIC_ENABLED=false",
 				"-e", "GF_AUTH_DISABLE_LOGIN_FORM=true",
-				"-e", "GF_AUTH_DISABLE_SIGNOUT_MENU=true",
-				"-e", "GF_AUTH_ANONYMOUS_ENABLED=true",
-				"-e", "GF_AUTH_ANONYMOUS_ORG_ROLE=Admin",
-				"-e", "GF_AUTH_ANONYMOUS_ORG_NAME=Main Org.",
+				"-e", "GF_AUTH_PROXY_ENABLED=true",
+				"-e", "GF_AUTH_PROXY_HEADER_NAME=X-WEBAUTH-USER",
+				"-e", "GF_AUTH_PROXY_HEADER_PROPERTY=username",
+				"-e", "GF_AUTH_PROXY_AUTO_SIGN_UP=true",
+				"-e", "GF_AUTH_PROXY_SYNC_TTL=60",
+				"-e", "GF_AUTH_PROXY_HEADERS=Role:X-WEBAUTH-ROLE",
+				"-e", "GF_AUTH_PROXY_ENABLE_LOGIN_TOKEN=false",
 				"-e", "GF_FEATURE_TOGGLES_ENABLE=accessTokenExpirationCheck panelTitleSearch increaseInMemDatabaseQueryCache newPanelChromeUI",
+				"-e", "GF_SERVER_ROUTER_LOGGING=true",
 				"-e", "GF_SERVER_DOMAIN=localhost",
-				"-e", "GF_SERVER_ROOT_URL=http://localhost",
+				"-e", "GF_SERVER_SERVE_FROM_SUB_PATH=false",
+				"-e", "GF_SERVER_ROOT_URL=/proxy/grafana",
 			},
 			extraDockerArgs...,
 		),

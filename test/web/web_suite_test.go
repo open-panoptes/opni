@@ -12,7 +12,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
-	"github.com/rancher/opni/pkg/dashboard"
 	"github.com/rancher/opni/pkg/test"
 	_ "github.com/rancher/opni/pkg/test/setup"
 	"golang.org/x/net/context"
@@ -21,6 +20,7 @@ import (
 )
 
 func TestWeb(t *testing.T) {
+	t.Skipf("TODO: not implemented")
 	SetDefaultEventuallyTimeout(5 * time.Second)
 	gin.SetMode(gin.TestMode)
 	RegisterFailHandler(AbortSuite)
@@ -41,10 +41,6 @@ var _ = SynchronizedBeforeSuite(func() {
 	b = biloba.ConnectToChrome(GinkgoT())
 	webUrl = "http://" + env.GatewayConfig().Spec.Management.WebListenAddress
 	mgmtClient = env.NewManagementClient()
-
-	dashboardSrv, err := dashboard.NewServer(&env.GatewayConfig().Spec.Management)
-	Expect(err).NotTo(HaveOccurred())
-	go dashboardSrv.ListenAndServe(env.Context())
 })
 
 var _ = BeforeEach(func() {

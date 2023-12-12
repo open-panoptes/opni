@@ -65,7 +65,8 @@ func KeyValueStoreTestSuite[B storage.KeyValueStoreTBroker[T], T any](
 		Context("basic operations", func() {
 			var ts storage.KeyValueStoreT[T]
 			BeforeAll(func() {
-				ts = tsF.Get().KeyValueStore("basic")
+				ns := uuid.NewString()
+				ts = tsF.Get().KeyValueStore(ns)
 			})
 			It("should initially be empty", func() {
 				keys, err := ts.ListKeys(context.Background(), "")

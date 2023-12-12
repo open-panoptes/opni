@@ -10,6 +10,7 @@ import (
 	"log/slog"
 
 	"github.com/lestrrat-go/backoff/v2"
+	opnicorev1 "github.com/rancher/opni/apis/core/v1"
 	opnicorev1beta1 "github.com/rancher/opni/apis/core/v1beta1"
 	monitoringv1beta1 "github.com/rancher/opni/apis/monitoring/v1beta1"
 	"github.com/rancher/opni/pkg/config/v1beta1"
@@ -54,6 +55,7 @@ type OTELNodeDriverOptions struct {
 func NewOTELDriver(options OTELNodeDriverOptions) (*OTELNodeDriver, error) {
 	if options.K8sClient == nil {
 		s := scheme.Scheme
+		opnicorev1.AddToScheme(s)
 		opnicorev1beta1.AddToScheme(s)
 		monitoringv1beta1.AddToScheme(s)
 		c, err := k8sutil.NewK8sClient(k8sutil.ClientOptions{
@@ -71,7 +73,7 @@ func NewOTELDriver(options OTELNodeDriverOptions) (*OTELNodeDriver, error) {
 	}, nil
 }
 
-func (o *OTELNodeDriver) ConfigureNode(nodeId string, conf *node.MetricsCapabilityConfig) error {
+func (o *OTELNodeDriver) ConfigureNode(nodeId string, conf *node.MetricsCapabilityStatus) error {
 	lg := o.Logger.With("nodeId", nodeId)
 	if o.state.GetRunning() {
 		o.state.Cancel()
@@ -80,9 +82,16 @@ func (o *OTELNodeDriver) ConfigureNode(nodeId string, conf *node.MetricsCapabili
 	ctx, ca := context.WithCancel(context.TODO())
 	o.state.SetBackoffCtx(ctx, ca)
 
-	deployOTEL := conf.Enabled &&
-		conf.GetSpec().GetOtel() != nil
-
+	var deployOTEL bool
+	if conf.Enabled {
+		if conf.GetSpec().Driver == nil {
+			// old config from before the driver field was added
+			deployOTEL = conf.GetSpec().GetOtel() != nil
+		} else {
+			deployOTEL = conf.GetSpec().GetOtel() != nil &&
+				conf.GetSpec().GetDriver() == node.MetricsCapabilityConfig_OpenTelemetry
+		}
+	}
 	otelConfig := o.buildMonitoringCollectorConfig(conf.GetSpec().GetOtel())
 	objList := []reconcilerutil.ReconcileItem{
 		{

@@ -2,7 +2,6 @@ package bootstrap_test
 
 import (
 	"context"
-	"crypto"
 	"crypto/tls"
 	"crypto/x509"
 	"net"
@@ -13,21 +12,44 @@ import (
 	. "github.com/onsi/gomega"
 	bootstrapv2 "github.com/rancher/opni/pkg/apis/bootstrap/v2"
 	"github.com/rancher/opni/pkg/bootstrap"
+	"github.com/rancher/opni/pkg/config/reactive"
+	"github.com/rancher/opni/pkg/config/reactive/reactivetest"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/ident"
+	"github.com/rancher/opni/pkg/pkp"
 	"github.com/rancher/opni/pkg/storage"
+	"github.com/rancher/opni/pkg/storage/inmemory"
 	mock_ident "github.com/rancher/opni/pkg/test/mock/ident"
 	mock_storage "github.com/rancher/opni/pkg/test/mock/storage"
 	"github.com/rancher/opni/pkg/test/testdata"
+	"github.com/rancher/opni/pkg/test/testlog"
 	"github.com/rancher/opni/pkg/test/testutil"
 	"github.com/rancher/opni/pkg/tokens"
+	"github.com/rancher/opni/pkg/trust"
+	"github.com/rancher/opni/pkg/util"
+	"github.com/samber/lo"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/protobuf/reflect/protopath"
 )
+
+func pkpTrustStrategy(cert *x509.Certificate) trust.Strategy {
+	conf := trust.StrategyConfig{
+		PKP: &trust.PKPConfig{
+			Pins: trust.NewPinSource([]*pkp.PublicKeyPin{pkp.NewSha256(cert)}),
+		},
+	}
+	return util.Must(conf.Build())
+}
 
 var _ = Describe("Client V2", Ordered, Label("unit"), func() {
 	var fooIdent ident.Provider
 	var cert *tls.Certificate
-	var store storage.Backend
+	var store struct {
+		storage.Backend
+		storage.LockManagerBroker
+	}
+
 	var endpoint string
 
 	BeforeAll(func() {
@@ -36,18 +58,29 @@ var _ = Describe("Client V2", Ordered, Label("unit"), func() {
 		}
 		fooIdent = mock_ident.NewTestIdentProvider(ctrl, "foo")
 		var err error
-		crt, err := tls.X509KeyPair(testdata.TestData("self_signed_leaf.crt"), testdata.TestData("self_signed_leaf.key"))
+		crt, err := tls.X509KeyPair(testdata.TestData("localhost.crt"), testdata.TestData("localhost.key"))
 		Expect(err).NotTo(HaveOccurred())
 		crt.Leaf, err = x509.ParseCertificate(crt.Certificate[0])
 		Expect(err).NotTo(HaveOccurred())
 		cert = &crt
-		store = mock_storage.NewTestStorageBackend(context.Background(), ctrl)
+		store.Backend = mock_storage.NewTestStorageBackend(context.Background(), ctrl)
+		store.LockManagerBroker = inmemory.NewLockManagerBroker()
 
 		srv := grpc.NewServer(grpc.Creds(credentials.NewTLS(&tls.Config{
 			Certificates: []tls.Certificate{*cert},
 		})))
 
-		server := bootstrap.NewServerV2(store, cert.PrivateKey.(crypto.Signer))
+		ctrl, ctx, ca := reactivetest.InMemoryController[*configv1.GatewayConfigSpec](reactivetest.WithExistingActiveConfig(
+			&configv1.GatewayConfigSpec{
+				Certs: &configv1.CertsSpec{
+					CaCertData:      lo.ToPtr(string(testdata.TestData("root_ca.crt"))),
+					ServingCertData: lo.ToPtr(string(testdata.TestData("localhost.crt"))),
+					ServingKeyData:  lo.ToPtr(string(testdata.TestData("localhost.key"))),
+				},
+			},
+		))
+
+		server := bootstrap.NewServerV2(ctx, store, reactive.Message[*configv1.CertsSpec](ctrl.Reactive(protopath.Path(configv1.ProtoPath().Certs()))), testlog.Log)
 		bootstrapv2.RegisterBootstrapServer(srv, server)
 
 		listener, err := net.Listen("tcp4", "127.0.0.1:0")
@@ -58,6 +91,7 @@ var _ = Describe("Client V2", Ordered, Label("unit"), func() {
 
 		DeferCleanup(func() {
 			srv.Stop()
+			ca()
 		})
 	})
 

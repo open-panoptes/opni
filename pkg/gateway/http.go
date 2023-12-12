@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -16,10 +17,13 @@ import (
 
 	"github.com/gin-contrib/pprof"
 	"github.com/ttacon/chalk"
+	"google.golang.org/protobuf/reflect/protopath"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/rancher/opni/pkg/config/v1beta1"
+	"github.com/rancher/opni/pkg/config/reactive"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/plugins"
 	"github.com/rancher/opni/pkg/plugins/apis/apiextensions"
@@ -49,9 +53,9 @@ var (
 
 type GatewayHTTPServer struct {
 	router            *gin.Engine
-	conf              *v1beta1.GatewayConfigSpec
+	certs             reactive.Value
+	mgr               *configv1.GatewayConfigManager
 	logger            *slog.Logger
-	tlsConfig         *tls.Config
 	metricsRouter     *gin.Engine
 	metricsRegisterer prometheus.Registerer
 
@@ -61,14 +65,23 @@ type GatewayHTTPServer struct {
 
 func NewHTTPServer(
 	ctx context.Context,
-	cfg *v1beta1.GatewayConfigSpec,
+	mgr *configv1.GatewayConfigManager,
 	lg *slog.Logger,
 	pl plugins.LoaderInterface,
-) *GatewayHTTPServer {
+) (*GatewayHTTPServer, error) {
 	lg = lg.WithGroup("http")
 
 	router := gin.New()
-	router.SetTrustedProxies(cfg.TrustedProxies)
+	trustedProxies := mgr.Reactive(configv1.ProtoPath().Dashboard().TrustedProxies())
+
+	trustedProxies.WatchFunc(ctx, func(v protoreflect.Value) {
+		list := v.List()
+		var items []string
+		for i := 0; i < list.Len(); i++ {
+			items = append(items, list.Get(i).String())
+		}
+		router.SetTrustedProxies(items)
+	})
 
 	router.Use(
 		logger.GinLogger(lg),
@@ -91,11 +104,7 @@ func NewHTTPServer(
 		healthz.Store(http.StatusOK)
 	}))
 
-	if cfg.Profiling.Path != "" {
-		pprof.Register(metricsRouter, cfg.Profiling.Path)
-	} else {
-		pprof.Register(metricsRouter)
-	}
+	pprof.Register(metricsRouter)
 
 	metricsRouter.POST("/debug/profiles/:name/enable", func(c *gin.Context) {
 		name := c.Param("name")
@@ -129,26 +138,21 @@ func NewHTTPServer(
 		fmt.Printf(chalk.Green.Color("%s profiling stopped\n"), name)
 	})
 
-	metricsHandler := NewMetricsEndpointHandler(cfg.Metrics)
-	metricsRouter.GET(cfg.Metrics.GetPath(), gin.WrapH(metricsHandler.Handler()))
+	metricsHandler := NewMetricsEndpointHandler()
+	metricsRouter.GET("/metrics", gin.WrapH(metricsHandler.Handler()))
 
-	tlsConfig, _, err := httpTLSConfig(cfg)
-	if err != nil {
-		lg.With(
-			logger.Err(err),
-		).Error("failed to load serving cert bundle")
-		panic("failed to load serving cert bundle")
-	}
+	certs := mgr.Reactive(protopath.Path(configv1.ProtoPath().Certs()))
 	srv := &GatewayHTTPServer{
 		router:            router,
-		conf:              cfg,
+		certs:             certs,
+		mgr:               mgr,
 		logger:            lg,
-		tlsConfig:         tlsConfig,
 		metricsRouter:     metricsRouter,
 		metricsRegisterer: metricsHandler.reg,
 		reservedPrefixRoutes: []string{
-			cfg.Metrics.GetPath(),
 			"/healthz",
+			"/debug",
+			"/metrics",
 		},
 	}
 
@@ -177,60 +181,166 @@ func NewHTTPServer(
 	}))
 
 	pl.Hook(hooks.OnLoadM(func(p types.HTTPAPIExtensionPlugin, md meta.PluginMeta) {
-		ctx, ca := context.WithTimeout(ctx, 10*time.Second)
-		defer ca()
-		cfg, err := p.Configure(ctx, apiextensions.NewCertConfig(cfg.Certs))
-		if err != nil {
-			lg.With(
-				"plugin", md.Module,
-				logger.Err(err),
-			).Error("failed to configure routes")
-			return
-		}
-		srv.setupPluginRoutes(cfg, md)
+		go certs.WatchFunc(ctx, func(v protoreflect.Value) {
+			ctx, ca := context.WithTimeout(ctx, 10*time.Second)
+			defer ca()
+			certs := v.Message().Interface().(*configv1.CertsSpec)
+			cfg, err := p.Configure(ctx, certs)
+			if err != nil {
+				lg.With(
+					"plugin", md.Module,
+					logger.Err(err),
+				).Error("failed to configure routes")
+				return
+			}
+			if err := srv.setupPluginRoutes(cfg, md, certs); err != nil {
+				lg.With(
+					"plugin", md.Module,
+					logger.Err(err),
+				).Error("failed to setup plugin routes")
+				return
+			}
+		})
 	}))
 
-	return srv
+	return srv, nil
 }
 
 func (s *GatewayHTTPServer) ListenAndServe(ctx context.Context) error {
 	lg := s.logger
 
-	listener, err := tls.Listen("tcp4", s.conf.HTTPListenAddress, s.tlsConfig)
-	if err != nil {
-		return err
-	}
+	ctx, ca := context.WithCancelCause(ctx)
 
-	metricsListener, err := net.Listen("tcp4", s.conf.MetricsListenAddress)
-	if err != nil {
-		return err
-	}
-
-	lg.With(
-		"api", listener.Addr().String(),
-		"metrics", metricsListener.Addr().String(),
-	).Info("gateway HTTP server starting")
-
-	ctx, ca := context.WithCancel(ctx)
+	httpListenAddr := s.mgr.Reactive(configv1.ProtoPath().Server().HttpListenAddress())
+	metricsListenAddr := s.mgr.Reactive(configv1.ProtoPath().Health().HttpListenAddress())
 
 	e1 := lo.Async(func() error {
-		return util.ServeHandler(ctx, s.router.Handler(), listener)
+		var mu sync.Mutex
+		var cancel context.CancelFunc
+		var done chan struct{}
+		reactive.Bind(ctx, func(v []protoreflect.Value) {
+			mu.Lock()
+			defer mu.Unlock()
+
+			if cancel != nil {
+				cancel()
+				<-done
+			}
+			addr := v[0].String()
+			if !v[1].IsValid() {
+				lg.Error("no certs configured, cannot start gateway HTTP server")
+				return
+			}
+			tlsConfig, err := v[1].Message().Interface().(*configv1.CertsSpec).AsTlsConfig(tls.NoClientCert)
+			if err != nil {
+				lg.With(
+					logger.Err(err),
+				).Error("failed to configure TLS")
+				return
+			}
+			listener, err := tls.Listen("tcp4", addr, tlsConfig)
+			if err != nil {
+				lg.With(
+					"address", addr,
+					logger.Err(err),
+				).Error("failed to start gateway HTTP server")
+				return
+			}
+			lg.With(
+				"address", listener.Addr().String(),
+			).Info("gateway HTTP server starting")
+
+			var serveContext context.Context
+			serveContext, cancel = context.WithCancel(ctx)
+			done = make(chan struct{})
+			go func() {
+				defer close(done)
+				if err := util.ServeHandler(serveContext, s.router.Handler(), listener); err != nil {
+					if !errors.Is(err, context.Canceled) {
+						lg.With(logger.Err(err)).Warn("gateway HTTP server exited with error")
+						return
+					}
+				}
+				lg.Info("gateway HTTP server stopped")
+			}()
+		}, httpListenAddr, s.certs)
+		<-ctx.Done()
+		mu.Lock()
+		if cancel != nil {
+			cancel()
+			<-done
+		}
+		mu.Unlock()
+		return ctx.Err()
 	})
 
 	e2 := lo.Async(func() error {
-		return util.ServeHandler(ctx, s.metricsRouter.Handler(), metricsListener)
+		var mu sync.Mutex
+		var cancel context.CancelFunc
+		var done chan struct{}
+		metricsListenAddr.WatchFunc(ctx, func(v protoreflect.Value) {
+			mu.Lock()
+			defer mu.Unlock()
+
+			if cancel != nil {
+				cancel()
+				<-done
+			}
+			addr := v.String()
+			listener, err := net.Listen("tcp4", addr)
+			if err != nil {
+				lg.With(
+					"address", addr,
+					logger.Err(err),
+				).Error("failed to start metrics HTTP server")
+				return
+			}
+			lg.With(
+				"address", listener.Addr().String(),
+			).Info("metrics HTTP server starting")
+
+			var serveContext context.Context
+			serveContext, cancel = context.WithCancel(ctx)
+			done = make(chan struct{})
+			go func() {
+				defer close(done)
+				if err := util.ServeHandler(serveContext, s.metricsRouter.Handler(), listener); err != nil {
+					if !errors.Is(err, context.Canceled) {
+						lg.With(logger.Err(err)).Warn("metrics HTTP server exited with error")
+						return
+					}
+				}
+				lg.Info("metrics HTTP server stopped")
+			}()
+		})
+		<-ctx.Done()
+		mu.Lock()
+		if cancel != nil {
+			cancel()
+			<-done
+		}
+		mu.Unlock()
+		return ctx.Err()
 	})
 
-	return util.WaitAll(ctx, ca, e1, e2)
+	util.WaitAll(ctx, ca, e1, e2)
+	return context.Cause(ctx)
 }
 
 func (s *GatewayHTTPServer) setupPluginRoutes(
 	cfg *apiextensions.HTTPAPIExtensionConfig,
 	pluginMeta meta.PluginMeta,
-) {
+	certs *configv1.CertsSpec,
+) error {
 	s.routesMu.Lock()
 	defer s.routesMu.Unlock()
-	tlsConfig := s.tlsConfig.Clone()
+	tlsConfig, err := certs.AsTlsConfig(tls.NoClientCert)
+	if err != nil {
+		s.logger.With(
+			logger.Err(err),
+		).Error("failed to configure TLS for plugin routes")
+		return err
+	}
 	sampledLogger := logger.New(
 		logger.WithSampling(&slogsampling.ThresholdSamplingOption{Threshold: 1, Tick: logger.NoRepeatInterval, Rate: 0})).WithGroup("api")
 
@@ -256,4 +366,5 @@ ROUTES:
 		).Debug("configured route for plugin")
 		s.router.Handle(route.Method, route.Path, forwarder)
 	}
+	return nil
 }

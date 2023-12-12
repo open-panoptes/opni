@@ -3,9 +3,11 @@ package bootstrap
 import (
 	"context"
 	"crypto"
+	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"strings"
-	"sync"
+	"sync/atomic"
 
 	"maps"
 
@@ -13,9 +15,12 @@ import (
 	"github.com/lestrrat-go/jwx/jws"
 	bootstrapv2 "github.com/rancher/opni/pkg/apis/bootstrap/v2"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
+	"github.com/rancher/opni/pkg/config/reactive"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/ecdh"
 	"github.com/rancher/opni/pkg/health/annotations"
 	"github.com/rancher/opni/pkg/keyring"
+	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/tokens"
 	"github.com/rancher/opni/pkg/util"
@@ -26,21 +31,47 @@ import (
 )
 
 type ServerV2 struct {
-	bootstrapv2.UnsafeBootstrapServer
-	privateKey     crypto.Signer
+	privateKey     *atomic.Pointer[crypto.Signer]
+	certs          reactive.Reactive[*configv1.CertsSpec]
 	storage        Storage
-	clusterIdLocks util.LockMap[string, *sync.Mutex]
+	clusterIdLocks storage.LockManager
+	lg             *slog.Logger
 }
 
-func NewServerV2(storage Storage, privateKey crypto.Signer) *ServerV2 {
+func NewServerV2(ctx context.Context, storage Storage, certs reactive.Reactive[*configv1.CertsSpec], lg *slog.Logger) *ServerV2 {
+	pkey := &atomic.Pointer[crypto.Signer]{}
+	certs.WatchFunc(ctx, func(value *configv1.CertsSpec) {
+		tlsConfig, err := value.AsTlsConfig(tls.NoClientCert)
+		if err != nil {
+			lg.With(
+				logger.Err(err),
+			).Error("failed to load TLS config; bootstrap server will not be available")
+			pkey.Store(nil)
+			return
+		}
+		signer := tlsConfig.Certificates[0].PrivateKey.(crypto.Signer)
+		old := pkey.Swap(&signer)
+		if old == nil {
+			lg.Info("bootstrap server is now available")
+		} else {
+			lg.Info("bootstrap server certificates updated")
+		}
+	})
 	return &ServerV2{
-		privateKey:     privateKey,
+		privateKey:     pkey,
+		certs:          certs,
 		storage:        storage,
-		clusterIdLocks: util.NewLockMap[string, *sync.Mutex](),
+		clusterIdLocks: storage.LockManager("bootstrap"),
+		lg:             lg,
 	}
 }
 
 func (h *ServerV2) Join(ctx context.Context, _ *bootstrapv2.BootstrapJoinRequest) (*bootstrapv2.BootstrapJoinResponse, error) {
+	pkey := h.privateKey.Load()
+	if pkey == nil {
+		return nil, status.Error(codes.Unavailable, "server is not accepting bootstrap requests")
+	}
+
 	signatures := map[string][]byte{}
 	tokenList, err := h.storage.ListTokens(ctx)
 	if err != nil {
@@ -52,7 +83,7 @@ func (h *ServerV2) Join(ctx context.Context, _ *bootstrapv2.BootstrapJoinRequest
 		if err != nil {
 			return nil, err
 		}
-		sig, err := rawToken.SignDetached(h.privateKey)
+		sig, err := rawToken.SignDetached(*pkey)
 		if err != nil {
 			return nil, fmt.Errorf("error signing token: %w", err)
 		}
@@ -67,6 +98,11 @@ func (h *ServerV2) Join(ctx context.Context, _ *bootstrapv2.BootstrapJoinRequest
 }
 
 func (h *ServerV2) Auth(ctx context.Context, authReq *bootstrapv2.BootstrapAuthRequest) (*bootstrapv2.BootstrapAuthResponse, error) {
+	pkey := h.privateKey.Load()
+	if pkey == nil {
+		return nil, status.Error(codes.Unavailable, "server is not accepting bootstrap requests")
+	}
+
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, util.StatusError(codes.Unauthenticated)
@@ -84,7 +120,7 @@ func (h *ServerV2) Auth(ctx context.Context, authReq *bootstrapv2.BootstrapAuthR
 	// Remove "Bearer " from the header
 	bearerToken := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer"))
 	// Verify the token
-	payload, err := jws.Verify([]byte(bearerToken), jwa.EdDSA, h.privateKey.Public())
+	payload, err := jws.Verify([]byte(bearerToken), jwa.EdDSA, (*pkey).Public())
 	if err != nil {
 		return nil, util.StatusError(codes.PermissionDenied)
 	}
@@ -109,9 +145,11 @@ func (h *ServerV2) Auth(ctx context.Context, authReq *bootstrapv2.BootstrapAuthR
 	}
 
 	// lock the mutex associated with the cluster ID
-	// TODO: when scaling the gateway we need a distributed lock
-	lock := h.clusterIdLocks.Get(authReq.ClientId)
-	lock.Lock()
+	lock := h.clusterIdLocks.NewLock(authReq.ClientId)
+	_, err = lock.Lock(ctx)
+	if err != nil {
+		panic(err)
+	}
 	defer lock.Unlock()
 
 	existing := &corev1.Reference{

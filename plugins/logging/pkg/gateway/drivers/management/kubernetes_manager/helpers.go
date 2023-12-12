@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 
+	opsterv1 "github.com/Opster/opensearch-k8s-operator/opensearch-operator/api/v1"
 	loggingv1beta1 "github.com/rancher/opni/apis/logging/v1beta1"
 	"github.com/rancher/opni/pkg/util"
 	k8sutilerrors "github.com/rancher/opni/pkg/util/errors/k8sutil"
@@ -18,7 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-	opsterv1 "opensearch.opster.io/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -365,11 +365,21 @@ func convertProtobufToDashboards(
 		},
 		Version: osVersion,
 		Tls: &opsterv1.DashboardsTlsConfig{
-			Enable:   true,
-			Generate: true,
+			Enable:   false,
+			Generate: false,
 		},
 		AdditionalConfig: map[string]string{
-			"opensearchDashboards.branding.applicationTitle": "Opni Logging",
+			"server.basePath":                                       "/proxy/logging",
+			"opensearch_security.multitenancy.enabled":              "false",
+			"opensearchDashboards.branding.applicationTitle":        "Opni Logging",
+			"opensearchDashboards.branding.faviconUrl":              "https://raw.githubusercontent.com/rancher/opni/main/branding/favicon.png",
+			"opensearchDashboards.branding.loadingLogo.darkModeUrl": "https://raw.githubusercontent.com/rancher/opni/main/branding/opni-loading-dark.svg",
+			"opensearchDashboards.branding.loadingLogo.defaultUrl":  "https://raw.githubusercontent.com/rancher/opni/main/branding/opni-loading.svg",
+			"opensearchDashboards.branding.logo.defaultUrl":         "https://raw.githubusercontent.com/rancher/opni/main/branding/opni-logo-dark.svg",
+			"opensearchDashboards.branding.mark.defaultUrl":         "https://raw.githubusercontent.com/rancher/opni/main/branding/opni-mark.svg",
+			"opensearch.requestHeadersAllowlist":                    `["securitytenant","Authorization","x-forwarded-for","x-proxy-user","x-proxy-roles"]`,
+			"opensearch_security.proxycache.user_header":            "x-proxy-user",
+			"opensearch_security.proxycache.roles_header":           "x-proxy-roles",
 		},
 	}
 }

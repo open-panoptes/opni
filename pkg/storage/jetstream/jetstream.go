@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
+	"sync"
 	"time"
 
 	"log/slog"
@@ -13,6 +13,7 @@ import (
 	"github.com/lestrrat-go/backoff/v2"
 	"github.com/nats-io/nats.go"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/config/v1beta1"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/storage"
@@ -46,7 +47,8 @@ type JetStreamStore struct {
 		Roles        nats.KeyValue
 		RoleBindings nats.KeyValue
 	}
-	logger *slog.Logger
+	logger    *slog.Logger
+	closeOnce sync.Once
 }
 
 var _ storage.Backend = (*JetStreamStore)(nil)
@@ -69,7 +71,7 @@ func WithBucketPrefix(prefix string) JetStreamStoreOption {
 	}
 }
 
-func NewJetStreamStore(ctx context.Context, conf *v1beta1.JetStreamStorageSpec, opts ...JetStreamStoreOption) (*JetStreamStore, error) {
+func NewJetStreamStore(ctx context.Context, conf *configv1.JetStreamSpec, opts ...JetStreamStoreOption) (*JetStreamStore, error) {
 	options := JetStreamStoreOptions{
 		BucketPrefix: "gateway",
 	}
@@ -77,11 +79,11 @@ func NewJetStreamStore(ctx context.Context, conf *v1beta1.JetStreamStorageSpec, 
 
 	lg := logger.New(logger.WithLogLevel(slog.LevelWarn)).WithGroup("jetstream")
 
-	nkeyOpt, err := nats.NkeyOptionFromSeed(conf.NkeySeedPath)
+	nkeyOpt, err := nats.NkeyOptionFromSeed(conf.GetNkeySeedPath())
 	if err != nil {
 		return nil, err
 	}
-	nc, err := nats.Connect(conf.Endpoint,
+	nc, err := nats.Connect(conf.GetEndpoint(),
 		nkeyOpt,
 		nats.MaxReconnects(-1),
 		nats.RetryOnFailedConnect(true),
@@ -107,11 +109,6 @@ func NewJetStreamStore(ctx context.Context, conf *v1beta1.JetStreamStorageSpec, 
 		return nil, err
 	}
 
-	go func() {
-		<-ctx.Done()
-		nc.Close()
-	}()
-
 	ctrl := backoff.Exponential(
 		backoff.WithMaxRetries(0),
 		backoff.WithMinInterval(10*time.Millisecond),
@@ -130,14 +127,14 @@ func NewJetStreamStore(ctx context.Context, conf *v1beta1.JetStreamStorageSpec, 
 		}
 	}
 
-	js, err := nc.JetStream(nats.Context(ctx))
+	js, err := nc.JetStream(nats.Context(context.WithoutCancel(ctx)))
 	if err != nil {
 		return nil, err
 	}
 
 	store := &JetStreamStore{
 		JetStreamStoreOptions: options,
-		ctx:                   ctx,
+		ctx:                   context.WithoutCancel(ctx),
 		nc:                    nc,
 		js:                    js,
 		logger:                lg,
@@ -153,6 +150,13 @@ func NewJetStreamStore(ctx context.Context, conf *v1beta1.JetStreamStorageSpec, 
 		return nil, ctx.Err()
 	}
 	return store, nil
+}
+
+func (s *JetStreamStore) Close() {
+	s.closeOnce.Do(func() {
+		s.nc.Close()
+		s.logger.Debug("nats client closed")
+	})
 }
 
 func (s *JetStreamStore) upsertBucket(name string) nats.KeyValue {
@@ -191,9 +195,15 @@ func (s *JetStreamStore) KeyringStore(prefix string, ref *corev1.Reference) stor
 	}
 }
 
+func (s *JetStreamStore) LockManager(
+	prefix string,
+) storage.LockManager {
+	return NewLockManager(s.ctx, s.js, prefix, s.logger.WithGroup("lock"))
+}
+
 func (s *JetStreamStore) KeyValueStore(prefix string) storage.KeyValueStore {
 	// sanitize bucket name
-	prefix = strings.ReplaceAll(strings.ReplaceAll(prefix, "/", "-"), ".", "_")
+	prefix = sanitizePrefix(prefix)
 	bucket := s.upsertBucket(fmt.Sprintf("%s-%s", dynamicBucket, prefix))
 	return &jetstreamKeyValueStore{
 		kv: bucket,
@@ -249,9 +259,19 @@ func jetstreamGrpcError(err error) error {
 }
 
 func init() {
-	storage.RegisterStoreBuilder(v1beta1.StorageTypeJetStream, func(args ...any) (any, error) {
+	storage.RegisterStoreBuilder(configv1.StorageBackend_JetStream.String(), func(args ...any) (any, error) {
 		ctx := args[0].(context.Context)
-		conf := args[1].(*v1beta1.JetStreamStorageSpec)
+
+		var conf *configv1.JetStreamSpec
+		switch spec := args[1].(type) {
+		case *v1beta1.JetStreamStorageSpec:
+			conf = &configv1.JetStreamSpec{
+				Endpoint:     &spec.Endpoint,
+				NkeySeedPath: &spec.NkeySeedPath,
+			}
+		case *configv1.JetStreamSpec:
+			conf = spec
+		}
 
 		var opts []JetStreamStoreOption
 		for _, arg := range args[2:] {

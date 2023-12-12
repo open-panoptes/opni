@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
@@ -12,9 +13,13 @@ import (
 type Backend interface {
 	TokenStore
 	ClusterStore
-	RBACStore
+	RoleBindingStore
 	KeyringStoreBroker
 	KeyValueStoreBroker
+
+	// Close shuts down any connections and releases any resources held
+	// by the storage backend client.
+	Close()
 }
 
 type MutatorFunc[T any] func(T)
@@ -42,16 +47,11 @@ type ClusterStore interface {
 	ListClusters(ctx context.Context, matchLabels *corev1.LabelSelector, matchOptions corev1.MatchOptions) (*corev1.ClusterList, error)
 }
 
-type RBACStore interface {
-	CreateRole(context.Context, *corev1.Role) error
-	UpdateRole(ctx context.Context, ref *corev1.Reference, mutator RoleMutator) (*corev1.Role, error)
-	DeleteRole(context.Context, *corev1.Reference) error
-	GetRole(context.Context, *corev1.Reference) (*corev1.Role, error)
+type RoleBindingStore interface {
 	CreateRoleBinding(context.Context, *corev1.RoleBinding) error
 	UpdateRoleBinding(ctx context.Context, ref *corev1.Reference, mutator RoleBindingMutator) (*corev1.RoleBinding, error)
 	DeleteRoleBinding(context.Context, *corev1.Reference) error
 	GetRoleBinding(context.Context, *corev1.Reference) (*corev1.RoleBinding, error)
-	ListRoles(context.Context) (*corev1.RoleList, error)
 	ListRoleBindings(context.Context) (*corev1.RoleBindingList, error)
 }
 
@@ -118,7 +118,9 @@ type KeyValueStoreT[T any] interface {
 	// When the watch is started, the current value of the key will be sent
 	// if and only if both of the following conditions are met:
 	// 1. A revision is explicitly set in the watch options. If no revision is
-	//    specified, only future events will be sent.
+	//    specified, only future events will be sent. Revision 0 is equivalent
+	//    to the oldest revision among all keys matching the prefix, not
+	//    including deleted keys.
 	// 2. The key exists; or in prefix mode, there is at least one key matching
 	//    the prefix.
 	//
@@ -138,6 +140,8 @@ type KeyValueStoreT[T any] interface {
 	ListKeys(ctx context.Context, prefix string, opts ...ListOpt) ([]string, error)
 	History(ctx context.Context, key string, opts ...HistoryOpt) ([]KeyRevision[T], error)
 }
+
+type RoleStore = KeyValueStoreT[*corev1.Role]
 
 type ValueStoreT[T any] interface {
 	Put(ctx context.Context, value T, opts ...PutOpt) error
@@ -161,25 +165,43 @@ type KeyValueStoreTBroker[T any] interface {
 	KeyValueStore(namespace string) KeyValueStoreT[T]
 }
 
-// A store that can be used to compute subject access rules
-type SubjectAccessCapableStore interface {
-	ListClusters(ctx context.Context, matchLabels *corev1.LabelSelector, matchOptions corev1.MatchOptions) (*corev1.ClusterList, error)
-	GetRole(ctx context.Context, ref *corev1.Reference) (*corev1.Role, error)
-	ListRoleBindings(ctx context.Context) (*corev1.RoleBindingList, error)
+type LockManagerBroker interface {
+	LockManager(namespace string) LockManager
 }
+
+// A store that can be used to compute subject access rules
+// type SubjectAccessCapableStore interface {
+// 	ListClusters(ctx context.Context, matchLabels *corev1.LabelSelector, matchOptions corev1.MatchOptions) (*corev1.ClusterList, error)
+// 	GetRole(ctx context.Context, ref *corev1.Reference) (*corev1.Role, error)
+// 	ListRoleBindings(ctx context.Context) (*corev1.RoleBindingList, error)
+// }
 
 type WatchEventType string
 
-// Lock is a distributed lock that can be used to coordinate access to a resource.
+// Lock is a distributed lock that can be used to coordinate access to a resource or interest in
+// such a resource.
+// Locks follow the following liveliness & atomicity guarantees to prevent distributed deadlocks
+// and guarantee atomicity in the critical section.
 //
-// Locks are single use, and return errors when used more than once. Retry mechanisms are built into\
-// the Lock and can be configured with LockOptions.
+// Liveliness A :  A lock is always eventually released when the process holding it crashes or exits unexpectedly.
+// Liveliness B : A lock is always eventually released when its backend store is unavailable.
+// Atomicity A : No two processes or threads can hold the same lock at the same time.
+// Atomicity B : Any call to unlock will always eventually release the lock
 type Lock interface {
-	// Lock acquires a lock on the key. If the lock is already held, it will block until the lock is released.\
-	//
-	// Lock returns an error when acquiring the lock fails.
-	Lock() error
-	// Unlock releases the lock on the key. If the lock was never held, it will return an error.
+	// Lock acquires a lock on the key. If the lock is already held, it will block until the lock is acquired or
+	// the context fails.
+	// Lock returns an error if the context expires or an unrecoverable error occurs when trying to acquire the lock.
+	Lock(ctx context.Context) (expired chan struct{}, err error)
+
+	// TryLock tries to acquire the lock on the key and reports whether it succeeded.
+	// It blocks until at least one attempt was made to acquired the lock, and returns acquired=false and no error
+	// if the lock is known to be held by someone else
+	TryLock(ctx context.Context) (acquired bool, expired chan struct{}, err error)
+
+	// Unlock releases the lock on the key in a non-blocking fashion.
+	// It spawns a goroutine that will perform the unlock mechanism until it succeeds or the the lock is
+	// expired by the server.
+	// It immediately signals to the lock's original expired channel that the lock is released.
 	Unlock() error
 }
 
@@ -222,7 +244,7 @@ type LockManager interface {
 	// Instantiates a new Lock instance for the given key, with the given options.
 	//
 	// Defaults to lock.DefaultOptions if no options are provided.
-	Locker(key string, opts ...lock.LockOption) Lock
+	NewLock(key string, opts ...lock.LockOption) Lock
 }
 
 const (
@@ -283,9 +305,9 @@ var (
 )
 
 func RegisterStoreBuilder[T ~string](name T, builder func(...any) (any, error)) {
-	storeBuilderCache[string(name)] = builder
+	storeBuilderCache[strings.ToLower(string(name))] = builder
 }
 
 func GetStoreBuilder[T ~string](name T) func(...any) (any, error) {
-	return storeBuilderCache[string(name)]
+	return storeBuilderCache[strings.ToLower(string(name))]
 }

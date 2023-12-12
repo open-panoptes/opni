@@ -106,7 +106,7 @@ var _ = Describe("update server", Ordered, Label("unit"), func() {
 				},
 			}
 			_, err := server.SyncManifest(context.Background(), manifest)
-			Expect(status.Code(err)).To(Equal(codes.Unimplemented))
+			Expect(status.Code(err)).To(Equal(codes.Unavailable))
 		})
 	})
 	When("manifest is valid", func() {
@@ -215,7 +215,7 @@ var _ = Describe("update server", Ordered, Label("unit"), func() {
 				stream, err := client.Stream(ctx, grpc.WaitForReady(true))
 				Expect(err).NotTo(HaveOccurred())
 				_, err = stream.Recv()
-				Expect(err).To(testutil.MatchStatusCode(codes.Unimplemented))
+				Expect(err).To(testutil.MatchStatusCode(codes.Unavailable))
 			})
 		})
 		When("one handler is unimplemented but one is available", func() {
@@ -229,7 +229,7 @@ var _ = Describe("update server", Ordered, Label("unit"), func() {
 				stream, err := client.Stream(ctx, grpc.WaitForReady(true))
 				Expect(err).NotTo(HaveOccurred())
 				_, err = stream.Recv()
-				Expect(err).To(testutil.MatchStatusCode(codes.Unimplemented))
+				Expect(err).To(testutil.MatchStatusCode(codes.Unavailable))
 			})
 		})
 		When("agent manifest is out of date", func() {

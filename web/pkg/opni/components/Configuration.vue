@@ -4,9 +4,25 @@ import YamlEditor from '@shell/components/YamlEditor';
 import Loading from '@shell/components/Loading';
 import AsyncButton from '@shell/components/AsyncButton';
 import { Banner } from '@components/Banner';
+import { GatewayConfigSpec } from '@pkg/opni/generated/github.com/rancher/opni/pkg/config/v1/gateway_config_pb';
 import { exceptionToErrorsArray } from '../utils/error';
 import { getGatewayConfig, updateGatewayConfig } from '../utils/requests/management';
+import { Config, DriverUtil } from '../api/opni';
 
+// replaces BigInts with Numbers
+function sanitizeBigInts(obj) {
+  if (typeof obj === 'bigint') {
+    return Number(obj);
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizeBigInts);
+  }
+  if (obj && typeof obj === 'object') {
+    return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, sanitizeBigInts(v)]));
+  }
+
+  return obj;
+}
 export default {
   components: {
     YamlEditor,
@@ -21,10 +37,10 @@ export default {
 
   data() {
     return {
-      loading:          false,
-      documents:        [],
-      editorContents:   '',
-      error:           '',
+      loading:        false,
+      config:         null,
+      editorContents: '',
+      error:          '',
     };
   },
 
@@ -32,32 +48,22 @@ export default {
     async load() {
       try {
         this.loading = true;
-        this.$set(this, 'documents', await getGatewayConfig(this));
-        let contents = '';
+        this.$set(this, 'config', await Config.service.GetConfiguration(new DriverUtil.types.GetRequest()));
+        const contents = jsyaml.dump(sanitizeBigInts(structuredClone(this.config)));
 
-        this.documents.forEach((doc, i) => {
-          contents += doc.yaml;
-          if (i < this.documents.length - 1) {
-            if (contents[contents.length - 1] !== '\n') {
-              contents += '\n';
-            }
-            contents += '---\n';
-          }
-        });
         this.$set(this, 'editorContents', contents);
+      } catch (err) {
+        this.$set(this, 'error', exceptionToErrorsArray(err).join('; '));
       } finally {
         this.loading = false;
       }
     },
     async save(buttonCallback) {
       try {
-        const documents = jsyaml.loadAll(this.editorContents);
-        const jsonDocuments = [];
+        const obj = jsyaml.load(this.editorContents);
 
-        documents.forEach((doc) => {
-          jsonDocuments.push(JSON.stringify(doc));
-        });
-        await updateGatewayConfig(jsonDocuments);
+        await Config.service.SetConfiguration(new Config.types.SetRequest({ spec: new GatewayConfigSpec(obj) }));
+        await this.load();
       } catch (err) {
         buttonCallback(false);
         this.$set(this, 'error', exceptionToErrorsArray(err).join('; '));
@@ -99,9 +105,9 @@ export default {
         </button>
         <AsyncButton
           class="btn role-primary mr-10"
-          action-label="Save and Restart"
+          action-label="Save"
           waiting-label="Saving..."
-          success-label="Restarting..."
+          success-label="Success"
           error-label="Error"
           @click="save"
         />

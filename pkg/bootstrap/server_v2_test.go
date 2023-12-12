@@ -2,7 +2,6 @@ package bootstrap_test
 
 import (
 	"context"
-	"crypto"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -15,8 +14,13 @@ import (
 	"github.com/lestrrat-go/jwx/jws"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/rancher/opni/pkg/config/reactive"
+	"github.com/rancher/opni/pkg/config/reactive/reactivetest"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
+	"github.com/rancher/opni/pkg/storage/inmemory"
 	mock_storage "github.com/rancher/opni/pkg/test/mock/storage"
 	"github.com/rancher/opni/pkg/test/testdata"
+	"github.com/rancher/opni/pkg/test/testlog"
 	"github.com/rancher/opni/pkg/util"
 	"github.com/samber/lo"
 	"google.golang.org/grpc"
@@ -25,6 +29,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/reflect/protopath"
 
 	bootstrapv2 "github.com/rancher/opni/pkg/apis/bootstrap/v2"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
@@ -58,31 +63,43 @@ var _ = Describe("Server V2", Ordered, Label("unit"), func() {
 
 	JustBeforeEach(func() {
 		var err error
-		crt, err := tls.X509KeyPair(testdata.TestData("self_signed_leaf.crt"), testdata.TestData("self_signed_leaf.key"))
+		crt, err := tls.X509KeyPair(testdata.TestData("localhost.crt"), testdata.TestData("localhost.key"))
 		Expect(err).NotTo(HaveOccurred())
 		crt.Leaf, err = x509.ParseCertificate(crt.Certificate[0])
 		Expect(err).NotTo(HaveOccurred())
 		cert = &crt
 
+		ctrl, ctx, ca := reactivetest.InMemoryController[*configv1.GatewayConfigSpec](reactivetest.WithExistingActiveConfig(
+			&configv1.GatewayConfigSpec{
+				Certs: &configv1.CertsSpec{
+					CaCertData:      lo.ToPtr(string(testdata.TestData("root_ca.crt"))),
+					ServingCertData: lo.ToPtr(string(testdata.TestData("localhost.crt"))),
+					ServingKeyData:  lo.ToPtr(string(testdata.TestData("localhost.key"))),
+				},
+			},
+		))
+
 		srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
-		server := bootstrap.NewServerV2(bootstrap.StorageConfig{
+		server := bootstrap.NewServerV2(ctx, bootstrap.StorageConfig{
 			TokenStore:         mockTokenStore,
 			ClusterStore:       mockClusterStore,
 			KeyringStoreBroker: mockKeyringStoreBroker,
-		}, cert.PrivateKey.(crypto.Signer))
+			LockManagerBroker:  inmemory.NewLockManagerBroker(),
+		}, reactive.Message[*configv1.CertsSpec](ctrl.Reactive(protopath.Path(configv1.ProtoPath().Certs()))), testlog.Log)
 		bootstrapv2.RegisterBootstrapServer(srv, server)
 
 		listener := bufconn.Listen(1024 * 1024)
 		go srv.Serve(listener)
 
-		cc, err := grpc.Dial("bufconn", grpc.WithDialer(func(s string, d time.Duration) (net.Conn, error) {
-			return listener.Dial()
+		cc, err := grpc.Dial("bufconn", grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
+			return listener.DialContext(ctx)
 		}), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		Expect(err).NotTo(HaveOccurred())
 		client = bootstrapv2.NewBootstrapClient(cc)
 
 		DeferCleanup(func() {
 			srv.Stop()
+			ca()
 		})
 	})
 

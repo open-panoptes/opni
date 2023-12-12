@@ -2,17 +2,14 @@ package gateway
 
 import (
 	"context"
-	"crypto"
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"net"
 	"slices"
 
 	"log/slog"
 
 	"github.com/prometheus/client_golang/prometheus"
-	bootstrapv1 "github.com/rancher/opni/pkg/apis/bootstrap/v1"
 	bootstrapv2 "github.com/rancher/opni/pkg/apis/bootstrap/v2"
 	controlv1 "github.com/rancher/opni/pkg/apis/control/v1"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
@@ -24,13 +21,12 @@ import (
 	"github.com/rancher/opni/pkg/auth/session"
 	"github.com/rancher/opni/pkg/bootstrap"
 	"github.com/rancher/opni/pkg/capabilities"
-	"github.com/rancher/opni/pkg/config"
-	cfgmeta "github.com/rancher/opni/pkg/config/meta"
-	"github.com/rancher/opni/pkg/config/v1beta1"
+	"github.com/rancher/opni/pkg/config/reactive"
+	"github.com/rancher/opni/pkg/config/reactive/subtle"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/health"
-	"github.com/rancher/opni/pkg/keyring"
 	"github.com/rancher/opni/pkg/logger"
-	"github.com/rancher/opni/pkg/machinery"
+	"github.com/rancher/opni/pkg/management"
 	"github.com/rancher/opni/pkg/plugins"
 	"github.com/rancher/opni/pkg/plugins/hooks"
 	"github.com/rancher/opni/pkg/plugins/meta"
@@ -38,33 +34,34 @@ import (
 	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/update"
 	k8sserver "github.com/rancher/opni/pkg/update/kubernetes/server"
+	"github.com/rancher/opni/pkg/update/patch"
 	patchserver "github.com/rancher/opni/pkg/update/patch/server"
 	"github.com/rancher/opni/pkg/util"
 	"github.com/samber/lo"
-	"github.com/spf13/afero"
 	"golang.org/x/mod/module"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/reflect/protopath"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type Gateway struct {
 	GatewayOptions
-	config        *config.GatewayConfig
-	tlsConfig     *tls.Config
-	logger        *slog.Logger
-	httpServer    *GatewayHTTPServer
-	grpcServer    *GatewayGRPCServer
-	statusQuerier health.HealthStatusQuerier
+	mgr               *configv1.GatewayConfigManager
+	certs             reactive.Reactive[*configv1.CertsSpec]
+	httpServer        *GatewayHTTPServer
+	grpcServer        *GatewayGRPCServer
+	connectionTracker *ConnectionTracker
+	delegate          *DelegateServer
+	statusQuerier     health.HealthStatusQuerier
 
-	storageBackend  storage.Backend
-	capBackendStore capabilities.BackendStore
+	storageBackend storage.Backend
+	capDataSource  *capabilitiesDataSource
 }
 
 type GatewayOptions struct {
-	lifecycler          config.Lifecycler
+	logger              *slog.Logger
 	extraUpdateHandlers []update.UpdateTypeHandler
 }
 
@@ -76,68 +73,63 @@ func (o *GatewayOptions) apply(opts ...GatewayOption) {
 	}
 }
 
-func WithLifecycler(lc config.Lifecycler) GatewayOption {
-	return func(o *GatewayOptions) {
-		o.lifecycler = lc
-	}
-}
-
 func WithExtraUpdateHandlers(handlers ...update.UpdateTypeHandler) GatewayOption {
 	return func(o *GatewayOptions) {
 		o.extraUpdateHandlers = append(o.extraUpdateHandlers, handlers...)
 	}
 }
 
-func NewGateway(ctx context.Context, conf *config.GatewayConfig, pl plugins.LoaderInterface, opts ...GatewayOption) *Gateway {
+func WithLogger(logger *slog.Logger) GatewayOption {
+	return func(o *GatewayOptions) {
+		o.logger = logger
+	}
+}
+
+func NewGateway(
+	ctx context.Context,
+	mgr *configv1.GatewayConfigManager,
+	storageBackend storage.Backend,
+	pl plugins.LoaderInterface,
+	opts ...GatewayOption,
+) *Gateway {
 	options := GatewayOptions{
-		lifecycler: config.NewUnavailableLifecycler(cfgmeta.ObjectList{conf}),
+		logger: logger.New().WithGroup("gateway"),
 	}
 	options.apply(opts...)
 
-	lg := logger.New().WithGroup("gateway")
-	conf.Spec.SetDefaults()
+	lg := options.logger
 
-	storageBackend, err := machinery.ConfigureStorageBackend(ctx, &conf.Spec.Storage)
-	if err != nil {
-		lg.With(
-			logger.Err(err),
-		).Error("failed to configure storage backend")
-		panic("failed to configure storage backend")
-	}
-
-	// configure the server-side installer template with the external hostname
-	// and grpc port which agents will connect to
-	_, port, err := net.SplitHostPort(conf.Spec.GRPCListenAddress)
-	if err != nil {
-		lg.With(
-			logger.Err(err),
-		).Error("failed to parse listen address")
-		panic("failed to parse listen address")
-	}
-	capBackendStore := capabilities.NewBackendStore(capabilities.ServerInstallerTemplateSpec{
-		Address: conf.Spec.Hostname,
-		Port:    fmt.Sprint(port),
-	}, lg)
+	capBackendStore := capabilities.NewBackendStore(lg)
 
 	// add capabilities from plugins
 	pl.Hook(hooks.OnLoadM(func(p types.CapabilityBackendPlugin, md meta.PluginMeta) {
-		info, err := p.Info(ctx, &emptypb.Empty{})
+		list, err := p.List(ctx, &emptypb.Empty{})
 		if err != nil {
 			lg.With(
 				"plugin", md.Module,
-			).Error("failed to get capability info")
+				logger.Err(err),
+			).Error("failed to list capabilities")
 			return
 		}
-		if err := capBackendStore.Add(info.Name, p); err != nil {
+		for _, cap := range list.GetItems() {
+			info, err := p.Info(ctx, &corev1.Reference{Id: cap.GetName()})
+			if err != nil {
+				lg.With(
+					"plugin", md.Module,
+				).Error("failed to get capability info")
+				return
+			}
+			if err := capBackendStore.Add(info.Name, p); err != nil {
+				lg.With(
+					"plugin", md.Module,
+					logger.Err(err),
+				).Error("failed to add capability backend")
+			}
 			lg.With(
 				"plugin", md.Module,
-				logger.Err(err),
-			).Error("failed to add capability backend")
+				"capability", info.Name,
+			).Info("added capability backend")
 		}
-		lg.With(
-			"plugin", md.Module,
-			"capability", info.Name,
-		).Info("added capability backend")
 	}))
 
 	// serve system plugin kv stores
@@ -150,8 +142,14 @@ func NewGateway(ctx context.Context, conf *config.GatewayConfig, pl plugins.Load
 			).Warn("system plugin module name is invalid")
 			return
 		}
-		store := storageBackend.KeyValueStore(ns)
-		go p.ServeKeyValueStore(store)
+		go func() {
+			if err := p.ServeKeyValueStore(ns, storageBackend); err != nil {
+				lg.With(
+					"plugin", md.Module,
+					logger.Err(err),
+				).Error("failed to serve key-value store to plugin")
+			}
+		}()
 	}))
 
 	// serve caching provider for plugin RPCs
@@ -164,28 +162,26 @@ func NewGateway(ctx context.Context, conf *config.GatewayConfig, pl plugins.Load
 			).Warn("system plugin module name is invalid")
 			return
 		}
-		go p.ServeCachingProvider()
+		go func() {
+			if err := p.ServeCachingProvider(); err != nil {
+				lg.With(
+					"plugin", md.Module,
+					logger.Err(err),
+				).Error("failed to serve caching provider to plugin")
+			}
+		}()
 	}))
 
 	// set up http server
-	httpServer := NewHTTPServer(ctx, &conf.Spec, lg, pl)
-
-	// Set up cluster auth
-	ephemeralKeys, err := machinery.LoadEphemeralKeys(afero.Afero{
-		Fs: afero.NewOsFs(),
-	}, conf.Spec.Keyring.EphemeralKeyDirs...)
+	httpServer, err := NewHTTPServer(ctx, mgr, lg, pl)
 	if err != nil {
-		lg.With(
-			logger.Err(err),
-		).Error("failed to load ephemeral keys")
-		panic("failed to load ephemeral keys")
+		panic(fmt.Errorf("failed to create http server: %w", err))
 	}
 
 	v1Verifier := challenges.NewKeyringVerifier(storageBackend, authv1.DomainString, lg.WithGroup("authv1"))
 	v2Verifier := challenges.NewKeyringVerifier(storageBackend, authv2.DomainString, lg.WithGroup("authv2"))
 
-	sessionAttrChallenge, err := session.NewServerChallenge(
-		keyring.New(lo.ToAnySlice(ephemeralKeys)...))
+	sessionAttrChallenge, err := session.NewServerChallenge(ctx, mgr, lg)
 	if err != nil {
 		lg.With(
 			logger.Err(err),
@@ -204,39 +200,59 @@ func NewGateway(ctx context.Context, conf *config.GatewayConfig, pl plugins.Load
 	//set up update server
 	updateServer := update.NewUpdateServer(lg)
 
-	// set up plugin sync server
-	binarySyncServer, err := patchserver.NewFilesystemPluginSyncServer(conf.Spec.Plugins, lg,
-		patchserver.WithPluginSyncFilters(func(pm meta.PluginMeta) bool {
-			if pm.ExtendedMetadata != nil {
-				// only sync plugins that have the agent mode set
-				return slices.Contains(pm.ExtendedMetadata.ModeList.Modes, meta.ModeAgent)
+	go func() {
+		// set up plugin sync server
+		lg.Debug("waiting for plugin config...")
+		pluginConfig := subtle.WaitOneMessage[*configv1.PluginsSpec](ctx, mgr.Reactive(protopath.Path(configv1.ProtoPath().Plugins())))
+		if pluginConfig == nil {
+			if ctx.Err() != nil {
+				return
 			}
-			return true // default to syncing all plugins
-		}),
-	)
-	if err != nil {
-		lg.With(
-			logger.Err(err),
-		).Error("failed to create plugin sync server")
-		panic("failed to create plugin sync server")
-	}
+			lg.Error("plugin config not received")
+			return
+		}
+		lg.Debug("plugin config received")
+		patchEngine := patch.NewReactivePatchEngine(ctx, lg, mgr.Reactive(configv1.ProtoPath().Upgrades().Plugins().Binary().PatchEngine()))
 
-	if err := binarySyncServer.RunGarbageCollection(ctx, storageBackend); err != nil {
-		lg.With(
-			logger.Err(err),
-		).Error("failed to run garbage collection")
-	}
+		binarySyncServer, err := patchserver.NewFilesystemPluginSyncServer(ctx, pluginConfig, patchEngine, lg,
+			patchserver.WithPluginSyncFilters(func(pm meta.PluginMeta) bool {
+				if pm.ExtendedMetadata != nil {
+					// only sync plugins that have the agent mode set
+					return slices.Contains(pm.ExtendedMetadata.ModeList.Modes, meta.ModeAgent)
+				}
+				return true // default to syncing all plugins
+			}),
+		)
+		if err != nil {
+			lg.With(
+				logger.Err(err),
+			).Error("failed to create plugin sync server")
+			return
+		}
+		lg.With("strategy", binarySyncServer.Strategy()).Info("plugin sync server starting")
 
-	updateServer.RegisterUpdateHandler(binarySyncServer.Strategy(), binarySyncServer)
+		if err := binarySyncServer.RunGarbageCollection(ctx, storageBackend); err != nil {
+			lg.With(
+				logger.Err(err),
+			).Error("failed to run garbage collection")
+		}
 
-	kubernetesSyncServer, err := k8sserver.NewKubernetesSyncServer(conf.Spec.AgentUpgrades.Kubernetes, lg)
-	if err != nil {
-		lg.With(
-			logger.Err(err),
-		).Error("failed to create kubernetes agent sync server")
-		panic("failed to create kubernetes agent sync server")
-	}
-	updateServer.RegisterUpdateHandler(kubernetesSyncServer.Strategy(), kubernetesSyncServer)
+		updateServer.RegisterUpdateHandler(binarySyncServer.Strategy(), binarySyncServer)
+	}()
+
+	go func() {
+		k8sSyncServerConfig := reactive.Message[*configv1.KubernetesAgentUpgradeSpec](
+			mgr.Reactive(protopath.Path(configv1.ProtoPath().Upgrades().Agents().Kubernetes())))
+		kubernetesSyncServer, err := k8sserver.NewKubernetesSyncServer(ctx, k8sSyncServerConfig, lg)
+		if err != nil {
+			lg.With(
+				logger.Err(err),
+			).Error("failed to create kubernetes agent sync server")
+			// panic("failed to create kubernetes agent sync server")
+		} else {
+			updateServer.RegisterUpdateHandler(kubernetesSyncServer.Strategy(), kubernetesSyncServer)
+		}
+	}()
 
 	for _, handler := range options.extraUpdateHandlers {
 		updateServer.RegisterUpdateHandler(handler.Strategy(), handler)
@@ -244,40 +260,64 @@ func NewGateway(ctx context.Context, conf *config.GatewayConfig, pl plugins.Load
 
 	httpServer.metricsRegisterer.MustRegister(updateServer.Collectors()...)
 
-	// set up grpc server
-	tlsConfig, pkey, err := grpcTLSConfig(&conf.Spec)
-	if err != nil {
-		lg.With(
-			logger.Err(err),
-		).Error("failed to load TLS config")
-		panic("failed to load TLS config")
-	}
-
-	rateLimitOpts := []RatelimiterOption{}
-	if conf.Spec.RateLimit != nil {
-		rateLimitOpts = append(rateLimitOpts, WithRate(conf.Spec.RateLimit.Rate))
-		rateLimitOpts = append(rateLimitOpts, WithBurst(conf.Spec.RateLimit.Burst))
-	}
-	grpcServer := NewGRPCServer(&conf.Spec, lg,
-		grpc.Creds(credentials.NewTLS(tlsConfig)),
-		grpc.ChainStreamInterceptor(
-			NewRateLimiterInterceptor(lg, rateLimitOpts...).StreamServerInterceptor(),
-			clusterAuth,
-			updateServer.StreamServerInterceptor(),
-			NewLastKnownDetailsApplier(storageBackend),
-		),
-	)
-
-	// set up stream server
 	listener := health.NewListener()
+	buffer := health.NewBuffer()
+
+	// set up connection tracker
+	var connectionTracker *ConnectionTracker
+	{
+		storageBackendLmBroker := storageBackend.(storage.LockManagerBroker)
+		lg := lg.WithGroup("connections")
+		connectionsKv := storageBackend.KeyValueStore("connections")
+		connectionsLm := storageBackendLmBroker.LockManager("lock/connections")
+
+		connectionTracker = NewConnectionTracker(ctx, mgr, connectionsKv, connectionsLm, lg)
+
+		writerManager := NewHealthStatusWriterManager(ctx, connectionsKv, lg)
+		go health.Copy(ctx, writerManager, listener)
+		// localUpdater := health.NewFanOutUpdater(listener, writerManager)
+		connectionTracker.AddTrackedConnectionListener(writerManager)
+
+		kvReader, err := NewHealthStatusReader(ctx, connectionsKv)
+		if err != nil {
+			panic(fmt.Errorf("failed to create health status reader: %w", err))
+		}
+		go health.Copy(ctx, buffer, kvReader)
+	}
+
 	monitor := health.NewMonitor(health.WithLogger(lg.WithGroup("monitor")))
-	delegate := NewDelegateServer(storageBackend, lg)
-	// set up agent connection handlers
+	delegateServerOpts := []DelegateServerOption{}
+	if connectionTracker != nil {
+		delegateServerOpts = append(delegateServerOpts, WithConnectionTracker(connectionTracker))
+	}
+	delegate := NewDelegateServer(mgr, storageBackend, lg, delegateServerOpts...)
 	agentHandler := MultiConnectionHandler(listener, delegate)
 
-	go monitor.Run(ctx, listener)
-	streamSvc := NewStreamServer(agentHandler, storageBackend, httpServer.metricsRegisterer, lg)
+	capDataSource := &capabilitiesDataSource{
+		capBackendStore: capBackendStore,
+		delegate:        delegate,
+		logger:          lg.WithGroup("capabilities"),
+	}
 
+	go monitor.Run(ctx, buffer)
+
+	// initialize grpc server
+
+	var streamInterceptors []grpc.StreamServerInterceptor
+	rateLimitConfig := reactive.Message[*configv1.RateLimitingSpec](mgr.Reactive(protopath.Path(configv1.ProtoPath().RateLimiting())))
+	streamInterceptors = append(streamInterceptors, NewRateLimiterInterceptor(ctx, lg, rateLimitConfig).StreamServerInterceptor())
+	streamInterceptors = append(streamInterceptors, clusterAuth)
+	if connectionTracker != nil {
+		streamInterceptors = append(streamInterceptors, connectionTracker.StreamServerInterceptor())
+	}
+	streamInterceptors = append(streamInterceptors, updateServer.StreamServerInterceptor())
+	streamInterceptors = append(streamInterceptors, NewLastKnownDetailsApplier(storageBackend))
+
+	grpcServer := NewGRPCServer(mgr, lg,
+		grpc.ChainStreamInterceptor(streamInterceptors...),
+	)
+
+	streamSvc := NewStreamServer(agentHandler, storageBackend, httpServer.metricsRegisterer, lg)
 	controlv1.RegisterHealthListenerServer(streamSvc, listener)
 	streamv1.RegisterDelegateServer(streamSvc.InternalServiceRegistrar(), delegate)
 	streamv1.RegisterStreamServer(grpcServer, streamSvc)
@@ -286,22 +326,22 @@ func NewGateway(ctx context.Context, conf *config.GatewayConfig, pl plugins.Load
 
 	pl.Hook(hooks.OnLoadMC(streamSvc.OnPluginLoad))
 
+	certs := reactive.Message[*configv1.CertsSpec](mgr.Reactive(protopath.Path(configv1.ProtoPath().Certs())))
 	// set up bootstrap server
-	bootstrapServerV1 := bootstrap.NewServer(storageBackend, pkey, capBackendStore)
-	bootstrapServerV2 := bootstrap.NewServerV2(storageBackend, pkey)
-	bootstrapv1.RegisterBootstrapServer(grpcServer, bootstrapServerV1)
+	bootstrapServerV2 := bootstrap.NewServerV2(ctx, bootstrap.NewStorage(storageBackend), certs, lg)
 	bootstrapv2.RegisterBootstrapServer(grpcServer, bootstrapServerV2)
 
 	g := &Gateway{
-		GatewayOptions:  options,
-		tlsConfig:       tlsConfig,
-		config:          conf,
-		logger:          lg,
-		storageBackend:  storageBackend,
-		capBackendStore: capBackendStore,
-		httpServer:      httpServer,
-		grpcServer:      grpcServer,
-		statusQuerier:   monitor,
+		certs:             certs,
+		mgr:               mgr,
+		GatewayOptions:    options,
+		storageBackend:    storageBackend,
+		capDataSource:     capDataSource,
+		httpServer:        httpServer,
+		grpcServer:        grpcServer,
+		statusQuerier:     monitor,
+		connectionTracker: connectionTracker,
+		delegate:          delegate,
 	}
 
 	return g
@@ -313,35 +353,62 @@ type keyValueStoreServer interface {
 
 func (g *Gateway) ListenAndServe(ctx context.Context) error {
 	lg := g.logger
-	ctx, ca := context.WithCancel(ctx)
-
-	// start http server
-	e1 := lo.Async(func() error {
-		err := g.httpServer.ListenAndServe(ctx)
-		if err != nil {
-			if errors.Is(err, context.Canceled) {
-				lg.Info("http server stopped")
-			} else {
-				lg.With(logger.Err(err)).Warn("http server exited with error")
+	ctx, ca := context.WithCancelCause(ctx)
+	channels := []<-chan error{
+		// start http server
+		lo.Async(func() error {
+			err := g.httpServer.ListenAndServe(ctx)
+			if err != nil {
+				if errors.Is(err, context.Canceled) {
+					lg.Info("http server stopped")
+				} else {
+					lg.With(logger.Err(err)).Warn("http server exited with error")
+				}
 			}
-		}
-		return err
-	})
-
-	// start grpc server
-	e2 := lo.Async(func() error {
-		err := g.grpcServer.ListenAndServe(ctx)
-		if err != nil {
-			if errors.Is(err, context.Canceled) {
-				lg.Info("grpc server stopped")
-			} else {
-				lg.With(logger.Err(err)).Warn("grpc server exited with error")
+			return err
+		}),
+		// start grpc server
+		lo.Async(func() error {
+			err := g.grpcServer.ListenAndServe(ctx)
+			if err != nil {
+				if errors.Is(err, context.Canceled) {
+					lg.Info("grpc server stopped")
+				} else {
+					lg.With(logger.Err(err)).Warn("grpc server exited with error")
+				}
 			}
-		}
-		return err
-	})
+			return err
+		}),
+	}
 
-	return util.WaitAll(ctx, ca, e1, e2)
+	if g.connectionTracker != nil {
+		channels = append(channels, lo.Async(func() error {
+			err := g.connectionTracker.Run(ctx)
+			if err != nil {
+				if errors.Is(err, context.Canceled) {
+					lg.Info("connection tracker stopped")
+				} else {
+					lg.With(logger.Err(err)).Warn("connection tracker exited with error")
+				}
+			}
+			return err
+		}))
+		channels = append(channels, lo.Async(func() error {
+			relaySrv := g.delegate.NewRelayServer()
+			err := relaySrv.ListenAndServe(ctx)
+			if err != nil {
+				if errors.Is(err, context.Canceled) {
+					lg.Info("relay server stopped")
+				} else {
+					lg.With(logger.Err(err)).Warn("relay server exited with error")
+				}
+			}
+			return err
+		}))
+	}
+
+	util.WaitAll(ctx, ca, channels...)
+	return context.Cause(ctx)
 }
 
 // Implements management.CoreDataSource
@@ -349,14 +416,22 @@ func (g *Gateway) StorageBackend() storage.Backend {
 	return g.storageBackend
 }
 
+func (g *Gateway) ConfigManager() *configv1.GatewayConfigManager {
+	return g.mgr
+}
+
 // Implements management.CoreDataSource
 func (g *Gateway) TLSConfig() *tls.Config {
-	return g.httpServer.tlsConfig
+	tc, err := g.certs.Value().AsTlsConfig(tls.NoClientCert)
+	if err != nil {
+		return nil
+	}
+	return tc
 }
 
 // Implements management.CapabilitiesDataSource
-func (g *Gateway) CapabilitiesStore() capabilities.BackendStore {
-	return g.capBackendStore
+func (g *Gateway) CapabilitiesDataSource() management.CapabilitiesDataSource {
+	return g.capDataSource
 }
 
 // Implements management.HealthStatusDataSource
@@ -375,31 +450,4 @@ func (g *Gateway) WatchClusterHealthStatus(ctx context.Context) <-chan *corev1.C
 
 func (g *Gateway) MustRegisterCollector(collector prometheus.Collector) {
 	g.httpServer.metricsRegisterer.MustRegister(collector)
-}
-
-func grpcTLSConfig(cfg *v1beta1.GatewayConfigSpec) (*tls.Config, crypto.Signer, error) {
-	servingCertBundle, caPool, err := util.LoadServingCertBundle(cfg.Certs)
-	if err != nil {
-		return nil, nil, err
-	}
-	return &tls.Config{
-		MinVersion:   tls.VersionTLS13,
-		RootCAs:      caPool,
-		Certificates: []tls.Certificate{*servingCertBundle},
-		ClientAuth:   tls.NoClientCert,
-	}, servingCertBundle.PrivateKey.(crypto.Signer), nil
-}
-
-func httpTLSConfig(cfg *v1beta1.GatewayConfigSpec) (*tls.Config, crypto.Signer, error) {
-	servingCertBundle, caPool, err := util.LoadServingCertBundle(cfg.Certs)
-	if err != nil {
-		return nil, nil, err
-	}
-	return &tls.Config{
-		MinVersion:   tls.VersionTLS12,
-		RootCAs:      caPool,
-		ClientCAs:    caPool,
-		Certificates: []tls.Certificate{*servingCertBundle},
-		ClientAuth:   tls.RequireAndVerifyClientCert,
-	}, servingCertBundle.PrivateKey.(crypto.Signer), nil
 }

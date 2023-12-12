@@ -1,42 +1,30 @@
 package alerting
 
 import (
-	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"os"
-	"time"
 )
 
 func (p *Plugin) loadCerts() *tls.Config {
-	ctx, ca := context.WithTimeout(context.Background(), 10*time.Second)
-	defer ca()
-	gwConfig, err := p.gatewayConfig.GetContext(ctx)
-	if err != nil {
-		p.logger.Error(fmt.Sprintf("plugin startup failed : config was not loaded: %s", err))
-		os.Exit(1)
-	}
-	alertingServerCa := gwConfig.Spec.Alerting.Certs.ServerCA
-	alertingClientCa := gwConfig.Spec.Alerting.Certs.ClientCA
-	alertingClientCert := gwConfig.Spec.Alerting.Certs.ClientCert
-	alertingClientKey := gwConfig.Spec.Alerting.Certs.ClientKey
+	certs := p.clusterDriver.Get().GetAlertingServiceConfig().Certs
 
 	p.logger.With(
-		"alertingServerCa", alertingServerCa,
-		"alertingClientCa", alertingClientCa,
-		"alertingClientCert", alertingClientCert,
-		"alertingClientKey", alertingClientKey,
+		"alertingServerCa", certs.ServerCA,
+		"alertingClientCa", certs.ClientCA,
+		"alertingClientCert", certs.ClientCert,
+		"alertingClientKey", certs.ClientKey,
 	).Debug("loading certs")
 
-	clientCert, err := tls.LoadX509KeyPair(alertingClientCert, alertingClientKey)
+	clientCert, err := tls.LoadX509KeyPair(certs.ClientCert, certs.ClientKey)
 	if err != nil {
 		p.logger.Error(fmt.Sprintf("failed to load alerting client key id : %s", err))
 		os.Exit(1)
 	}
 
 	serverCaPool := x509.NewCertPool()
-	serverCaData, err := os.ReadFile(alertingServerCa)
+	serverCaData, err := os.ReadFile(certs.ServerCA)
 	if err != nil {
 		p.logger.Error(fmt.Sprintf("failed to read alerting server CA %s", err))
 		os.Exit(1)
@@ -48,7 +36,7 @@ func (p *Plugin) loadCerts() *tls.Config {
 	}
 
 	clientCaPool := x509.NewCertPool()
-	clientCaData, err := os.ReadFile(alertingClientCa)
+	clientCaData, err := os.ReadFile(certs.ClientCA)
 	if err != nil {
 		p.logger.Error(fmt.Sprintf("failed to load alerting client CA : %s", err))
 		os.Exit(1)

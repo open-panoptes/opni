@@ -9,8 +9,9 @@ import (
 
 	"github.com/rancher/opni/pkg/agent"
 	capabilityv1 "github.com/rancher/opni/pkg/apis/capability/v1"
-	opnicorev1 "github.com/rancher/opni/pkg/apis/core/v1"
+	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
+	proxyv1 "github.com/rancher/opni/pkg/apis/proxy/v1"
 	"github.com/rancher/opni/pkg/capabilities/wellknown"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/management"
@@ -27,6 +28,8 @@ import (
 
 type LoggingBackend struct {
 	capabilityv1.UnsafeBackendServer
+	capabilityv1.UnsafeRBACManagerServer
+	proxyv1.UnsafeRegisterProxyServer
 	node.UnsafeNodeLoggingCapabilityServer
 	LoggingBackendConfig
 	util.Initializer
@@ -44,9 +47,14 @@ type LoggingBackendConfig struct {
 	UninstallController *task.Controller                          `validate:"required"`
 	OpensearchManager   *opensearchdata.Manager                   `validate:"required"`
 	ClusterDriver       driver.ClusterDriver                      `validate:"required"`
+	RBACDriver          driver.RBACDriver                         `validate:"required"`
 }
 
-var _ node.NodeLoggingCapabilityServer = (*LoggingBackend)(nil)
+var (
+	_ node.NodeLoggingCapabilityServer = (*LoggingBackend)(nil)
+	_ proxyv1.RegisterProxyServer      = (*LoggingBackend)(nil)
+	_ capabilityv1.RBACManagerServer   = (*LoggingBackend)(nil)
+)
 
 // TODO: set up watches on underlying k8s objects to dynamically request a sync
 func (b *LoggingBackend) Initialize(conf LoggingBackendConfig) {
@@ -58,10 +66,10 @@ func (b *LoggingBackend) Initialize(conf LoggingBackendConfig) {
 
 		b.watcher = management.NewManagementWatcherHooks[*managementv1.WatchEvent](context.TODO())
 		b.watcher.RegisterHook(func(event *managementv1.WatchEvent) bool {
-			return event.Type == managementv1.WatchEventType_Put && slices.ContainsFunc(event.Cluster.Metadata.Capabilities, func(c *opnicorev1.ClusterCapability) bool {
+			return event.Type == managementv1.WatchEventType_Put && slices.ContainsFunc(event.Cluster.Metadata.Capabilities, func(c *corev1.ClusterCapability) bool {
 				return c.Name == wellknown.CapabilityLogs
 			})
-		}, b.updateClusterMetadata)
+		}, b.updateClusterMetadata, b.updateRoles)
 
 		go func() {
 			clusters, err := b.MgmtClient.ListClusters(context.Background(), &managementv1.ListClustersRequest{})
@@ -82,10 +90,20 @@ func (b *LoggingBackend) Initialize(conf LoggingBackendConfig) {
 	})
 }
 
-func (b *LoggingBackend) Info(context.Context, *emptypb.Empty) (*capabilityv1.Details, error) {
+func (b *LoggingBackend) Info(context.Context, *corev1.Reference) (*capabilityv1.Details, error) {
+	return b.info(), nil
+}
+
+func (b *LoggingBackend) info() *capabilityv1.Details {
 	return &capabilityv1.Details{
-		Name:    wellknown.CapabilityLogs,
-		Source:  "plugin_logging",
-		Drivers: driver.Drivers.List(),
+		Name:             wellknown.CapabilityLogs,
+		Source:           "plugin_logging",
+		AvailableDrivers: driver.ClusterDrivers.List(),
+	}
+}
+
+func (b *LoggingBackend) List(context.Context, *emptypb.Empty) (*capabilityv1.DetailsList, error) {
+	return &capabilityv1.DetailsList{
+		Items: []*capabilityv1.Details{b.info()},
 	}, nil
 }

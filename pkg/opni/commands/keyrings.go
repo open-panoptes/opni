@@ -15,14 +15,14 @@ import (
 
 	opnicorev1beta1 "github.com/rancher/opni/apis/core/v1beta1"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
-	"github.com/rancher/opni/pkg/config/v1beta1"
+	configv1 "github.com/rancher/opni/pkg/config/v1"
 	"github.com/rancher/opni/pkg/keyring/ephemeral"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/machinery"
 	"github.com/rancher/opni/pkg/opni/cliutil"
+	"github.com/rancher/opni/pkg/plugins/driverutil"
 	"github.com/rancher/opni/pkg/util"
 	"github.com/spf13/cobra"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 func BuildKeyringsCmd() *cobra.Command {
@@ -34,6 +34,7 @@ func BuildKeyringsCmd() *cobra.Command {
 	cmd.AddCommand(BuildKeyringsGetCmd())
 	cmd.AddCommand(BuildKeyringsGenKeyCmd())
 	ConfigureManagementCommand(cmd)
+	ConfigureGatewayConfigCmd(cmd)
 	return cmd
 }
 
@@ -51,29 +52,19 @@ func BuildKeyringsGetCmd() *cobra.Command {
 			logger.DefaultLogLevel = slog.LevelWarn
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			resp, err := mgmtClient.GetConfig(cmd.Context(), &emptypb.Empty{})
-			if err != nil {
-				return fmt.Errorf("failed to get config: %w", err)
-			}
-			objects, err := machinery.LoadDocuments(resp.Documents)
-			if err != nil {
-				return fmt.Errorf("failed to load config: %w", err)
-			}
-			var gatewayConf *v1beta1.GatewayConfig
-			ok := objects.Visit(func(gc *v1beta1.GatewayConfig) {
-				if gatewayConf == nil {
-					gatewayConf = gc
-				}
-			})
+			client, ok := configv1.GatewayConfigContextInjector.ClientFromContext(cmd.Context())
 			if !ok {
-				return fmt.Errorf("gateway config not found")
+				return fmt.Errorf("gateway config client not found in context")
+			}
+			gatewayConf, err := client.GetConfiguration(cmd.Context(), &driverutil.GetRequest{})
+			if err != nil {
+				return fmt.Errorf("failed to get gateway configuration: %w", err)
 			}
 
-			backend, err := machinery.ConfigureStorageBackend(cmd.Context(), &gatewayConf.Spec.Storage)
+			backend, err := machinery.ConfigureStorageBackendV1(cmd.Context(), gatewayConf.GetStorage())
 			if err != nil {
 				return fmt.Errorf("failed to configure storage backend: %w", err)
 			}
-
 			store := backend.KeyringStore("gateway", &corev1.Reference{
 				Id: args[0],
 			})
