@@ -15,11 +15,6 @@ export default {
 </script>
 <template>
   <EnabledDisabled v-model="value.enabled" disabled-message="Grafana is not currently enabled. Enabling it will install additional resources.">
-    <div class="row">
-      <div class="col span-4">
-        <LabeledInput v-model="value.hostname" label="Hostname" :required="true" />
-      </div>
-    </div>
   </EnabledDisabled>
 </template>
 

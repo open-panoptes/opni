@@ -25,7 +25,7 @@ export async function GetDefaultConfiguration(input: GetRequest): Promise<Gatewa
         'Content-Type': 'application/octet-stream',
         'Accept': 'application/octet-stream',
       },
-      url: `/opni-api/GatewayConfig`,
+      url: `/opni-api/GatewayConfig/configuration/default`,
     data: input?.toBinary() as ArrayBuffer
     })).data;
 
@@ -50,13 +50,13 @@ export async function SetDefaultConfiguration(input: SetRequest): Promise<void> 
     }
   
     const rawResponse = (await axios.request({
-      method: 'get',
+      method: 'put',
       responseType: 'arraybuffer',
       headers: {
         'Content-Type': 'application/octet-stream',
         'Accept': 'application/octet-stream',
       },
-      url: `/opni-api/GatewayConfig`,
+      url: `/opni-api/GatewayConfig/configuration/default`,
     data: input?.toBinary() as ArrayBuffer
     })).data;
 
@@ -87,7 +87,7 @@ export async function GetConfiguration(input: GetRequest): Promise<GatewayConfig
         'Content-Type': 'application/octet-stream',
         'Accept': 'application/octet-stream',
       },
-      url: `/opni-api/GatewayConfig`,
+      url: `/opni-api/GatewayConfig/configuration`,
     data: input?.toBinary() as ArrayBuffer
     })).data;
 
@@ -112,13 +112,13 @@ export async function SetConfiguration(input: SetRequest): Promise<void> {
     }
   
     const rawResponse = (await axios.request({
-      method: 'get',
+      method: 'put',
       responseType: 'arraybuffer',
       headers: {
         'Content-Type': 'application/octet-stream',
         'Accept': 'application/octet-stream',
       },
-      url: `/opni-api/GatewayConfig`,
+      url: `/opni-api/GatewayConfig/configuration`,
     data: input?.toBinary() as ArrayBuffer
     })).data;
 
@@ -139,13 +139,13 @@ export async function ResetDefaultConfiguration(): Promise<void> {
   try {
     
     const rawResponse = (await axios.request({
-      method: 'get',
+      method: 'post',
       responseType: 'arraybuffer',
       headers: {
         'Content-Type': 'application/octet-stream',
         'Accept': 'application/octet-stream',
       },
-      url: `/opni-api/GatewayConfig`
+      url: `/opni-api/GatewayConfig/configuration/default/reset`
     })).data;
 
     const response = rawResponse;
@@ -169,13 +169,13 @@ export async function ResetConfiguration(input: ResetRequest): Promise<void> {
     }
   
     const rawResponse = (await axios.request({
-      method: 'get',
+      method: 'post',
       responseType: 'arraybuffer',
       headers: {
         'Content-Type': 'application/octet-stream',
         'Accept': 'application/octet-stream',
       },
-      url: `/opni-api/GatewayConfig`,
+      url: `/opni-api/GatewayConfig/configuration/reset`,
     data: input?.toBinary() as ArrayBuffer
     })).data;
 
@@ -200,13 +200,13 @@ export async function DryRun(input: DryRunRequest): Promise<DryRunResponse> {
     }
   
     const rawResponse = (await axios.request({
-      method: 'get',
+      method: 'post',
       responseType: 'arraybuffer',
       headers: {
         'Content-Type': 'application/octet-stream',
         'Accept': 'application/octet-stream',
       },
-      url: `/opni-api/GatewayConfig`,
+      url: `/opni-api/GatewayConfig/dry-run`,
     data: input?.toBinary() as ArrayBuffer
     })).data;
 
@@ -237,7 +237,7 @@ export async function ConfigurationHistory(input: ConfigurationHistoryRequest): 
         'Content-Type': 'application/octet-stream',
         'Accept': 'application/octet-stream',
       },
-      url: `/opni-api/GatewayConfig`,
+      url: `/opni-api/GatewayConfig/configuration/history`,
     data: input?.toBinary() as ArrayBuffer
     })).data;
 
@@ -255,7 +255,7 @@ export async function ConfigurationHistory(input: ConfigurationHistoryRequest): 
 
 
 export function WatchReactive(input: ReactiveWatchRequest, callback: (data: ReactiveEvents) => void): () => Promise<any> {
-  const socket = new Socket('/opni-api/GatewayConfig', true);
+  const socket = new Socket('/opni-api/GatewayConfig/configuration/watch', true);
   Object.assign(socket, { frameTimeout: null })
   socket.addEventListener(EVENT_MESSAGE, (e: any) => {
     const event = e.detail;

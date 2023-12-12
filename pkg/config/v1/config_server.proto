@@ -7,6 +7,7 @@ import "github.com/rancher/opni/pkg/apis/core/v1/core.proto";
 import "github.com/rancher/opni/pkg/config/v1/gateway_config.proto";
 import "github.com/rancher/opni/pkg/plugins/driverutil/types.proto";
 import "github.com/rancher/opni/pkg/validation/validate.proto";
+import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 
@@ -25,16 +26,26 @@ service GatewayConfig {
     option (cli.command) = {
       use: "get-default"
     };
+    option (google.api.http) = {
+      get: "/configuration/default"
+    };
   }
   rpc SetDefaultConfiguration(SetRequest) returns (google.protobuf.Empty) {
     option (cli.command) = {
       use:         "set-default"
       granularity: EditMessage
     };
+    option (google.api.http) = {
+      put:  "/configuration/default"
+      body: "*"
+    };
   }
   rpc GetConfiguration(driverutil.GetRequest) returns (GatewayConfigSpec) {
     option (cli.command) = {
       use: "get"
+    };
+    option (google.api.http) = {
+      get: "/configuration"
     };
   }
   rpc SetConfiguration(SetRequest) returns (google.protobuf.Empty) {
@@ -42,10 +53,17 @@ service GatewayConfig {
       use:         "set"
       granularity: EditMessage
     };
+    option (google.api.http) = {
+      put:  "/configuration"
+      body: "*"
+    };
   }
   rpc ResetDefaultConfiguration(google.protobuf.Empty) returns (google.protobuf.Empty) {
     option (cli.command) = {
       use: "reset-default"
+    };
+    option (google.api.http) = {
+      post: "/configuration/default/reset"
     };
   }
   rpc ResetConfiguration(ResetRequest) returns (google.protobuf.Empty) {
@@ -53,18 +71,33 @@ service GatewayConfig {
       use:         "reset"
       granularity: EditMessage
     };
+    option (google.api.http) = {
+      post: "/configuration/reset"
+      body: "*"
+    };
   }
   rpc DryRun(DryRunRequest) returns (DryRunResponse) {
     option (cli.command).skip = true;
+    option (google.api.http) = {
+      post: "/dry-run"
+      body: "*"
+    };
   }
   rpc ConfigurationHistory(driverutil.ConfigurationHistoryRequest) returns (HistoryResponse) {
     option (cli.command) = {
       use: "history"
     };
+    option (google.api.http) = {
+      get: "/configuration/history"
+    };
   }
   rpc WatchReactive(core.ReactiveWatchRequest) returns (stream core.ReactiveEvents) {
     option (cli.command) = {
       use: "watch"
+    };
+    option (google.api.http) = {
+      get:  "/configuration/watch"
+      body: "*"
     };
   }
 }

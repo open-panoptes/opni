@@ -79,8 +79,12 @@ func BuildGatewayConfigCmd() *cobra.Command {
 func BuildGatewayConfigGetDefaultConfigurationCmd() *cobra.Command {
 	in := &driverutil.GetRequest{}
 	cmd := &cobra.Command{
-		Use:               "get-default",
-		Short:             "",
+		Use:   "get-default",
+		Short: "",
+		Long: `
+HTTP handlers for this method:
+- GET /configuration/default
+`[1:],
 		Args:              cobra.NoArgs,
 		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -107,8 +111,12 @@ func BuildGatewayConfigGetDefaultConfigurationCmd() *cobra.Command {
 func BuildGatewayConfigSetDefaultConfigurationCmd() *cobra.Command {
 	in := &SetRequest{}
 	cmd := &cobra.Command{
-		Use:               "set-default",
-		Short:             "",
+		Use:   "set-default",
+		Short: "",
+		Long: `
+HTTP handlers for this method:
+- PUT /configuration/default
+`[1:],
 		Args:              cobra.NoArgs,
 		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -154,8 +162,12 @@ func BuildGatewayConfigSetDefaultConfigurationCmd() *cobra.Command {
 func BuildGatewayConfigGetConfigurationCmd() *cobra.Command {
 	in := &driverutil.GetRequest{}
 	cmd := &cobra.Command{
-		Use:               "get",
-		Short:             "",
+		Use:   "get",
+		Short: "",
+		Long: `
+HTTP handlers for this method:
+- GET /configuration
+`[1:],
 		Args:              cobra.NoArgs,
 		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -182,8 +194,12 @@ func BuildGatewayConfigGetConfigurationCmd() *cobra.Command {
 func BuildGatewayConfigSetConfigurationCmd() *cobra.Command {
 	in := &SetRequest{}
 	cmd := &cobra.Command{
-		Use:               "set",
-		Short:             "",
+		Use:   "set",
+		Short: "",
+		Long: `
+HTTP handlers for this method:
+- PUT /configuration
+`[1:],
 		Args:              cobra.NoArgs,
 		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -228,8 +244,12 @@ func BuildGatewayConfigSetConfigurationCmd() *cobra.Command {
 
 func BuildGatewayConfigResetDefaultConfigurationCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "reset-default",
-		Short:             "",
+		Use:   "reset-default",
+		Short: "",
+		Long: `
+HTTP handlers for this method:
+- POST /configuration/default/reset
+`[1:],
 		Args:              cobra.NoArgs,
 		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -251,8 +271,12 @@ func BuildGatewayConfigResetDefaultConfigurationCmd() *cobra.Command {
 func BuildGatewayConfigResetConfigurationCmd() *cobra.Command {
 	in := &ResetRequest{}
 	cmd := &cobra.Command{
-		Use:               "reset",
-		Short:             "",
+		Use:   "reset",
+		Short: "",
+		Long: `
+HTTP handlers for this method:
+- POST /configuration/reset
+`[1:],
 		Args:              cobra.NoArgs,
 		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -292,8 +316,12 @@ func BuildGatewayConfigResetConfigurationCmd() *cobra.Command {
 func BuildGatewayConfigConfigurationHistoryCmd() *cobra.Command {
 	in := &driverutil.ConfigurationHistoryRequest{}
 	cmd := &cobra.Command{
-		Use:               "history",
-		Short:             "",
+		Use:   "history",
+		Short: "",
+		Long: `
+HTTP handlers for this method:
+- GET /configuration/history
+`[1:],
 		Args:              cobra.NoArgs,
 		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -190,19 +190,3 @@ export async function createRoleBinding(name: string, roleName: string, subjects
     id: name, roleId: roleName, subjects, metadata
   }));
 }
-
-export async function getGatewayConfig(vue: any): Promise<ConfigDocument[]> {
-  const config = (await axios.get<GatewayConfig>(`opni-api/Management/config`)).data;
-
-  return config.documents.map(configDocument => new ConfigDocument(configDocument, vue));
-}
-
-export function updateGatewayConfig(jsonDocuments: string[]): Promise<undefined> {
-  const documents = [];
-
-  for (const jsonDocument of jsonDocuments) {
-    documents.push({ json: base64Encode(jsonDocument) });
-  }
-
-  return axios.put(`opni-api/Management/config`, { documents });
-}
