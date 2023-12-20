@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/cortexproject/cortex/pkg/cortexpb"
+	"github.com/kralicky/tools-lite/pkg/memoize"
 	"github.com/rancher/opni/pkg/auth/cluster"
 	"github.com/rancher/opni/pkg/auth/session"
 	"github.com/rancher/opni/pkg/metrics"
@@ -20,7 +21,6 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-	"golang.org/x/tools/pkg/memoize"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"

@@ -7,13 +7,13 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/kralicky/ragu"
-	"github.com/kralicky/ragu/pkg/plugins/external"
-	"github.com/kralicky/ragu/pkg/plugins/golang"
-	"github.com/kralicky/ragu/pkg/plugins/golang/grpc"
-	"github.com/kralicky/ragu/pkg/plugins/python"
+	"github.com/kralicky/protols/sdk/codegen"
+	"github.com/kralicky/protols/sdk/codegen/generators/external"
+	"github.com/kralicky/protols/sdk/codegen/generators/golang"
+	"github.com/kralicky/protols/sdk/codegen/generators/golang/grpc"
+	"github.com/kralicky/protols/sdk/codegen/generators/x/python"
 	"github.com/magefile/mage/mg"
-	"github.com/rancher/opni/internal/codegen"
+	internalcodegen "github.com/rancher/opni/internal/codegen"
 	"github.com/rancher/opni/internal/codegen/cli"
 	"github.com/rancher/opni/internal/codegen/pathbuilder"
 	"github.com/rancher/opni/internal/codegen/templating"
@@ -23,12 +23,12 @@ import (
 
 // Generates Go protobuf code
 func (Generate) ProtobufGo(ctx context.Context) error {
-	mg.Deps(codegen.GenCortexConfig)
+	mg.Deps(internalcodegen.GenCortexConfig)
 	_, tr := Tracer.Start(ctx, "target.generate.protobuf.go")
 	defer tr.End()
 
 	grpc.SetRequireUnimplemented(false)
-	generators := []ragu.Generator{
+	generators := []codegen.Generator{
 		templating.CommentRenderer{},
 		golang.Generator,
 		grpc.Generator,
@@ -41,7 +41,7 @@ func (Generate) ProtobufGo(ctx context.Context) error {
 		},
 	}
 
-	out, err := ragu.GenerateCode(
+	out, err := codegen.GenerateCode(
 		generators,
 		[]string{
 			"internal/codegen/cli",
@@ -64,7 +64,7 @@ func (Generate) ProtobufGo(ctx context.Context) error {
 
 // Can be used to "bootstrap" the cli generator when modifying cli.proto
 func (Generate) ProtobufCLI() error {
-	out, err := ragu.GenerateCode([]ragu.Generator{golang.Generator, grpc.Generator, cli.NewGenerator()},
+	out, err := codegen.GenerateCode([]codegen.Generator{golang.Generator, grpc.Generator, cli.NewGenerator()},
 		[]string{"internal/codegen/cli"},
 	)
 	if err != nil {
@@ -83,8 +83,8 @@ func (Generate) ProtobufPython(ctx context.Context) error {
 	_, tr := Tracer.Start(ctx, "target.generate.protobuf.python")
 	defer tr.End()
 
-	generators := []ragu.Generator{python.Generator}
-	out, err := ragu.GenerateCode(generators, []string{"aiops"})
+	generators := []codegen.Generator{python.Generator}
+	out, err := codegen.GenerateCode(generators, []string{"aiops"})
 	if err != nil {
 		return err
 	}
@@ -113,14 +113,14 @@ func (Generate) ProtobufTypescript() error {
 		"internal/cortex",
 	}
 
-	out, err := ragu.GenerateCode([]ragu.Generator{
+	out, err := codegen.GenerateCode([]codegen.Generator{
 		external.NewGenerator("./web/service-generator/node_modules/.bin/protoc-gen-es", external.GeneratorOptions{
 			Opt: "target=ts,import_extension=none,ts_nocheck=false",
 		}),
 		external.NewGenerator([]string{"./web/service-generator/generate"}, external.GeneratorOptions{
 			Opt: "target=ts,import_extension=none,ts_nocheck=false",
 		}),
-	}, searchDirs, ragu.WithGenerateStrategy(ragu.AllDescriptorsExceptGoogleProtobuf))
+	}, searchDirs, codegen.WithGenerateStrategy(codegen.AllDescriptorsExceptGoogleProtobuf))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error generating typescript code: %v\n", err)
 		return err
@@ -128,7 +128,7 @@ func (Generate) ProtobufTypescript() error {
 
 	for _, file := range out {
 		file.SourceRelPath = filepath.Join(destDir, file.Package, file.Name)
-		os.MkdirAll(filepath.Dir(file.SourceRelPath), 0755)
+		os.MkdirAll(filepath.Dir(file.SourceRelPath), 0o755)
 		if err := file.WriteToDisk(); err != nil {
 			return fmt.Errorf("error writing file %s: %w", file.SourceRelPath, err)
 		}

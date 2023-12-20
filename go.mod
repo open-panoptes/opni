@@ -1,6 +1,6 @@
 module github.com/rancher/opni
 
-go 1.21
+go 1.21.4
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20231030212536-12f9cba37c9d.2
@@ -39,9 +39,9 @@ require (
 	github.com/go-playground/validator/v10 v10.14.1
 	github.com/golang/protobuf v1.5.3
 	github.com/golang/snappy v0.0.4
-	github.com/google/cel-go v0.18.1
+	github.com/google/cel-go v0.18.2
 	github.com/google/go-cmp v0.6.0
-	github.com/google/uuid v1.3.1
+	github.com/google/uuid v1.4.0
 	github.com/goombaio/namegenerator v0.0.0-20181006234301-989e774b106e
 	github.com/grafana-operator/grafana-operator/v5 v5.4.1
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -60,9 +60,10 @@ require (
 	github.com/klauspost/compress v1.17.3
 	github.com/kralicky/gpkg v0.0.0-20231114180450-2f4bff8c5588
 	github.com/kralicky/kmatch v0.0.0-20230301203314-20f658a0e56c
-	github.com/kralicky/protols v0.0.0-20231127004555-d87290c46672
-	github.com/kralicky/ragu v1.0.11-0.20231206204722-a12a1b1ac338
-	github.com/kralicky/totem v1.2.2-0.20231014025935-6e4657314606
+	github.com/kralicky/protols v0.0.0-20231220234657-7d95f8c6c89c
+	github.com/kralicky/protols/sdk/codegen/generators/x/python v0.0.0-20231220232819-6e527e1f9a5e
+	github.com/kralicky/tools-lite v0.0.0-20231220233131-d53203363d9e
+	github.com/kralicky/totem v1.2.2-0.20231220234754-f98daa28bcda
 	github.com/kralicky/yaml/v3 v3.0.0-20220520012407-b0e7050bd81d
 	github.com/lestrrat-go/backoff/v2 v2.0.8
 	github.com/lestrrat-go/jwx v1.2.26
@@ -106,7 +107,7 @@ require (
 	github.com/samber/slog-multi v1.0.1
 	github.com/samber/slog-sampling v1.0.0
 	github.com/spf13/afero v1.9.5
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/sryoya/protorand v0.0.0-20230821135621-5e0808bbd3d8
 	github.com/steveteuber/kubectl-graph v0.6.0
@@ -140,18 +141,18 @@ require (
 	go.uber.org/atomic v1.11.0
 	go.uber.org/mock v0.2.0
 	go.uber.org/multierr v1.11.0
-	golang.org/x/crypto v0.15.0
+	golang.org/x/crypto v0.16.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/mod v0.14.0
-	golang.org/x/net v0.18.0
+	golang.org/x/net v0.19.0
 	golang.org/x/sync v0.5.0
-	golang.org/x/term v0.14.0
+	golang.org/x/term v0.15.0
 	golang.org/x/time v0.3.0
-	golang.org/x/tools v0.14.0
+	golang.org/x/tools v0.14.1-0.20231026192422-8b5abd452b28
 	gonum.org/v1/gonum v0.14.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20231030173426-d783a09b4405
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20231030173426-d783a09b4405
-	google.golang.org/grpc v1.59.0
+	google.golang.org/genproto/googleapis/api v0.0.0-20231212172506-995d672761c0
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20231212172506-995d672761c0
+	google.golang.org/grpc v1.60.1
 	google.golang.org/protobuf v1.31.1-0.20231027082548-f4a6c1f6e5c1
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/square/go-jose.v2 v2.6.0
@@ -171,15 +172,17 @@ require (
 
 require (
 	github.com/VictoriaMetrics/fastcache v1.12.1 // indirect
+	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
+	github.com/kralicky/protocompile v0.0.0-20231218212224-15ecf10ac6ce // indirect
 	github.com/zhangyunhao116/umap v0.0.0-20221211160557-cb7705fafa39 // indirect
 )
 
 require (
-	cloud.google.com/go v0.110.9 // indirect
-	cloud.google.com/go/compute v1.23.2 // indirect
+	cloud.google.com/go v0.111.0 // indirect
+	cloud.google.com/go/compute v1.23.3 // indirect
 	cloud.google.com/go/compute/metadata v0.2.4-0.20230617002413-005d2dfb6b68 // indirect
-	cloud.google.com/go/dlp v1.11.0 // indirect
-	cloud.google.com/go/iam v1.1.4 // indirect
+	cloud.google.com/go/dlp v1.11.1 // indirect
+	cloud.google.com/go/iam v1.1.5 // indirect
 	cloud.google.com/go/storage v1.30.1 // indirect
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230106234847-43070de90fa1 // indirect
@@ -204,7 +207,6 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
 	github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 // indirect
-	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230512164433-5d1fd1a340c9 // indirect
 	github.com/antonmedv/expr v1.15.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
@@ -334,9 +336,9 @@ require (
 	github.com/google/go-jsonnet v0.20.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20230926050212-f7f687d19a98 // indirect
-	github.com/google/s2a-go v0.1.4 // indirect
+	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
-	github.com/googleapis/enterprise-certificate-proxy v0.2.5 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.0
@@ -364,7 +366,7 @@ require (
 	github.com/hashicorp/yamux v0.0.0-20211028200310-0bc27b27de87 // indirect
 	github.com/huandu/xstrings v1.4.0
 	github.com/iancoleman/orderedmap v0.2.0 // indirect
-	github.com/imdario/mergo v0.3.16 // indirect
+	github.com/imdario/mergo v0.3.16
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/influxdata/go-syslog/v3 v3.0.1-0.20210608084020-ac565dc76ba6 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
@@ -548,16 +550,12 @@ require (
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20230525183740-e7c30c78aeb2 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/oauth2 v0.13.0
-	golang.org/x/sys v0.14.0
-	golang.org/x/telemetry v0.0.0-20231114163143-69313e640400 // indirect
+	golang.org/x/sys v0.15.0
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/tools/gopls v0.14.1
-	golang.org/x/vuln v1.0.1 // indirect
-	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/api v0.132.0 // indirect
+	google.golang.org/api v0.149.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/genproto v0.0.0-20231030173426-d783a09b4405 // indirect
+	google.golang.org/genproto v0.0.0-20231212172506-995d672761c0 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/telebot.v3 v3.1.3 // indirect
@@ -638,13 +636,6 @@ replace (
 	github.com/samber/lo => github.com/samber/lo v1.36.1-0.20230320154156-56ef8fe8a306
 	github.com/sercand/kuberesolver => github.com/sercand/kuberesolver/v5 v5.1.1
 	google.golang.org/protobuf => github.com/kralicky/protobuf-go v0.0.0-20231206232713-f1de255d7c35
-)
-
-// Keep in sync with ragu go.mod
-replace (
-	github.com/bufbuild/protocompile => github.com/kralicky/protocompile v0.0.0-20231127004431-65d698ee9458
-	golang.org/x/tools => github.com/kralicky/tools v0.0.0-20231125202352-51ba2ad9b13a
-	golang.org/x/tools/gopls => github.com/kralicky/tools/gopls v0.0.0-20231125202352-51ba2ad9b13a
 )
 
 // Version pins

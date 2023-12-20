@@ -16,6 +16,7 @@ import (
 
 	"github.com/cortexproject/cortex/pkg/cortexpb"
 	"github.com/cortexproject/cortex/pkg/distributor"
+	"github.com/kralicky/tools-lite/pkg/memoize"
 	"github.com/rancher/opni/pkg/logger"
 	managementext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/management"
 	"github.com/rancher/opni/pkg/plugins/driverutil"
@@ -26,7 +27,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/tidwall/gjson"
 	"golang.org/x/sync/errgroup"
-	"golang.org/x/tools/pkg/memoize"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -113,6 +113,7 @@ func mapExemplars(e *cortexadmin.Exemplar, _ int) cortexpb.Exemplar {
 		Labels:      lo.Map(e.Labels, mapLabels),
 	}
 }
+
 func mapMetadata(m *cortexadmin.MetricMetadata, _ int) *cortexpb.MetricMetadata {
 	return &cortexpb.MetricMetadata{
 		Type:             cortexpb.MetricMetadata_MetricType(m.Type),
@@ -839,7 +840,7 @@ func (s *CortexAdminService) parseCortexLabelsOnSeriesJob(
 	if !gjson.Valid(string(b)) {
 		return nil, fmt.Errorf("invalid json in response")
 	}
-	//labelSets := make(map[string]map[string]struct{})
+	// labelSets := make(map[string]map[string]struct{})
 	result := gjson.Get(string(b), "data")
 	if !result.Exists() {
 		return nil, fmt.Errorf("no data in cortex response")
