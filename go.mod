@@ -41,7 +41,7 @@ require (
 	github.com/golang/snappy v0.0.4
 	github.com/google/cel-go v0.18.1
 	github.com/google/go-cmp v0.6.0
-	github.com/google/uuid v1.3.1
+	github.com/google/uuid v1.4.0
 	github.com/goombaio/namegenerator v0.0.0-20181006234301-989e774b106e
 	github.com/grafana-operator/grafana-operator/v5 v5.4.1
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -88,8 +88,8 @@ require (
 	github.com/ory/fosite v0.44.1-0.20230614124936-69300915a423
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.66.0
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.66.0
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.71.2
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.71.2
 	github.com/prometheus/alertmanager v0.26.0
 	github.com/prometheus/client_golang v1.17.0
 	github.com/prometheus/common v0.44.0
@@ -140,13 +140,13 @@ require (
 	go.uber.org/atomic v1.11.0
 	go.uber.org/mock v0.2.0
 	go.uber.org/multierr v1.11.0
-	golang.org/x/crypto v0.15.0
+	golang.org/x/crypto v0.16.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/mod v0.14.0
-	golang.org/x/net v0.18.0
+	golang.org/x/net v0.19.0
 	golang.org/x/sync v0.5.0
-	golang.org/x/term v0.14.0
-	golang.org/x/time v0.3.0
+	golang.org/x/term v0.15.0
+	golang.org/x/time v0.5.0
 	golang.org/x/tools v0.14.0
 	gonum.org/v1/gonum v0.14.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20231030173426-d783a09b4405
@@ -278,7 +278,7 @@ require (
 	github.com/efficientgo/tools/extkingpin v0.0.0-20220817170617-6c25e3b627dd // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
-	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
+	github.com/evanphx/json-patch v5.7.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/facette/natsort v0.0.0-20181210072756-2cd4dd1e2dcb // indirect
@@ -364,7 +364,7 @@ require (
 	github.com/hashicorp/yamux v0.0.0-20211028200310-0bc27b27de87 // indirect
 	github.com/huandu/xstrings v1.4.0
 	github.com/iancoleman/orderedmap v0.2.0 // indirect
-	github.com/imdario/mergo v0.3.16 // indirect
+	github.com/imdario/mergo v0.3.16
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/influxdata/go-syslog/v3 v3.0.1-0.20210608084020-ac565dc76ba6 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
@@ -547,8 +547,8 @@ require (
 	go4.org/intern v0.0.0-20230525184215-6c62f75575cb // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20230525183740-e7c30c78aeb2 // indirect
 	golang.org/x/arch v0.3.0 // indirect
-	golang.org/x/oauth2 v0.13.0
-	golang.org/x/sys v0.14.0
+	golang.org/x/oauth2 v0.15.0
+	golang.org/x/sys v0.15.0
 	golang.org/x/telemetry v0.0.0-20231114163143-69313e640400 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools/gopls v0.14.1
@@ -565,16 +565,16 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	helm.sh/helm/v3 v3.12.0 // indirect
 	k8s.io/apiserver v0.28.4 // indirect
-	k8s.io/klog/v2 v2.100.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
-	k8s.io/utils v0.0.0-20230711102312-30195339c3c7 // indirect
+	k8s.io/klog/v2 v2.110.1 // indirect
+	k8s.io/kube-openapi v0.0.0-20231129212854-f0671cc7e66a // indirect
+	k8s.io/utils v0.0.0-20231127182322-b307cd553661 // indirect
 	lukechampine.com/frand v1.4.2 // indirect
 	oras.land/oras-go v1.2.4-0.20230710032925-ae22fd053bb5 // indirect
 	sigs.k8s.io/gateway-api v0.6.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.13.5-0.20230601165947-6ce0bf390ce3 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.14.3-0.20230601165947-6ce0bf390ce3 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.3.0
+	sigs.k8s.io/structured-merge-diff/v4 v4.4.1
 	sourcegraph.com/sourcegraph/appdash v0.0.0-20211028080628-e2786a622600 // indirect
 )
 
