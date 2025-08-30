@@ -14,7 +14,6 @@ import (
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
 	grpc_health_v1 "google.golang.org/grpc/health/grpc_health_v1"
-	metadata "google.golang.org/grpc/metadata"
 	descriptorpb "google.golang.org/protobuf/types/descriptorpb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
@@ -103,14 +102,14 @@ func (mr *MockManagementAPIExtensionClientMockRecorder) Descriptors(ctx, in inte
 }
 
 // WatchHealth mocks base method.
-func (m *MockManagementAPIExtensionClient) WatchHealth(ctx context.Context, in *grpc_health_v1.HealthCheckRequest, opts ...grpc.CallOption) (apiextensions.ManagementAPIExtension_WatchHealthClient, error) {
+func (m *MockManagementAPIExtensionClient) WatchHealth(ctx context.Context, in *grpc_health_v1.HealthCheckRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[grpc_health_v1.HealthCheckResponse], error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "WatchHealth", varargs...)
-	ret0, _ := ret[0].(apiextensions.ManagementAPIExtension_WatchHealthClient)
+	ret0, _ := ret[0].(grpc.ServerStreamingClient[grpc_health_v1.HealthCheckResponse])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -120,129 +119,6 @@ func (mr *MockManagementAPIExtensionClientMockRecorder) WatchHealth(ctx, in inte
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WatchHealth", reflect.TypeOf((*MockManagementAPIExtensionClient)(nil).WatchHealth), varargs...)
-}
-
-// MockManagementAPIExtension_WatchHealthClient is a mock of ManagementAPIExtension_WatchHealthClient interface.
-type MockManagementAPIExtension_WatchHealthClient struct {
-	ctrl     *gomock.Controller
-	recorder *MockManagementAPIExtension_WatchHealthClientMockRecorder
-}
-
-// MockManagementAPIExtension_WatchHealthClientMockRecorder is the mock recorder for MockManagementAPIExtension_WatchHealthClient.
-type MockManagementAPIExtension_WatchHealthClientMockRecorder struct {
-	mock *MockManagementAPIExtension_WatchHealthClient
-}
-
-// NewMockManagementAPIExtension_WatchHealthClient creates a new mock instance.
-func NewMockManagementAPIExtension_WatchHealthClient(ctrl *gomock.Controller) *MockManagementAPIExtension_WatchHealthClient {
-	mock := &MockManagementAPIExtension_WatchHealthClient{ctrl: ctrl}
-	mock.recorder = &MockManagementAPIExtension_WatchHealthClientMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockManagementAPIExtension_WatchHealthClient) EXPECT() *MockManagementAPIExtension_WatchHealthClientMockRecorder {
-	return m.recorder
-}
-
-// CloseSend mocks base method.
-func (m *MockManagementAPIExtension_WatchHealthClient) CloseSend() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CloseSend")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CloseSend indicates an expected call of CloseSend.
-func (mr *MockManagementAPIExtension_WatchHealthClientMockRecorder) CloseSend() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseSend", reflect.TypeOf((*MockManagementAPIExtension_WatchHealthClient)(nil).CloseSend))
-}
-
-// Context mocks base method.
-func (m *MockManagementAPIExtension_WatchHealthClient) Context() context.Context {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Context")
-	ret0, _ := ret[0].(context.Context)
-	return ret0
-}
-
-// Context indicates an expected call of Context.
-func (mr *MockManagementAPIExtension_WatchHealthClientMockRecorder) Context() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Context", reflect.TypeOf((*MockManagementAPIExtension_WatchHealthClient)(nil).Context))
-}
-
-// Header mocks base method.
-func (m *MockManagementAPIExtension_WatchHealthClient) Header() (metadata.MD, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Header")
-	ret0, _ := ret[0].(metadata.MD)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Header indicates an expected call of Header.
-func (mr *MockManagementAPIExtension_WatchHealthClientMockRecorder) Header() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Header", reflect.TypeOf((*MockManagementAPIExtension_WatchHealthClient)(nil).Header))
-}
-
-// Recv mocks base method.
-func (m *MockManagementAPIExtension_WatchHealthClient) Recv() (*grpc_health_v1.HealthCheckResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Recv")
-	ret0, _ := ret[0].(*grpc_health_v1.HealthCheckResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Recv indicates an expected call of Recv.
-func (mr *MockManagementAPIExtension_WatchHealthClientMockRecorder) Recv() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Recv", reflect.TypeOf((*MockManagementAPIExtension_WatchHealthClient)(nil).Recv))
-}
-
-// RecvMsg mocks base method.
-func (m_2 *MockManagementAPIExtension_WatchHealthClient) RecvMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "RecvMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RecvMsg indicates an expected call of RecvMsg.
-func (mr *MockManagementAPIExtension_WatchHealthClientMockRecorder) RecvMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvMsg", reflect.TypeOf((*MockManagementAPIExtension_WatchHealthClient)(nil).RecvMsg), m)
-}
-
-// SendMsg mocks base method.
-func (m_2 *MockManagementAPIExtension_WatchHealthClient) SendMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "SendMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendMsg indicates an expected call of SendMsg.
-func (mr *MockManagementAPIExtension_WatchHealthClientMockRecorder) SendMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMsg", reflect.TypeOf((*MockManagementAPIExtension_WatchHealthClient)(nil).SendMsg), m)
-}
-
-// Trailer mocks base method.
-func (m *MockManagementAPIExtension_WatchHealthClient) Trailer() metadata.MD {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Trailer")
-	ret0, _ := ret[0].(metadata.MD)
-	return ret0
-}
-
-// Trailer indicates an expected call of Trailer.
-func (mr *MockManagementAPIExtension_WatchHealthClientMockRecorder) Trailer() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Trailer", reflect.TypeOf((*MockManagementAPIExtension_WatchHealthClient)(nil).Trailer))
 }
 
 // MockManagementAPIExtensionServer is a mock of ManagementAPIExtensionServer interface.
@@ -314,7 +190,7 @@ func (mr *MockManagementAPIExtensionServerMockRecorder) Descriptors(arg0, arg1 i
 }
 
 // WatchHealth mocks base method.
-func (m *MockManagementAPIExtensionServer) WatchHealth(arg0 *grpc_health_v1.HealthCheckRequest, arg1 apiextensions.ManagementAPIExtension_WatchHealthServer) error {
+func (m *MockManagementAPIExtensionServer) WatchHealth(arg0 *grpc_health_v1.HealthCheckRequest, arg1 grpc.ServerStreamingServer[grpc_health_v1.HealthCheckResponse]) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WatchHealth", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -360,125 +236,6 @@ func (m *MockUnsafeManagementAPIExtensionServer) mustEmbedUnimplementedManagemen
 func (mr *MockUnsafeManagementAPIExtensionServerMockRecorder) mustEmbedUnimplementedManagementAPIExtensionServer() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "mustEmbedUnimplementedManagementAPIExtensionServer", reflect.TypeOf((*MockUnsafeManagementAPIExtensionServer)(nil).mustEmbedUnimplementedManagementAPIExtensionServer))
-}
-
-// MockManagementAPIExtension_WatchHealthServer is a mock of ManagementAPIExtension_WatchHealthServer interface.
-type MockManagementAPIExtension_WatchHealthServer struct {
-	ctrl     *gomock.Controller
-	recorder *MockManagementAPIExtension_WatchHealthServerMockRecorder
-}
-
-// MockManagementAPIExtension_WatchHealthServerMockRecorder is the mock recorder for MockManagementAPIExtension_WatchHealthServer.
-type MockManagementAPIExtension_WatchHealthServerMockRecorder struct {
-	mock *MockManagementAPIExtension_WatchHealthServer
-}
-
-// NewMockManagementAPIExtension_WatchHealthServer creates a new mock instance.
-func NewMockManagementAPIExtension_WatchHealthServer(ctrl *gomock.Controller) *MockManagementAPIExtension_WatchHealthServer {
-	mock := &MockManagementAPIExtension_WatchHealthServer{ctrl: ctrl}
-	mock.recorder = &MockManagementAPIExtension_WatchHealthServerMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockManagementAPIExtension_WatchHealthServer) EXPECT() *MockManagementAPIExtension_WatchHealthServerMockRecorder {
-	return m.recorder
-}
-
-// Context mocks base method.
-func (m *MockManagementAPIExtension_WatchHealthServer) Context() context.Context {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Context")
-	ret0, _ := ret[0].(context.Context)
-	return ret0
-}
-
-// Context indicates an expected call of Context.
-func (mr *MockManagementAPIExtension_WatchHealthServerMockRecorder) Context() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Context", reflect.TypeOf((*MockManagementAPIExtension_WatchHealthServer)(nil).Context))
-}
-
-// RecvMsg mocks base method.
-func (m_2 *MockManagementAPIExtension_WatchHealthServer) RecvMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "RecvMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RecvMsg indicates an expected call of RecvMsg.
-func (mr *MockManagementAPIExtension_WatchHealthServerMockRecorder) RecvMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvMsg", reflect.TypeOf((*MockManagementAPIExtension_WatchHealthServer)(nil).RecvMsg), m)
-}
-
-// Send mocks base method.
-func (m *MockManagementAPIExtension_WatchHealthServer) Send(arg0 *grpc_health_v1.HealthCheckResponse) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Send indicates an expected call of Send.
-func (mr *MockManagementAPIExtension_WatchHealthServerMockRecorder) Send(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockManagementAPIExtension_WatchHealthServer)(nil).Send), arg0)
-}
-
-// SendHeader mocks base method.
-func (m *MockManagementAPIExtension_WatchHealthServer) SendHeader(arg0 metadata.MD) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendHeader", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendHeader indicates an expected call of SendHeader.
-func (mr *MockManagementAPIExtension_WatchHealthServerMockRecorder) SendHeader(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendHeader", reflect.TypeOf((*MockManagementAPIExtension_WatchHealthServer)(nil).SendHeader), arg0)
-}
-
-// SendMsg mocks base method.
-func (m_2 *MockManagementAPIExtension_WatchHealthServer) SendMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "SendMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendMsg indicates an expected call of SendMsg.
-func (mr *MockManagementAPIExtension_WatchHealthServerMockRecorder) SendMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMsg", reflect.TypeOf((*MockManagementAPIExtension_WatchHealthServer)(nil).SendMsg), m)
-}
-
-// SetHeader mocks base method.
-func (m *MockManagementAPIExtension_WatchHealthServer) SetHeader(arg0 metadata.MD) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetHeader", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetHeader indicates an expected call of SetHeader.
-func (mr *MockManagementAPIExtension_WatchHealthServerMockRecorder) SetHeader(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetHeader", reflect.TypeOf((*MockManagementAPIExtension_WatchHealthServer)(nil).SetHeader), arg0)
-}
-
-// SetTrailer mocks base method.
-func (m *MockManagementAPIExtension_WatchHealthServer) SetTrailer(arg0 metadata.MD) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetTrailer", arg0)
-}
-
-// SetTrailer indicates an expected call of SetTrailer.
-func (mr *MockManagementAPIExtension_WatchHealthServerMockRecorder) SetTrailer(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTrailer", reflect.TypeOf((*MockManagementAPIExtension_WatchHealthServer)(nil).SetTrailer), arg0)
 }
 
 // MockHTTPAPIExtensionClient is a mock of HTTPAPIExtensionClient interface.
@@ -621,14 +378,14 @@ func (m *MockStreamAPIExtensionClient) EXPECT() *MockStreamAPIExtensionClientMoc
 }
 
 // ConnectInternal mocks base method.
-func (m *MockStreamAPIExtensionClient) ConnectInternal(ctx context.Context, opts ...grpc.CallOption) (apiextensions.StreamAPIExtension_ConnectInternalClient, error) {
+func (m *MockStreamAPIExtensionClient) ConnectInternal(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[totem.RPC, totem.RPC], error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ConnectInternal", varargs...)
-	ret0, _ := ret[0].(apiextensions.StreamAPIExtension_ConnectInternalClient)
+	ret0, _ := ret[0].(grpc.BidiStreamingClient[totem.RPC, totem.RPC])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -638,143 +395,6 @@ func (mr *MockStreamAPIExtensionClientMockRecorder) ConnectInternal(ctx interfac
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectInternal", reflect.TypeOf((*MockStreamAPIExtensionClient)(nil).ConnectInternal), varargs...)
-}
-
-// MockStreamAPIExtension_ConnectInternalClient is a mock of StreamAPIExtension_ConnectInternalClient interface.
-type MockStreamAPIExtension_ConnectInternalClient struct {
-	ctrl     *gomock.Controller
-	recorder *MockStreamAPIExtension_ConnectInternalClientMockRecorder
-}
-
-// MockStreamAPIExtension_ConnectInternalClientMockRecorder is the mock recorder for MockStreamAPIExtension_ConnectInternalClient.
-type MockStreamAPIExtension_ConnectInternalClientMockRecorder struct {
-	mock *MockStreamAPIExtension_ConnectInternalClient
-}
-
-// NewMockStreamAPIExtension_ConnectInternalClient creates a new mock instance.
-func NewMockStreamAPIExtension_ConnectInternalClient(ctrl *gomock.Controller) *MockStreamAPIExtension_ConnectInternalClient {
-	mock := &MockStreamAPIExtension_ConnectInternalClient{ctrl: ctrl}
-	mock.recorder = &MockStreamAPIExtension_ConnectInternalClientMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockStreamAPIExtension_ConnectInternalClient) EXPECT() *MockStreamAPIExtension_ConnectInternalClientMockRecorder {
-	return m.recorder
-}
-
-// CloseSend mocks base method.
-func (m *MockStreamAPIExtension_ConnectInternalClient) CloseSend() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CloseSend")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CloseSend indicates an expected call of CloseSend.
-func (mr *MockStreamAPIExtension_ConnectInternalClientMockRecorder) CloseSend() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseSend", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalClient)(nil).CloseSend))
-}
-
-// Context mocks base method.
-func (m *MockStreamAPIExtension_ConnectInternalClient) Context() context.Context {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Context")
-	ret0, _ := ret[0].(context.Context)
-	return ret0
-}
-
-// Context indicates an expected call of Context.
-func (mr *MockStreamAPIExtension_ConnectInternalClientMockRecorder) Context() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Context", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalClient)(nil).Context))
-}
-
-// Header mocks base method.
-func (m *MockStreamAPIExtension_ConnectInternalClient) Header() (metadata.MD, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Header")
-	ret0, _ := ret[0].(metadata.MD)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Header indicates an expected call of Header.
-func (mr *MockStreamAPIExtension_ConnectInternalClientMockRecorder) Header() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Header", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalClient)(nil).Header))
-}
-
-// Recv mocks base method.
-func (m *MockStreamAPIExtension_ConnectInternalClient) Recv() (*totem.RPC, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Recv")
-	ret0, _ := ret[0].(*totem.RPC)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Recv indicates an expected call of Recv.
-func (mr *MockStreamAPIExtension_ConnectInternalClientMockRecorder) Recv() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Recv", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalClient)(nil).Recv))
-}
-
-// RecvMsg mocks base method.
-func (m_2 *MockStreamAPIExtension_ConnectInternalClient) RecvMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "RecvMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RecvMsg indicates an expected call of RecvMsg.
-func (mr *MockStreamAPIExtension_ConnectInternalClientMockRecorder) RecvMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvMsg", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalClient)(nil).RecvMsg), m)
-}
-
-// Send mocks base method.
-func (m *MockStreamAPIExtension_ConnectInternalClient) Send(arg0 *totem.RPC) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Send indicates an expected call of Send.
-func (mr *MockStreamAPIExtension_ConnectInternalClientMockRecorder) Send(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalClient)(nil).Send), arg0)
-}
-
-// SendMsg mocks base method.
-func (m_2 *MockStreamAPIExtension_ConnectInternalClient) SendMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "SendMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendMsg indicates an expected call of SendMsg.
-func (mr *MockStreamAPIExtension_ConnectInternalClientMockRecorder) SendMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMsg", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalClient)(nil).SendMsg), m)
-}
-
-// Trailer mocks base method.
-func (m *MockStreamAPIExtension_ConnectInternalClient) Trailer() metadata.MD {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Trailer")
-	ret0, _ := ret[0].(metadata.MD)
-	return ret0
-}
-
-// Trailer indicates an expected call of Trailer.
-func (mr *MockStreamAPIExtension_ConnectInternalClientMockRecorder) Trailer() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Trailer", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalClient)(nil).Trailer))
 }
 
 // MockStreamAPIExtensionServer is a mock of StreamAPIExtensionServer interface.
@@ -801,7 +421,7 @@ func (m *MockStreamAPIExtensionServer) EXPECT() *MockStreamAPIExtensionServerMoc
 }
 
 // ConnectInternal mocks base method.
-func (m *MockStreamAPIExtensionServer) ConnectInternal(arg0 apiextensions.StreamAPIExtension_ConnectInternalServer) error {
+func (m *MockStreamAPIExtensionServer) ConnectInternal(arg0 grpc.BidiStreamingServer[totem.RPC, totem.RPC]) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConnectInternal", arg0)
 	ret0, _ := ret[0].(error)
@@ -847,140 +467,6 @@ func (m *MockUnsafeStreamAPIExtensionServer) mustEmbedUnimplementedStreamAPIExte
 func (mr *MockUnsafeStreamAPIExtensionServerMockRecorder) mustEmbedUnimplementedStreamAPIExtensionServer() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "mustEmbedUnimplementedStreamAPIExtensionServer", reflect.TypeOf((*MockUnsafeStreamAPIExtensionServer)(nil).mustEmbedUnimplementedStreamAPIExtensionServer))
-}
-
-// MockStreamAPIExtension_ConnectInternalServer is a mock of StreamAPIExtension_ConnectInternalServer interface.
-type MockStreamAPIExtension_ConnectInternalServer struct {
-	ctrl     *gomock.Controller
-	recorder *MockStreamAPIExtension_ConnectInternalServerMockRecorder
-}
-
-// MockStreamAPIExtension_ConnectInternalServerMockRecorder is the mock recorder for MockStreamAPIExtension_ConnectInternalServer.
-type MockStreamAPIExtension_ConnectInternalServerMockRecorder struct {
-	mock *MockStreamAPIExtension_ConnectInternalServer
-}
-
-// NewMockStreamAPIExtension_ConnectInternalServer creates a new mock instance.
-func NewMockStreamAPIExtension_ConnectInternalServer(ctrl *gomock.Controller) *MockStreamAPIExtension_ConnectInternalServer {
-	mock := &MockStreamAPIExtension_ConnectInternalServer{ctrl: ctrl}
-	mock.recorder = &MockStreamAPIExtension_ConnectInternalServerMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockStreamAPIExtension_ConnectInternalServer) EXPECT() *MockStreamAPIExtension_ConnectInternalServerMockRecorder {
-	return m.recorder
-}
-
-// Context mocks base method.
-func (m *MockStreamAPIExtension_ConnectInternalServer) Context() context.Context {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Context")
-	ret0, _ := ret[0].(context.Context)
-	return ret0
-}
-
-// Context indicates an expected call of Context.
-func (mr *MockStreamAPIExtension_ConnectInternalServerMockRecorder) Context() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Context", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalServer)(nil).Context))
-}
-
-// Recv mocks base method.
-func (m *MockStreamAPIExtension_ConnectInternalServer) Recv() (*totem.RPC, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Recv")
-	ret0, _ := ret[0].(*totem.RPC)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Recv indicates an expected call of Recv.
-func (mr *MockStreamAPIExtension_ConnectInternalServerMockRecorder) Recv() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Recv", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalServer)(nil).Recv))
-}
-
-// RecvMsg mocks base method.
-func (m_2 *MockStreamAPIExtension_ConnectInternalServer) RecvMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "RecvMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RecvMsg indicates an expected call of RecvMsg.
-func (mr *MockStreamAPIExtension_ConnectInternalServerMockRecorder) RecvMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvMsg", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalServer)(nil).RecvMsg), m)
-}
-
-// Send mocks base method.
-func (m *MockStreamAPIExtension_ConnectInternalServer) Send(arg0 *totem.RPC) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Send indicates an expected call of Send.
-func (mr *MockStreamAPIExtension_ConnectInternalServerMockRecorder) Send(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalServer)(nil).Send), arg0)
-}
-
-// SendHeader mocks base method.
-func (m *MockStreamAPIExtension_ConnectInternalServer) SendHeader(arg0 metadata.MD) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendHeader", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendHeader indicates an expected call of SendHeader.
-func (mr *MockStreamAPIExtension_ConnectInternalServerMockRecorder) SendHeader(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendHeader", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalServer)(nil).SendHeader), arg0)
-}
-
-// SendMsg mocks base method.
-func (m_2 *MockStreamAPIExtension_ConnectInternalServer) SendMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "SendMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendMsg indicates an expected call of SendMsg.
-func (mr *MockStreamAPIExtension_ConnectInternalServerMockRecorder) SendMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMsg", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalServer)(nil).SendMsg), m)
-}
-
-// SetHeader mocks base method.
-func (m *MockStreamAPIExtension_ConnectInternalServer) SetHeader(arg0 metadata.MD) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetHeader", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetHeader indicates an expected call of SetHeader.
-func (mr *MockStreamAPIExtension_ConnectInternalServerMockRecorder) SetHeader(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetHeader", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalServer)(nil).SetHeader), arg0)
-}
-
-// SetTrailer mocks base method.
-func (m *MockStreamAPIExtension_ConnectInternalServer) SetTrailer(arg0 metadata.MD) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetTrailer", arg0)
-}
-
-// SetTrailer indicates an expected call of SetTrailer.
-func (mr *MockStreamAPIExtension_ConnectInternalServerMockRecorder) SetTrailer(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTrailer", reflect.TypeOf((*MockStreamAPIExtension_ConnectInternalServer)(nil).SetTrailer), arg0)
 }
 
 // MockUnaryAPIExtensionClient is a mock of UnaryAPIExtensionClient interface.

@@ -112,7 +112,7 @@ func LockManagerTestSuite(
 				}
 				num := 0
 				errs := make(chan error, 2*len(locks))
-				doneV := make(chan chan struct{}, 2*len(locks))
+				doneV := make(chan (<-chan struct{}), 2*len(locks))
 				lockOrder := lo.Shuffle(locks)
 				var wg sync.WaitGroup
 				for _, lock := range lockOrder {

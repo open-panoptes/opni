@@ -43,7 +43,7 @@ func (l *Lock) Key() string {
 	return l.key
 }
 
-func (l *Lock) acquire(ctx context.Context, retrier *backoffv2.Policy) (chan struct{}, error) {
+func (l *Lock) acquire(ctx context.Context, retrier *backoffv2.Policy) (<-chan struct{}, error) {
 	var curErr error
 	mutex := newJetstreamMutex(l.lg, l.js, l.prefix, l.key)
 	done, err := mutex.tryLock()
@@ -68,11 +68,11 @@ func (l *Lock) acquire(ctx context.Context, retrier *backoffv2.Policy) (chan str
 	return nil, curErr
 }
 
-func (l *Lock) Lock(ctx context.Context) (chan struct{}, error) {
+func (l *Lock) Lock(ctx context.Context) (<-chan struct{}, error) {
 	ctxca, ca := context.WithCancel(ctx)
 	defer ca()
 
-	var closureDone chan struct{}
+	var closureDone <-chan struct{}
 	if err := l.scheduler.Schedule(func() error {
 		done, err := l.acquire(ctxca,
 			lo.ToPtr(backoffv2.Constant(
@@ -90,7 +90,6 @@ func (l *Lock) Lock(ctx context.Context) (chan struct{}, error) {
 		return nil, err
 	}
 	return closureDone, nil
-
 }
 
 func (l *Lock) Unlock() error {
@@ -112,11 +111,11 @@ func (l *Lock) Unlock() error {
 	return nil
 }
 
-func (l *Lock) TryLock(ctx context.Context) (acquired bool, done chan struct{}, err error) {
+func (l *Lock) TryLock(ctx context.Context) (acquired bool, done <-chan struct{}, err error) {
 	// https://github.com/lestrrat-go/backoff/issues/31
 	ctxca, ca := context.WithCancel(ctx)
 	defer ca()
-	var closureDone chan struct{}
+	var closureDone <-chan struct{}
 	if err := l.scheduler.Schedule(func() error {
 		done, err := l.acquire(ctxca, nil)
 		if err != nil {

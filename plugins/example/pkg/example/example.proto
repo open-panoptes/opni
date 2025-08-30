@@ -2,24 +2,24 @@ syntax = "proto3";
 
 package example;
 
-import "github.com/rancher/opni/internal/codegen/cli/cli.proto";
+import "buf/validate/validate.proto";
+import "github.com/kralicky/codegen/cli/cli.proto";
 import "github.com/rancher/opni/pkg/apis/core/v1/core.proto";
 import "github.com/rancher/opni/pkg/plugins/driverutil/types.proto";
-import "github.com/rancher/opni/pkg/validation/validate.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 
-option go_package = "github.com/rancher/opni/plugins/example/pkg/example";
+option go_package      = "github.com/rancher/opni/plugins/example/pkg/example";
 option (cli.generator) = {
-  generate: true
+  enabled: true,
 };
 
 service ExampleAPIExtension {
   rpc Echo(EchoRequest) returns (EchoResponse) {
     option (google.api.http) = {
-      post: "/echo"
-      body: "*"
+      post: "/echo",
+      body: "*",
     };
   }
   rpc Ready(google.protobuf.Empty) returns (google.protobuf.Empty);
@@ -40,35 +40,35 @@ message EchoResponse {
 service Config {
   rpc GetDefaultConfiguration(driverutil.GetRequest) returns (ConfigSpec) {
     option (cli.command) = {
-      use: "get-default"
+      use: "get-default",
     };
   }
   rpc SetDefaultConfiguration(SetRequest) returns (google.protobuf.Empty) {
     option (cli.command) = {
-      use:         "set-default"
-      granularity: EditMessage
+      use:         "set-default",
+      granularity: EditMessage,
     };
   }
   rpc GetConfiguration(driverutil.GetRequest) returns (ConfigSpec) {
     option (cli.command) = {
-      use: "get"
+      use: "get",
     };
   }
   rpc SetConfiguration(SetRequest) returns (google.protobuf.Empty) {
     option (cli.command) = {
-      use:         "set"
-      granularity: EditMessage
+      use:         "set",
+      granularity: EditMessage,
     };
   }
   rpc ResetDefaultConfiguration(google.protobuf.Empty) returns (google.protobuf.Empty) {
     option (cli.command) = {
-      use: "reset-default"
+      use: "reset-default",
     };
   }
   rpc ResetConfiguration(ResetRequest) returns (google.protobuf.Empty) {
     option (cli.command) = {
-      use:         "reset"
-      granularity: EditMessage
+      use:         "reset",
+      granularity: EditMessage,
     };
   }
   rpc DryRun(DryRunRequest) returns (DryRunResponse) {
@@ -76,7 +76,7 @@ service Config {
   }
   rpc ConfigurationHistory(driverutil.ConfigurationHistoryRequest) returns (HistoryResponse) {
     option (cli.command) = {
-      use: "history"
+      use: "history",
     };
   }
 }

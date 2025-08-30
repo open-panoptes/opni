@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package node.metrics;
 
-import "github.com/rancher/opni/pkg/validation/validate.proto";
+import "buf/validate/validate.proto";
 import "github.com/rancher/opni/plugins/metrics/apis/node/config.proto";
 
 option go_package = "github.com/rancher/opni/plugins/metrics/apis/node";
@@ -17,8 +17,8 @@ service NodeMetricsCapability {
 message SyncRequest {
   config.MetricsCapabilityStatus currentConfig = 1 [
     (buf.validate.field) = {
-      required: true
-      skipped:  true
+      required: true,
+      // skipped:  true,
     }
   ];
 }

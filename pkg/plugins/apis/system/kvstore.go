@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/bufbuild/protovalidate-go"
+	"buf.build/go/protovalidate"
 	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/validation"
 	"github.com/samber/lo"
@@ -20,7 +20,7 @@ type kvStoreServer struct {
 	kv storage.KeyValueStore
 	lm storage.LockManager
 
-	validator *protovalidate.Validator
+	validator protovalidate.Validator
 }
 
 func NewKVStoreServer(store storage.KeyValueStore, lockMgr storage.LockManager) KeyValueStoreServer {
@@ -204,7 +204,7 @@ func (s *kvStoreServer) Lock(in *LockRequest, stream KeyValueStore_LockServer) e
 	}
 
 	locker := s.lm.NewLock(in.Key)
-	var expiredC chan struct{}
+	var expiredC <-chan struct{}
 	if in.TryLock {
 		acquired, expired, err := locker.TryLock(stream.Context())
 		if err != nil {

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	cli "github.com/rancher/opni/internal/codegen/cli"
+	cli "github.com/kralicky/codegen/cli"
 	driverutil "github.com/rancher/opni/pkg/plugins/driverutil"
 	"github.com/rancher/opni/pkg/plugins/driverutil/dryrun"
 	"github.com/rancher/opni/pkg/plugins/driverutil/rollback"

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package system;
 
-import "github.com/rancher/opni/pkg/validation/validate.proto";
+import "buf/validate/validate.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -63,8 +63,8 @@ message DeleteResponse {}
 message ListKeysRequest {
   string         key   = 1 [(buf.validate.field).required = true];
   optional int64 limit = 2 [(buf.validate.field) = {
-    int64:        {gte: 0}
-    ignore_empty: true
+    int64:  {gte: 0},
+    ignore: IGNORE_IF_ZERO_VALUE,
   }];
 }
 

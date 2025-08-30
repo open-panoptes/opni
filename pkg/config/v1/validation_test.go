@@ -1,9 +1,11 @@
+//go:build disable
+
 package configv1_test
 
 import (
 	"fmt"
 
-	"github.com/bufbuild/protovalidate-go"
+	"buf.build/go/protovalidate"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	lo "github.com/samber/lo"

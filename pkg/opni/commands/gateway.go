@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bufbuild/protovalidate-go"
 	"github.com/nsf/jsondiff"
 	"github.com/rancher/opni/apis"
 	opnicorev1 "github.com/rancher/opni/apis/core/v1"
@@ -262,7 +261,7 @@ persist their default configurations in the KV store.
 					}
 					if resp.GetValidationErrors() != nil {
 						lg.Error("refusing to apply default flags due to validation errors (re-run with --ignore-validation-errors to skip this check)")
-						return (*protovalidate.ValidationError)(resp.ValidationErrors)
+						return validation.ErrorsFromProto(resp.ValidationErrors)
 					}
 					if anyChanges {
 						_, err := mgr.ResetConfiguration(ctx, &configv1.ResetRequest{

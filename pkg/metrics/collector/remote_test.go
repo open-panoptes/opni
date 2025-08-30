@@ -97,11 +97,15 @@ var _ = Describe("Remote Collector", Label("unit"), func() {
 		// Create a remote collector
 		reg := prometheus.NewRegistry()
 
+		remoteCollector1 := collector.NewRemoteProducer(collector.NewRemoteCollectorClient(cc1))
+		remoteCollector2 := collector.NewRemoteProducer(collector.NewRemoteCollectorClient(cc2))
+
 		remotePrometheus1, err := otelprom.New(
 			otelprom.WithNamespace("remote"),
 			otelprom.WithRegisterer(reg),
 			otelprom.WithoutScopeInfo(),
 			otelprom.WithoutTargetInfo(),
+			otelprom.WithProducer(remoteCollector1),
 		)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -110,15 +114,11 @@ var _ = Describe("Remote Collector", Label("unit"), func() {
 			otelprom.WithRegisterer(reg),
 			otelprom.WithoutScopeInfo(),
 			otelprom.WithoutTargetInfo(),
+			otelprom.WithProducer(remoteCollector2),
 		)
 		Expect(err).NotTo(HaveOccurred())
 		_ = sdkmetric.NewMeterProvider(sdkmetric.WithReader(remotePrometheus1))
 		_ = sdkmetric.NewMeterProvider(sdkmetric.WithReader(remotePrometheus2))
-
-		remoteCollector1 := collector.NewRemoteProducer(collector.NewRemoteCollectorClient(cc1))
-		remotePrometheus1.RegisterProducer(remoteCollector1)
-		remoteCollector2 := collector.NewRemoteProducer(collector.NewRemoteCollectorClient(cc2))
-		remotePrometheus2.RegisterProducer(remoteCollector2)
 
 		// Create a local collector
 		localCollector := prometheus.NewGaugeVec(prometheus.GaugeOpts{

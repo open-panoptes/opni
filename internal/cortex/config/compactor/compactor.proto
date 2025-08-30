@@ -4,14 +4,14 @@
 syntax = "proto3";
 package compactor;
 
-import "github.com/rancher/opni/internal/codegen/cli/cli.proto";
-import "github.com/rancher/opni/pkg/validation/validate.proto";
+import "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate/validate.proto";
+import "github.com/kralicky/codegen/cli/cli.proto";
 import "google/protobuf/duration.proto";
 
 option go_package      = "github.com/rancher/opni/internal/cortex/config/compactor";
 option (cli.generator) = {
-  generate:          true
-  generate_deepcopy: true
+  enabled:           true,
+  generate_deepcopy: true,
 };
 
 message Config {
@@ -19,16 +19,16 @@ message Config {
   repeated google.protobuf.Duration block_ranges = 1 [
     (buf.validate.field) = {
       repeated: {
-        min_items: 1
+        min_items: 1,
         items: {
           duration: {
-            gt: {}
-          }
-        }
-      }
+            gt: {},
+          },
+        },
+      },
     },
     (cli.flag) = {
-      default: "2h0m0s,12h0m0s,24h0m0s"
+      default: "2h0m0s,12h0m0s,24h0m0s",
     }
   ];
   // Number of Go routines to use when syncing block index and chunks files from the long term storage.
@@ -63,10 +63,18 @@ message Config {
   repeated string enabled_tenants = 16;
   // Comma separated list of tenants that cannot be compacted by this compactor. If specified, and compactor would normally pick given tenant for compaction (via -compactor.enabled-tenants or sharding), it will be ignored instead.
   repeated string disabled_tenants = 17;
-  // How long block visit marker file should be considered as expired and able to be picked up by compactor again.
-  google.protobuf.Duration block_visit_marker_timeout = 18 [(cli.flag) = {default: "5m0s"}];
-  // How frequently block visit marker file should be updated duration compaction.
-  google.protobuf.Duration block_visit_marker_file_update_interval = 19 [(cli.flag) = {default: "1m0s"}];
+  // The compaction strategy to use. Supported values are: default, partitioning.
+  optional string compaction_strategy = 18 [(cli.flag) = {default: "default"}];
+  // How long compaction visit marker file should be considered as expired and able to be picked up by compactor again.
+  google.protobuf.Duration compaction_visit_marker_timeout = 19 [(cli.flag) = {default: "10m0s"}];
   // When enabled, index verification will ignore out of order label names.
   optional bool accept_malformed_index = 20 [(cli.flag) = {default: "false"}];
+  // How long cleaner visit marker file should be considered as expired and able to be picked up by cleaner again. The value should be smaller than -compactor.cleanup-interval
+  google.protobuf.Duration cleaner_visit_marker_timeout = 21 [(cli.flag) = {default: "10m0s"}];
+  // How frequently cleaner visit marker file should be updated when cleaning user.
+  google.protobuf.Duration cleaner_visit_marker_file_update_interval = 22 [(cli.flag) = {default: "5m0s"}];
+  // When enabled, caching bucket will be used for compactor, except cleaner service, which serves as the source of truth for block status
+  optional bool caching_bucket_enabled = 24 [(cli.flag) = {default: "false"}];
+  // How frequently compaction visit marker file should be updated duration compaction.
+  google.protobuf.Duration compaction_visit_marker_file_update_interval = 25 [(cli.flag) = {default: "1m0s"}];
 }

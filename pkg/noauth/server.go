@@ -6,10 +6,9 @@ import (
 	"crypto/rsa"
 	"embed"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
-
-	"log/slog"
 
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/ory/fosite"
@@ -100,8 +99,7 @@ func (s *Server) connectToManagementAPI(ctx context.Context) error {
 	).Info("connecting to management api")
 	cc, err := grpc.DialContext(ctx, s.ManagementAPIEndpoint,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithChainStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-		grpc.WithChainUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		grpc.WithBlock(),
 	)
 	if err != nil {

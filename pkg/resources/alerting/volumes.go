@@ -30,7 +30,7 @@ func (r *Reconciler) storage() ([]corev1.PersistentVolumeClaim, []corev1.Volume)
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  "alerting-serving-cert-keys",
-					DefaultMode: lo.ToPtr[int32](0400),
+					DefaultMode: lo.ToPtr[int32](0o400),
 					Items: []corev1.KeyToPath{
 						{
 							Key:  "tls.crt",
@@ -63,7 +63,7 @@ func (r *Reconciler) storage() ([]corev1.PersistentVolumeClaim, []corev1.Volume)
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  "alerting-client-cert-keys",
-					DefaultMode: lo.ToPtr[int32](0400),
+					DefaultMode: lo.ToPtr[int32](0o400),
 					Items: []corev1.KeyToPath{
 						{
 							Key:  "tls.crt",
@@ -86,7 +86,7 @@ func (r *Reconciler) storage() ([]corev1.PersistentVolumeClaim, []corev1.Volume)
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  "alerting-serving-cert-keys",
-					DefaultMode: lo.ToPtr[int32](0400),
+					DefaultMode: lo.ToPtr[int32](0o400),
 					Items: []corev1.KeyToPath{
 						{
 							Key:  "ca.crt",
@@ -141,7 +141,6 @@ func (r *Reconciler) syncerMounts() []corev1.VolumeMount {
 }
 
 func (r *Reconciler) webConfig() (*corev1.ConfigMap, error) {
-
 	// prometheus-webkit does something really annoying with marshalling that does not work
 	// when we marshal->unmarshal the struct
 	httpConfig := fmt.Sprintf(`
@@ -198,7 +197,7 @@ func (r *Reconciler) handlePVC(diskSize string) (pvc corev1.PersistentVolumeClai
 					}
 					return node.PersistenceConfig.PersistenceSource.PVC.AccessModes
 				}(),
-				Resources: corev1.ResourceRequirements{
+				Resources: corev1.VolumeResourceRequirements{
 					Requests: corev1.ResourceList{
 						corev1.ResourceStorage: resource.MustParse(diskSize),
 					},

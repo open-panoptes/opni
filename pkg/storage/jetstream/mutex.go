@@ -65,7 +65,7 @@ func (j *jetstreamMutex) Key() string {
 	return j.prefix + "-" + j.key
 }
 
-func (j *jetstreamMutex) tryLock() (chan struct{}, error) {
+func (j *jetstreamMutex) tryLock() (<-chan struct{}, error) {
 	var err error
 	if _, err := j.js.AddStream(newLease(j.Key())); err != nil {
 		return nil, err

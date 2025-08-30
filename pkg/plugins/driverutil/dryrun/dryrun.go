@@ -7,11 +7,11 @@ import (
 	"reflect"
 	strings "strings"
 
-	"github.com/bufbuild/protovalidate-go"
 	"github.com/nsf/jsondiff"
 	cliutil "github.com/rancher/opni/pkg/opni/cliutil"
 	"github.com/rancher/opni/pkg/plugins/driverutil"
 	"github.com/rancher/opni/pkg/util"
+	"github.com/rancher/opni/pkg/validation"
 	"github.com/samber/lo"
 	cobra "github.com/spf13/cobra"
 	"github.com/ttacon/chalk"
@@ -103,7 +103,7 @@ func BuildCmd[
 			dryRunClient := NewDryRunClient(client).FromClientConn(cci.UnderlyingConn(client))
 
 			response := dryRunClient.Response()
-			if errs := (*protovalidate.ValidationError)(response.GetValidationErrors()); errs != nil {
+			if errs := validation.ErrorsFromProto(response.GetValidationErrors()); errs != nil {
 				cmd.Println(chalk.Yellow.Color(errs.Error()))
 			}
 

@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/bufbuild/protovalidate-go"
 	"github.com/nsf/jsondiff"
 	"github.com/rancher/opni/pkg/opni/cliutil"
 	"github.com/rancher/opni/pkg/plugins/driverutil"
@@ -15,6 +14,7 @@ import (
 	"github.com/rancher/opni/pkg/util"
 	"github.com/rancher/opni/pkg/util/fieldmask"
 	"github.com/rancher/opni/pkg/util/flagutil"
+	"github.com/rancher/opni/pkg/validation"
 	"github.com/spf13/cobra"
 	"github.com/ttacon/chalk"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -51,8 +51,8 @@ func BuildCmd[
 		diffFull   bool
 		diffFormat string
 	)
-	var getRequest = util.NewMessage[G]()
-	var historyRequest = util.NewMessage[H]()
+	getRequest := util.NewMessage[G]()
+	historyRequest := util.NewMessage[H]()
 
 	cmd := &cobra.Command{
 		Use:   use,
@@ -228,7 +228,7 @@ the secret values will not change from the current configuration.
 				yes := "Yes"
 
 				comments := []string{}
-				if errs := (*protovalidate.ValidationError)(dryRunResp.GetValidationErrors()); errs != nil {
+				if errs := validation.ErrorsFromProto(dryRunResp.GetValidationErrors()); errs != nil {
 					yes += " (bypass validation checks)"
 					errStr := errs.Error()
 					comments = append(comments, errStr)

@@ -4,10 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
-
-	"log/slog"
 
 	opsterv1 "github.com/Opster/opensearch-k8s-operator/opensearch-operator/api/v1"
 	"github.com/Opster/opensearch-k8s-operator/opensearch-operator/pkg/builders"
@@ -175,7 +174,6 @@ func (d *KubernetesManagerDriver) StoreClusterMetadata(ctx context.Context, id, 
 		cluster.Spec.FriendlyName = name
 		return d.K8sClient.Update(ctx, cluster)
 	})
-
 	if err != nil {
 		d.Logger.Error(fmt.Sprintf("failed to update cluster data: %v", err))
 		return k8sutilerrors.GRPCFromK8s(err)
@@ -239,7 +237,6 @@ func (d *KubernetesManagerDriver) SetClusterStatus(ctx context.Context, id strin
 		cluster.Spec.Enabled = enabled
 		return d.K8sClient.Update(ctx, cluster)
 	})
-
 	if err != nil {
 		d.Logger.Error(fmt.Sprintf("failed to update logging cluster: %v", err))
 		return k8sutilerrors.GRPCFromK8s(err)
@@ -322,7 +319,6 @@ func (d *KubernetesManagerDriver) StoreClusterReadUser(ctx context.Context, user
 	controllerutil.SetOwnerReference(cluster, binding, d.K8sClient.Scheme())
 
 	err = client.IgnoreAlreadyExists(d.K8sClient.Create(ctx, binding))
-
 	if err != nil {
 		d.Logger.Error(fmt.Sprintf("failed to store logging cluster binding: %v", err))
 		return k8sutilerrors.GRPCFromK8s(err)
@@ -449,7 +445,7 @@ func (d *KubernetesManagerDriver) GetBackendURL(ctx context.Context) (string, er
 	if err != nil {
 		return "", k8sutilerrors.GRPCFromK8s(err)
 	}
-	host := builders.DashboardsServiceName(cluster)
+	host := builders.NewDashboardsSvcForCr(cluster)
 	return fmt.Sprintf("http://%s.%s:5601", host, d.Namespace), nil
 }
 

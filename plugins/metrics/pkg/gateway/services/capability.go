@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/cortexproject/cortex/pkg/purger"
+	"github.com/kralicky/tools-lite/pkg/memoize"
 	"github.com/lestrrat-go/backoff/v2"
 	capabilityv1 "github.com/rancher/opni/pkg/apis/capability/v1"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
@@ -30,7 +31,6 @@ import (
 	"github.com/rancher/opni/plugins/metrics/pkg/cortex"
 	"github.com/rancher/opni/plugins/metrics/pkg/gateway/drivers"
 	"github.com/rancher/opni/plugins/metrics/pkg/types"
-	"golang.org/x/tools/pkg/memoize"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"

@@ -2,11 +2,10 @@ package cortex
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 	"unsafe"
-
-	"errors"
 
 	"github.com/cortexproject/cortex/pkg/cortexpb"
 	"github.com/rancher/opni/plugins/metrics/pkg/types"
@@ -71,7 +70,7 @@ func (t *federatingInterceptor) Intercept(
 		}
 		errs = append(errs, t.mdTracker.replicate(req.Metadata, func(tenantId string, metricMetadata []*cortexpb.MetricMetadata) error {
 			req.Metadata = metricMetadata
-			md, _, _ := metadata.FromOutgoingContextRaw(outgoingCtx)
+			md, _ := metadata.FromOutgoingContext(outgoingCtx)
 			md[lowerOrgIDHeaderName] = []string{tenantId}
 			if _, err := handler(outgoingCtx, req); err != nil {
 				return err
@@ -118,7 +117,7 @@ func (t *federatingInterceptor) Intercept(
 				t.conf.Metrics.RemoteWriteTotalProcessedSeries.Add(outgoingCtx, int64(len(req.Timeseries)))
 			}
 			req.Timeseries = allTimeseries[start:end] // reuse the same request
-			md, _, _ := metadata.FromOutgoingContextRaw(outgoingCtx)
+			md, _ := metadata.FromOutgoingContext(outgoingCtx)
 			if id == "" {
 				id = defaultId
 			} else {

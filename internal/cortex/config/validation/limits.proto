@@ -4,13 +4,13 @@
 syntax = "proto3";
 package validation;
 
-import "github.com/rancher/opni/internal/codegen/cli/cli.proto";
+import "github.com/kralicky/codegen/cli/cli.proto";
 import "google/protobuf/duration.proto";
 
 option go_package      = "github.com/rancher/opni/internal/cortex/config/validation";
 option (cli.generator) = {
-  generate:          true
-  generate_deepcopy: true
+  enabled:           true,
+  generate_deepcopy: true,
 };
 
 message Limits {
@@ -43,7 +43,7 @@ message Limits {
   // Reject old samples.
   optional bool reject_old_samples = 14 [(cli.flag) = {default: "false"}];
   // Maximum accepted sample age before rejecting.
-  google.protobuf.Duration reject_old_samples_max_age = 15 [(cli.flag) = {default: "2w"}];
+  google.protobuf.Duration reject_old_samples_max_age = 15 [(cli.flag) = {default: "336h"}];
   // Duration which table will be created/deleted before/after it's needed; we won't accept sample from before this time.
   google.protobuf.Duration creation_grace_period = 16 [(cli.flag) = {default: "10m"}];
   // Enforce every metadata has a metric name.
@@ -56,8 +56,8 @@ message Limits {
   repeated RelabelConfig metric_relabel_configs = 20 [(cli.flag) = {skip: true}];
   // Enables support for exemplars in TSDB and sets the maximum number that will be stored. less than zero means disabled. If the value is set to zero, cortex will fallback to blocks-storage.tsdb.max-exemplars value.
   optional int32 max_exemplars = 21 [(cli.flag) = {default: "0"}];
-  // The maximum number of series for which a query can fetch samples from each ingester. This limit is enforced only in the ingesters (when querying samples not flushed to the storage yet) and it's a per-instance limit. This limit is ignored when running the Cortex blocks storage. When running Cortex with blocks storage use -querier.max-fetched-series-per-query limit instead.
-  optional int32 max_series_per_query = 22 [(cli.flag) = {default: "100000"}];
+  // Limit on total number of positive and negative buckets allowed in a single native histogram. The resolution of a histogram with more buckets will be reduced until the number of buckets is within the limit. If the limit cannot be reached, the sample will be discarded. 0 means no limit. Enforced at Distributor.
+  optional int32 max_native_histogram_buckets = 22 [(cli.flag) = {default: "0"}];
   // The maximum number of active series per user, per ingester. 0 to disable.
   optional int32 max_series_per_user = 23 [(cli.flag) = {default: "5000000"}];
   // The maximum number of active series per metric name, per ingester. 0 to disable.
@@ -86,7 +86,7 @@ message Limits {
   optional int32 max_fetched_data_bytes_per_query = 35 [(cli.flag) = {default: "0"}];
   // Limit how long back data (series and metadata) can be queried, up until <lookback> duration ago. This limit is enforced in the query-frontend, querier and ruler. If the requested time range is outside the allowed range, the request will not fail but will be manipulated to only query data within the allowed time range. 0 to disable.
   google.protobuf.Duration max_query_lookback = 36 [(cli.flag) = {default: "0s"}];
-  // Limit the query time range (end - start time). This limit is enforced in the query-frontend (on the received query) and in the querier (on the query possibly split by the query-frontend). 0 to disable.
+  // Limit the query time range (end - start time of range query parameter and max - min of data fetched time range). This limit is enforced in the query-frontend and ruler (on the received query). 0 to disable.
   google.protobuf.Duration max_query_length = 37 [(cli.flag) = {default: "0s"}];
   // Maximum number of split queries will be scheduled in parallel by the frontend.
   optional int32 max_query_parallelism = 38 [(cli.flag) = {default: "14"}];
@@ -96,7 +96,7 @@ message Limits {
   optional double max_queriers_per_tenant = 40 [(cli.flag) = {default: "0"}];
   // Maximum number of outstanding requests per tenant per request queue (either query frontend or query scheduler); requests beyond this error with HTTP 429.
   optional int32 max_outstanding_requests_per_tenant = 41 [(cli.flag) = {default: "100"}];
-  // Duration to delay the evaluation of rules to ensure the underlying metrics have been pushed to Cortex.
+  // Deprecated(use ruler.query-offset instead) and will be removed in v1.19.0: Duration to delay the evaluation of rules to ensure the underlying metrics have been pushed to Cortex.
   google.protobuf.Duration ruler_evaluation_delay_duration = 42 [(cli.flag) = {default: "0s"}];
   // The default tenant's shard size when the shuffle-sharding strategy is used by ruler. When this setting is specified in the per-tenant overrides, a value of 0 disables shuffle sharding for the tenant.
   optional int32 ruler_tenant_shard_size = 43 [(cli.flag) = {default: "0"}];
@@ -140,6 +140,24 @@ message Limits {
   optional int32 alertmanager_max_alerts_size_bytes = 62 [(cli.flag) = {default: "0"}];
   // list of rule groups to disable
   repeated DisabledRuleGroup disabled_rule_groups = 63 [(cli.flag) = {skip: true}];
+  // [Experimental] Flag to enable handling of samples with mixed external labels identifying replicas in an HA Prometheus setup. Supported only if -distributor.ha-tracker.enable-for-all-users is true.
+  optional bool accept_mixed_ha_samples = 73 [(cli.flag) = {default: "false"}];
+  // Comma separated list of resource attributes that should be converted to labels.
+  repeated string promote_resource_attributes = 74;
+  // [Experimental] Enable limits per LabelSet. Supported limits per labelSet: [max_series]
+  repeated LimitsPerLabelSet limits_per_label_set = 75 [(cli.flag) = {skip: true}];
+  // Configuration for query priority.
+  QueryPriority query_priority = 76 [(cli.flag) = {skip: true}];
+  // Configuration for query rejection.
+  QueryRejection query_rejection = 77 [(cli.flag) = {skip: true}];
+  // Duration to offset all rule evaluation queries per-tenant.
+  google.protobuf.Duration ruler_query_offset = 78 [(cli.flag) = {default: "0s"}];
+  // external labels for alerting rules
+  repeated LabelsLabel ruler_external_labels = 79 [(cli.flag) = {skip: true}];
+  // Index size limit in bytes for each compaction partition. 0 means no limit
+  optional int64 compactor_partition_index_size_bytes = 80 [(cli.flag) = {default: "68719476736"}];
+  // Time series count limit for each compaction partition. 0 means no limit
+  optional int64 compactor_partition_series_count = 81 [(cli.flag) = {default: "0"}];
 }
 
 message DisabledRuleGroup {
@@ -147,6 +165,86 @@ message DisabledRuleGroup {
   optional string namespace = 1 [(cli.flag) = {skip: true}];
   // name of the rule group
   optional string name = 2 [(cli.flag) = {skip: true}];
+}
+
+message LimitsPerLabelSet {
+  LimitsPerLabelSetEntry limits = 1 [(cli.flag) = {skip: true}];
+  // LabelSet which the limit should be applied. If no labels are provided, it becomes the default partition which matches any series that doesn't match any other explicitly defined label sets.'
+  repeated LabelsLabel label_set = 2 [(cli.flag) = {skip: true}];
+}
+
+message LimitsPerLabelSetEntry {
+  // The maximum number of active series per LabelSet, across the cluster before replication. Setting the value 0 will enable the monitoring (metrics) but would not enforce any limits.
+  optional int32 max_series = 1 [(cli.flag) = {skip: true}];
+}
+
+message PriorityDef {
+  // Priority level. Must be a unique value.
+  optional int64 priority = 1 [(cli.flag) = {skip: true}];
+  // Number of reserved queriers to handle priorities higher or equal to the priority level. Value between 0 and 1 will be used as a percentage.
+  optional double reserved_queriers = 2 [(cli.flag) = {skip: true}];
+  // List of query_attributes to match and assign priority to queries. A query is assigned to this priority if it matches any query_attribute in this list. Each query_attribute has several properties (e.g., regex, time_window, user_agent), and all specified properties must match for a query_attribute to be considered a match. Only the specified properties are checked, and an AND operator is applied to them.
+  repeated QueryAttribute query_attributes = 3 [(cli.flag) = {skip: true}];
+}
+
+message QueryAttribute {
+  // API type for the query. Should be one of the query, query_range, series, labels, label_values. If not set, it won't be checked.
+  optional string api_type = 1 [(cli.flag) = {skip: true}];
+  // Regex that the query string (or at least one of the matchers in metadata query) should match. If not set, it won't be checked.
+  optional string regex = 2 [(cli.flag) = {skip: true}];
+  // Overall data select time window (including range selectors, modifiers and lookback delta) that the query should be within. If not set, it won't be checked.
+  TimeWindow time_window = 3 [(cli.flag) = {skip: true}];
+  // Query time range should be within this limit to match. Depending on where it was used, in most of the use-cases, either min or max value will be used. If not set, it won't be checked.
+  TimeRangeLimit time_range_limit = 4 [(cli.flag) = {skip: true}];
+  // If query step provided should be within this limit to match. If not set, it won't be checked. This property only applied to range queries and ignored for other types of queries.
+  QueryStepLimit query_step_limit = 5 [(cli.flag) = {skip: true}];
+  // Regex that User-Agent header of the request should match. If not set, it won't be checked.
+  optional string user_agent_regex = 6 [(cli.flag) = {skip: true}];
+  // Grafana includes X-Dashboard-Uid header in query requests. If this field is provided then X-Dashboard-Uid header of request should match this value. If not set, it won't be checked. This property won't be applied to metadata queries.
+  optional string dashboard_uid = 7 [(cli.flag) = {skip: true}];
+  // Grafana includes X-Panel-Id header in query requests. If this field is provided then X-Panel-Id header of request should match this value. If not set, it won't be checked. This property won't be applied to metadata queries.
+  optional string panel_id               = 8  [(cli.flag) = {skip: true}];
+  RegexpRegexp    CompiledRegex          = 9;
+  RegexpRegexp    CompiledUserAgentRegex = 10;
+}
+
+message QueryPriority {
+  optional bool  enabled          = 1;
+  optional int64 default_priority = 2;
+  // List of priority definitions.
+  repeated PriorityDef priorities = 3 [(cli.flag) = {skip: true}];
+}
+
+message QueryRejection {
+  optional bool enabled = 1;
+  // List of query_attributes to match and reject queries. A query is rejected if it matches any query_attribute in this list. Each query_attribute has several properties (e.g., regex, time_window, user_agent), and all specified properties must match for a query_attribute to be considered a match. Only the specified properties are checked, and an AND operator is applied to them.
+  repeated QueryAttribute query_attributes = 2 [(cli.flag) = {skip: true}];
+}
+
+message QueryStepLimit {
+  // Query step should be above or equal to this value to match. If set to 0, it won't be checked.
+  google.protobuf.Duration min = 1 [(cli.flag) = {skip: true}];
+  // Query step should be below or equal to this value to match. If set to 0, it won't be checked.
+  google.protobuf.Duration max = 2 [(cli.flag) = {skip: true}];
+}
+
+message TimeRangeLimit {
+  // This will be duration (12h, 1d, 15d etc.). Query time range should be above or equal to this value to match. Ex: if this value is 20d, then queries whose range is bigger than or equal to 20d will match. If set to 0, it won't be checked.
+  google.protobuf.Duration min = 1 [(cli.flag) = {skip: true}];
+  // This will be duration (12h, 1d, 15d etc.). Query time range should be below or equal to this value to match. Ex: if this value is 24h, then queries whose range is smaller than or equal to 24h will match.If set to 0, it won't be checked.
+  google.protobuf.Duration max = 2 [(cli.flag) = {skip: true}];
+}
+
+message TimeWindow {
+  // Start of the data select time window (including range selectors, modifiers and lookback delta) that the query should be within. If set to 0, it won't be checked.
+  google.protobuf.Duration start = 1 [(cli.flag) = {skip: true}];
+  // End of the data select time window (including range selectors, modifiers and lookback delta) that the query should be within. If set to 0, it won't be checked.
+  google.protobuf.Duration end = 2 [(cli.flag) = {skip: true}];
+}
+
+message LabelsLabel {
+  optional string Name  = 1;
+  optional string Value = 2;
 }
 
 message RelabelConfig {
@@ -158,3 +256,5 @@ message RelabelConfig {
   optional string replacement   = 6;
   optional string action        = 7;
 }
+
+message RegexpRegexp {}

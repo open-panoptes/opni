@@ -169,10 +169,9 @@ func NewQueryClient(url, tenantName, username, password string) (v1.API, error) 
 		Address: url,
 		RoundTripper: &TenantIDRoundTripper{
 			TenantName: tenantName,
-			Next:       config_util.NewBasicAuthRoundTripper(username, config_util.Secret(password), "", api.DefaultRoundTripper),
+			Next:       config_util.NewBasicAuthRoundTripper(config_util.NewInlineSecret(username), config_util.NewInlineSecret(password), api.DefaultRoundTripper),
 		},
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +268,7 @@ func (q *QueryRunner) ResolveAddrs() error {
 	defer cancel()
 
 	// If some of the dns resolution fails, log the error.
-	if err := q.dnsProvider.Resolve(ctx, []string{q.cfg.Endpoint}); err != nil {
+	if err := q.dnsProvider.Resolve(ctx, []string{q.cfg.Endpoint}, false); err != nil {
 		level.Error(q.logger).Log("msg", "failed to resolve addresses", "err", err)
 	}
 

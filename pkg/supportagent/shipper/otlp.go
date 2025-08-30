@@ -4,20 +4,20 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"log/slog"
 	"runtime"
 	"strings"
 	"sync"
 
-	"log/slog"
-
-	"github.com/go-logr/logr/slogr"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/adapter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/entry"
 	"github.com/rancher/opni/pkg/logger"
 	"github.com/rancher/opni/pkg/supportagent/dateparser"
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 	collogspb "go.opentelemetry.io/proto/otlp/collector/logs/v1"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 )
@@ -26,7 +26,7 @@ type otlpShipper struct {
 	otlpShipperOptions
 	client                 collogspb.LogsServiceClient
 	dateParser             dateparser.DateParser
-	converter              *adapter.Converter
+	converter              *adapter.FromPdataConverter
 	collectedErrorMessages []string
 	failureCount           int
 
@@ -93,7 +93,7 @@ func NewOTLPShipper(
 		otlpShipperOptions: options,
 		client:             collogspb.NewLogsServiceClient(cc),
 		dateParser:         parser,
-		converter:          adapter.NewConverter(slogr.NewLogr(lg.Handler())),
+		converter:          adapter.NewFromPdataConverter(component.TelemetrySettings{Logger: zap.L()}, 1),
 		lg:                 lg,
 	}
 }
@@ -123,7 +123,7 @@ func (s *otlpShipper) Publish(ctx context.Context, tokens *bufio.Scanner) error 
 				s.lg.Info(fmt.Sprintf("batching %d logs", len(entries)))
 
 				s.wgCounter.Add(1)
-				err := s.converter.Batch(entries)
+				err := s.converter.Batch(adapter.ConvertEntries(entries))
 				if err != nil {
 					s.wgCounter.Done()
 					s.lg.Error("failed to batch logs", logger.Err(err))
@@ -156,7 +156,7 @@ func (s *otlpShipper) Publish(ctx context.Context, tokens *bufio.Scanner) error 
 
 	if len(entries) > 0 {
 		s.wgCounter.Add(1)
-		err := s.converter.Batch(entries)
+		err := s.converter.Batch(adapter.ConvertEntries(entries))
 		if err != nil {
 			s.wgCounter.Done()
 			s.lg.Error("failed to batch logs", logger.Err(err))
@@ -198,7 +198,7 @@ func (s *otlpShipper) shipLogs(ctx context.Context) {
 			s.rMutex.RUnlock()
 			return
 		case logs := <-s.converter.OutChannel():
-			s.exportLogs(ctx, logs)
+			s.exportLogs(ctx, adapter.ConvertEntries(logs))
 			s.wgCounter.Done()
 			s.rMutex.RUnlock()
 		default:

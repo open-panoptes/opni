@@ -2,12 +2,11 @@ syntax = "proto3";
 
 package node.metrics.config;
 
-import "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate/validate.proto";
-import "github.com/rancher/opni/internal/codegen/cli/cli.proto";
+import "buf/validate/validate.proto";
+import "github.com/kralicky/codegen/cli/cli.proto";
 import "github.com/rancher/opni/pkg/apis/core/v1/core.proto";
 import "github.com/rancher/opni/pkg/config/v1beta1/agent_config.proto";
 import "github.com/rancher/opni/pkg/plugins/driverutil/types.proto";
-import "github.com/rancher/opni/pkg/validation/validate.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/descriptor.proto";
 import "google/protobuf/duration.proto";
@@ -16,7 +15,7 @@ import "google/protobuf/field_mask.proto";
 
 option go_package      = "github.com/rancher/opni/plugins/metrics/apis/node";
 option (cli.generator) = {
-  generate: true
+  enabled: true,
 };
 
 // The NodeConfiguration service allows for per-node configuration of the
@@ -24,74 +23,74 @@ option (cli.generator) = {
 // Served as a management API extension.
 service NodeConfiguration {
   option (cli.command_group) = {
-    use: "config"
+    use: "config",
   };
 
   // {{ template "GetDefaultConfiguration" }}
   rpc GetDefaultConfiguration(GetRequest) returns (MetricsCapabilityConfig) {
     option (cli.command) = {
-      use:          "get-default"
-      enable_hooks: true
+      use:          "get-default",
+      enable_hooks: true,
     };
     option (google.api.http) = {
-      get: "/node_config"
+      get: "/node_config",
     };
   }
 
   // {{ template "SetDefaultConfiguration" }}
   rpc SetDefaultConfiguration(SetRequest) returns (google.protobuf.Empty) {
     option (cli.command) = {
-      use:         "set-default"
-      granularity: EditMessage
+      use:         "set-default",
+      granularity: EditMessage,
     };
     option (google.api.http) = {
-      put:  "/node_config"
-      body: "*"
+      put:  "/node_config",
+      body: "*",
     };
   }
 
   // {{ template "ResetDefaultConfiguration" }}
   rpc ResetDefaultConfiguration(google.protobuf.Empty) returns (google.protobuf.Empty) {
     option (cli.command) = {
-      use: "reset-default"
+      use: "reset-default",
     };
     option (google.api.http) = {
-      post: "/node_config/reset"
+      post: "/node_config/reset",
     };
   }
 
   // {{ template "GetConfiguration" }}
   rpc GetConfiguration(GetRequest) returns (MetricsCapabilityConfig) {
     option (cli.command) = {
-      use:          "get"
-      enable_hooks: true
+      use:          "get",
+      enable_hooks: true,
     };
     option (google.api.http) = {
-      get: "/node_config/{node.id}"
+      get: "/node_config/{node.id}",
     };
   }
 
   // {{ template "SetConfiguration" }}
   rpc SetConfiguration(SetRequest) returns (google.protobuf.Empty) {
     option (cli.command) = {
-      use:          "set"
-      enable_hooks: true
-      granularity:  EditMessage
+      use:          "set",
+      enable_hooks: true,
+      granularity:  EditMessage,
     };
     option (google.api.http) = {
-      put:  "/node_config/{node.id}"
-      body: "*"
+      put:  "/node_config/{node.id}",
+      body: "*",
     };
   }
 
   // {{ template "ResetConfiguration" }}
   rpc ResetConfiguration(ResetRequest) returns (google.protobuf.Empty) {
     option (cli.command) = {
-      use: "reset"
+      use: "reset",
     };
     option (google.api.http) = {
-      post: "/node_config/{node.id}/reset"
-      body: "*"
+      post: "/node_config/{node.id}/reset",
+      body: "*",
     };
   }
 
@@ -99,18 +98,18 @@ service NodeConfiguration {
   rpc DryRun(DryRunRequest) returns (DryRunResponse) {
     option (cli.command).skip = true;
     option (google.api.http) = {
-      post: "/dry-run"
-      body: "*"
+      post: "/dry-run",
+      body: "*",
     };
   }
 
   // {{ template "ConfigurationHistory" }}
   rpc ConfigurationHistory(ConfigurationHistoryRequest) returns (ConfigurationHistoryResponse) {
     option (cli.command) = {
-      use: "history"
+      use: "history",
     };
     option (google.api.http) = {
-      get: "/node_config/{node.id}/history"
+      get: "/node_config/{node.id}/history",
     };
   }
 }
@@ -132,14 +131,14 @@ message MetricsCapabilityStatus {
 message MetricsCapabilityConfig {
   core.Revision revision = 5;
 
-  .config.v1beta1.RulesSpec rules = 1 [(cli.flag_set).default = {
+  ..config.v1beta1.RulesSpec rules = 1 [(cli.flag_set).default = {
     [type.googleapis.com/config.v1beta1.RulesSpec]: {
       discovery: {
         prometheusRules: {
-          searchNamespaces: [""]
-        }
-      }
-    }
+          searchNamespaces: [""],
+        },
+      },
+    },
   }];
 
   enum Driver {
@@ -147,27 +146,17 @@ message MetricsCapabilityConfig {
     Prometheus    = 1;
     OpenTelemetry = 2;
   }
-  optional Driver driver = 4 [(cli.flag).default = "Prometheus"];
-  PrometheusSpec prometheus = 2 [
-    (buf.validate.field).ignore_if = {
-      id:         "prometheus"
-      expression: "this.driver != 1"
-    }
-  ];
-  OTELSpec otel = 3 [
-    (buf.validate.field).ignore_if = {
-      id:         "otel"
-      expression: "this.driver != 2"
-    }
-  ];
+  optional Driver driver     = 4 [(cli.flag).default = "Prometheus"];
+  PrometheusSpec  prometheus = 2;
+  OTELSpec        otel       = 3;
 }
 
 message PrometheusSpec {
   optional string image = 1 [
     (cli.flag).default       = "quay.io/prometheus/prometheus:latest",
     (buf.validate.field).cel = {
-      id:         "prometheus_image"
-      expression: "this.isValidImageRef()"
+      id:         "prometheus_image",
+      expression: "this.isValidImageRef()",
     }
   ];
   reserved 2;
@@ -176,17 +165,17 @@ message PrometheusSpec {
 message ScrapeConfig {
   optional string jobName = 1 [(buf.validate.field).required = true];
   repeated string targets = 2 [(buf.validate.field).repeated = {
-    min_items: 1
-    unique:    true
+    min_items: 1,
+    unique:    true,
   }];
   optional string scrapeInterval = 3 [
     (buf.validate.field) = {
-      required: true
+      required: true,
       cel: {
-        id:         "scrape_interval_duration"
-        message:    "invalid scrape interval duration"
-        expression: "prometheusDuration(this) >= duration('1s')"
-      }
+        id:         "scrape_interval_duration",
+        message:    "invalid scrape interval duration",
+        expression: "prometheusDuration(this) >= duration('1s')",
+      },
     }
   ];
 }
@@ -200,12 +189,10 @@ message OTELSpec {
 message WALConfig {
   optional bool enabled = 1;
   optional int64 bufferSize = 2 [
-    (buf.validate.field).ignore_if = {id: "bufferSize", expression: "!this.enabled"},
-    (buf.validate.field).required  = true,
-    (buf.validate.field).int64.gt  = 0
+    (buf.validate.field).required = true,
+    (buf.validate.field).int64.gt = 0
   ];
   google.protobuf.Duration truncateFrequency = 3 [
-    (buf.validate.field).ignore_if   = {id: "truncateFrequency", expression: "!this.enabled"},
     (buf.validate.field).required    = true,
     (buf.validate.field).duration.gt = {seconds: 0, nanos: 0}
   ];

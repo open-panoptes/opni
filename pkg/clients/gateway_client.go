@@ -4,12 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"math"
 	"net"
 	"strings"
 	"sync"
-
-	"log/slog"
 
 	"github.com/rancher/opni/pkg/auth/challenges"
 	"github.com/rancher/opni/pkg/auth/cluster"
@@ -146,10 +145,9 @@ func dial(ctx context.Context, address, id string, kr keyring.Keyring, tlsConfig
 	cc, err := grpc.DialContext(ctx, address,
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
 		grpc.WithChainStreamInterceptor(
-			otelgrpc.StreamClientInterceptor(),
 			cluster.StreamClientInterceptor(challengeHandler),
 		),
-		grpc.WithChainUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		grpc.WithDefaultCallOptions(
 			grpc.WaitForReady(true),
 			grpc.MaxCallSendMsgSize(math.MaxInt32),

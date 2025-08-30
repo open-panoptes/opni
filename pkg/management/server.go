@@ -6,12 +6,11 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"sync"
 	"time"
-
-	"log/slog"
 
 	"github.com/gin-gonic/gin"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -248,10 +247,8 @@ func (m *Server) listenAndServeGrpc(ctx context.Context) error {
 		server = grpc.NewServer(
 			grpc.Creds(insecure.NewCredentials()),
 			grpc.UnknownServiceHandler(unknownServiceHandler(m.director)),
-			grpc.ChainStreamInterceptor(otelgrpc.StreamServerInterceptor()),
-			grpc.ChainUnaryInterceptor(
-				caching.NewClientGrpcTtlCacher().UnaryServerInterceptor(),
-				otelgrpc.UnaryServerInterceptor()),
+			grpc.StatsHandler(otelgrpc.NewServerHandler()),
+			grpc.ChainUnaryInterceptor(caching.NewClientGrpcTtlCacher().UnaryServerInterceptor()),
 		)
 		managementv1.RegisterManagementServer(server, m)
 		configv1.RegisterGatewayConfigServer(server, m.mgr.AsServer())

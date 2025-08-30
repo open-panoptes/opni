@@ -2,13 +2,13 @@ syntax = "proto3";
 
 package test.lock;
 
-import "github.com/rancher/opni/internal/codegen/cli/cli.proto";
+import "github.com/kralicky/codegen/cli/cli.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
 
 option go_package      = "github.com/rancher/opni/pkg/test/testgrpc";
 option (cli.generator) = {
-  generate: true
+  enabled: true,
 };
 
 message LockRequest {

@@ -311,7 +311,7 @@ func (r *Reconciler) etcdStatefulSet() (resources.Resource, error) {
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
 									SecretName:  "etcd-jwt-token",
-									DefaultMode: lo.ToPtr[int32](0400),
+									DefaultMode: lo.ToPtr[int32](0o400),
 								},
 							},
 						},
@@ -320,7 +320,7 @@ func (r *Reconciler) etcdStatefulSet() (resources.Resource, error) {
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
 									SecretName:  "etcd-serving-cert-keys",
-									DefaultMode: lo.ToPtr[int32](0400),
+									DefaultMode: lo.ToPtr[int32](0o400),
 								},
 							},
 						},
@@ -329,7 +329,7 @@ func (r *Reconciler) etcdStatefulSet() (resources.Resource, error) {
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
 									SecretName:  "etcd-peer-cert-keys",
-									DefaultMode: lo.ToPtr[int32](0400),
+									DefaultMode: lo.ToPtr[int32](0o400),
 								},
 							},
 						},
@@ -343,7 +343,7 @@ func (r *Reconciler) etcdStatefulSet() (resources.Resource, error) {
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
 						AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-						Resources: corev1.ResourceRequirements{
+						Resources: corev1.VolumeResourceRequirements{
 							Requests: corev1.ResourceList{
 								corev1.ResourceStorage: resource.MustParse("20Gi"),
 							},

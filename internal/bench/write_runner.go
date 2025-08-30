@@ -193,7 +193,6 @@ func (w *WriteBenchmarkRunner) SendBatch(ctx context.Context, batch []prompb.Tim
 	compressed := snappy.Encode(nil, data)
 
 	err = cli.Store(ctx, compressed)
-
 	if err != nil {
 		return errors.Wrap(err, "remote-write request failed")
 	}
@@ -224,7 +223,7 @@ func (w *WriteBenchmarkRunner) ResolveAddrs() error {
 	defer cancel()
 
 	// If some of the dns resolution fails, log the error.
-	if err := w.dnsProvider.Resolve(ctx, []string{w.cfg.Endpoint}); err != nil {
+	if err := w.dnsProvider.Resolve(ctx, []string{w.cfg.Endpoint}, false); err != nil {
 		level.Error(w.logger).Log("msg", "failed to resolve addresses", "err", err)
 	}
 

@@ -3,7 +3,7 @@ package node
 import (
 	"os"
 
-	cli "github.com/rancher/opni/internal/codegen/cli"
+	cli "github.com/kralicky/codegen/cli"
 	"github.com/rancher/opni/pkg/otel"
 	driverutil "github.com/rancher/opni/pkg/plugins/driverutil"
 	"github.com/rancher/opni/pkg/plugins/driverutil/dryrun"

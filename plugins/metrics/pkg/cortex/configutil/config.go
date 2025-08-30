@@ -391,7 +391,6 @@ func NewImplementationSpecificOverrides(impl ImplementationSpecificOverridesShap
 		}),
 		NewOverrider(func(t *ruler.Config) bool {
 			t.AlertmanagerURL = impl.AlertManager.AlertmanagerURL
-			t.AlertmanangerEnableV2API = impl.AlertManager.EnableV2
 			// t.Notifier.TLS = cortextls.ClientConfig(impl.AlertManager.ClientTLS)
 			return true
 		}),
@@ -477,13 +476,11 @@ func loadNonConfigurableStaticFields(config *cortex.Config) {
 	config.Distributor.ShardByAllLabels = true
 	config.Ingester.LifecyclerConfig.NumTokens = 512
 	config.IngesterClient.GRPCClientConfig.MaxSendMsgSize = 100 << 20
-	config.Querier.QueryStoreForLabels = true
 	config.QueryRange.SplitQueriesByInterval = 24 * time.Hour
 	config.QueryRange.AlignQueriesWithStep = true
 	config.QueryRange.CacheResults = true
 	config.QueryRange.ResultsCacheConfig.CacheConfig.EnableFifoCache = true
 	config.QueryRange.ResultsCacheConfig.CacheConfig.Fifocache.Validity = 1 * time.Hour
-	config.Ruler.AlertmanangerEnableV2API = true
 	config.Ruler.EnableAPI = true
 	config.LimitsConfig.MetricRelabelConfigs = []*relabel.Config{
 		metrics.OpniInternalLabelFilter(),

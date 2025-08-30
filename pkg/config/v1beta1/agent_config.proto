@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package config.v1beta1;
 
-import "github.com/rancher/opni/internal/codegen/cli/cli.proto";
+import "github.com/kralicky/codegen/cli/cli.proto";
 
 option go_package      = "github.com/rancher/opni/pkg/config/v1beta1";
 option (cli.generator) = {
-  generate: true
+  enabled: true,
 };
 
 message RulesSpec {

@@ -34,14 +34,15 @@ var _ = Describe("Tenant Impersonation", Ordered, Label("integration"), func() {
 		agent2RwClient    remote.WriteClient
 		cortexAdminClient cortexadmin.CortexAdminClient
 	)
-	var store = func(client remote.WriteClient, req *prompb.WriteRequest) error {
+	store := func(client remote.WriteClient, req *prompb.WriteRequest) error {
 		wrData, err := req.Marshal()
 		Expect(err).NotTo(HaveOccurred())
 
 		compressed := snappy.Encode(nil, wrData)
-		return client.Store(context.Background(), compressed, 0)
+		_, err = client.Store(context.Background(), compressed, 0)
+		return err
 	}
-	var queryVec = func(tenants []string, promql string) (model.Vector, error) {
+	queryVec := func(tenants []string, promql string) (model.Vector, error) {
 		resp, err := cortexAdminClient.Query(context.Background(), &cortexadmin.QueryRequest{
 			Tenants: tenants,
 			Query:   promql,
@@ -266,7 +267,6 @@ var _ = Describe("Tenant Impersonation", Ordered, Label("integration"), func() {
 
 						return nil
 					}).Should(Succeed())
-
 				})
 			})
 			When("a timeseries in the request does not contain the tenant impersonation label", func() {

@@ -16,7 +16,6 @@ import (
 	"github.com/rancher/opni/pkg/test/testgrpc"
 	"github.com/rancher/opni/pkg/util"
 	"github.com/samber/lo"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
@@ -44,7 +43,6 @@ var _ = BuildCachingInterceptorSuite(
 		testgrpc.ObjectServiceClient,
 		testgrpc.AggregatorServiceClient,
 	) {
-
 		testCacher := buildCache()
 		testCacher.SetCache(
 			caching.NewInMemoryGrpcTtlCache(10*1024, defaultEvictionInterval),
@@ -183,7 +181,6 @@ func BuildCachingInterceptorSuite(
 				testObjectClient,
 				testAggregatorClient = serverAndClientConstructor(buildCache)
 			id1, id2 = uuid.New().String(), uuid.New().String()
-
 		})
 
 		var aggregate int64 = 1
@@ -448,8 +445,12 @@ func BuildCachingInterceptorSuite(
 				}
 				randomInterceptors := []s{
 					{
-						UnaryServerInterceptor: otelgrpc.UnaryServerInterceptor(),
-						UnaryClientInterceptor: otelgrpc.UnaryClientInterceptor(),
+						UnaryServerInterceptor: func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+							return handler(ctx, req)
+						},
+						UnaryClientInterceptor: func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+							return invoker(ctx, method, req, reply, cc, opts...)
+						},
 					},
 				}
 
@@ -611,7 +612,6 @@ func BuildCachingInterceptorSuite(
 						)
 						Expect(err).To(Succeed())
 						Expect(value.Value).To(Equal(int64(1)))
-
 					}()
 				}
 				wg.Wait()

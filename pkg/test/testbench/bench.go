@@ -3,10 +3,9 @@ package testbench
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"time"
-
-	"log/slog"
 
 	"emperror.dev/errors"
 	"github.com/golang/snappy"
@@ -96,5 +95,6 @@ func (b *BenchRunner) sendBatch(ctx context.Context, batch []prompb.TimeSeries) 
 
 	compressed := snappy.Encode(nil, data)
 
-	return b.client.Store(ctx, compressed, 0)
+	_, err = b.client.Store(ctx, compressed, 0)
+	return err
 }

@@ -2,21 +2,21 @@ syntax = "proto3";
 
 package config.v1;
 
-import "github.com/rancher/opni/internal/codegen/cli/cli.proto";
+import "buf/validate/validate.proto";
+import "github.com/kralicky/codegen/cli/cli.proto";
 import "github.com/rancher/opni/pkg/apis/core/v1/core.proto";
-import "github.com/rancher/opni/pkg/validation/validate.proto";
 
 option go_package      = "github.com/rancher/opni/pkg/config/v1;configv1";
 option (cli.generator) = {
-  generate:                        true
-  generate_flags_for_all_messages: true
+  enabled:                         true,
+  generate_flags_for_all_messages: true,
 };
 
 message GatewayConfigSpec {
   option (buf.validate.message) = {
     cel: {
-      id:         "check_conflicting_addresses"
-      message:    "gateway listen addresses must not conflict"
+      id:         "check_conflicting_addresses",
+      message:    "gateway listen addresses must not conflict",
       expression: 
         "["
         "  this.server.httpListenAddress,"
@@ -26,8 +26,8 @@ message GatewayConfigSpec {
         "  this.relay.grpcListenAddress,"
         "  this.health.httpListenAddress,"
         "  this.dashboard.httpListenAddress"
-        "].filter(a, !a.endsWith(':0')).unique()"
-    }
+        "].filter(a, !a.endsWith(':0')).unique()",
+    },
   };
   core.Revision        revision     = 1  [(cli.flag).skip = true];
   ServerSpec           server       = 2;
@@ -49,16 +49,16 @@ message ServerSpec {
   optional string httpListenAddress = 1 [
     (cli.flag).default       = "0.0.0.0:8080",
     (buf.validate.field).cel = {
-      id:         "server_http_listen_address"
-      expression: "this.isValidListenAddress()"
+      id:         "server_http_listen_address",
+      expression: "this.isValidListenAddress()",
     }
   ];
   // Address and port to serve the gateway's external grpc server on.
   optional string grpcListenAddress = 2 [
     (cli.flag).default       = "0.0.0.0:9090",
     (buf.validate.field).cel = {
-      id:         "server_grpc_listen_address"
-      expression: "this.isValidListenAddress()"
+      id:         "server_grpc_listen_address",
+      expression: "this.isValidListenAddress()",
     }
   ];
 
@@ -68,15 +68,15 @@ message ServerSpec {
     (buf.validate.field) = {
       cel: [
         {
-          id:         "server_grpc_advertise_address"
-          expression: "this.isValidListenAddress()"
+          id:         "server_grpc_advertise_address",
+          expression: "this.isValidListenAddress()",
         },
         {
-          id:         "server_grpc_advertise_address_port"
-          message:    "advertise address must have a non-zero port"
-          expression: "!this.endsWith(':0') && !this.endsWith(':')"
+          id:         "server_grpc_advertise_address_port",
+          message:    "advertise address must have a non-zero port",
+          expression: "!this.endsWith(':0') && !this.endsWith(':')",
         }
-      ]
+      ],
     }
   ];
 }
@@ -86,16 +86,16 @@ message ManagementServerSpec {
   optional string httpListenAddress = 1 [
     (cli.flag).default       = "0.0.0.0:11080",
     (buf.validate.field).cel = {
-      id:         "mgmt_http_listen_address"
-      expression: "this.isValidListenAddress()"
+      id:         "mgmt_http_listen_address",
+      expression: "this.isValidListenAddress()",
     }
   ];
   // Address and port to serve the management grpc server on.
   optional string grpcListenAddress = 2 [
     (cli.flag).default       = "0.0.0.0:11090",
     (buf.validate.field).cel = {
-      id:         "mgmt_grpc_listen_address"
-      expression: "this.isValidListenAddress()"
+      id:         "mgmt_grpc_listen_address",
+      expression: "this.isValidListenAddress()",
     }
   ];
   // The advertise address for the management server.
@@ -105,15 +105,15 @@ message ManagementServerSpec {
     (buf.validate.field) = {
       cel: [
         {
-          id:         "mgmt_grpc_advertise_address"
-          expression: "this.isValidListenAddress()"
+          id:         "mgmt_grpc_advertise_address",
+          expression: "this.isValidListenAddress()",
         },
         {
-          id:         "mgmt_grpc_advertise_address_port"
-          message:    "advertise address must have a non-zero port"
-          expression: "!this.endsWith(':0') && !this.endsWith(':')"
+          id:         "mgmt_grpc_advertise_address_port",
+          message:    "advertise address must have a non-zero port",
+          expression: "!this.endsWith(':0') && !this.endsWith(':')",
         }
-      ]
+      ],
     }
   ];
 }
@@ -123,8 +123,8 @@ message RelayServerSpec {
   optional string grpcListenAddress = 4 [
     (cli.flag).default       = "0.0.0.0:11190",
     (buf.validate.field).cel = {
-      id:         "relay_grpc_listen_address"
-      expression: "this.isValidListenAddress()"
+      id:         "relay_grpc_listen_address",
+      expression: "this.isValidListenAddress()",
     }
   ];
   // The advertise address for the relay server.
@@ -134,15 +134,15 @@ message RelayServerSpec {
     (buf.validate.field) = {
       cel: [
         {
-          id:         "relay_grpc_advertise_address"
-          expression: "this.isValidListenAddress()"
+          id:         "relay_grpc_advertise_address",
+          expression: "this.isValidListenAddress()",
         },
         {
-          id:         "relay_grpc_advertise_address_port"
-          message:    "advertise address must have a non-zero port"
-          expression: "!this.endsWith(':0') && !this.endsWith(':')"
+          id:         "relay_grpc_advertise_address_port",
+          message:    "advertise address must have a non-zero port",
+          expression: "!this.endsWith(':0') && !this.endsWith(':')",
         }
-      ]
+      ],
     }
   ];
 }
@@ -152,8 +152,8 @@ message HealthServerSpec {
   optional string httpListenAddress = 1 [
     (cli.flag).default       = "0.0.0.0:8086",
     (buf.validate.field).cel = {
-      id:         "health_http_listen_address"
-      expression: "this.isValidListenAddress()"
+      id:         "health_http_listen_address",
+      expression: "this.isValidListenAddress()",
     }
   ];
 }
@@ -163,8 +163,8 @@ message DashboardServerSpec {
   optional string httpListenAddress = 1 [
     (cli.flag).default       = "0.0.0.0:12080",
     (buf.validate.field).cel = {
-      id:         "dashboard_http_listen_address"
-      expression: "this.isValidListenAddress()"
+      id:         "dashboard_http_listen_address",
+      expression: "this.isValidListenAddress()",
     }
   ];
   // The advertise address for the dashboard server.
@@ -172,15 +172,15 @@ message DashboardServerSpec {
     (buf.validate.field) = {
       cel: [
         {
-          id:         "dashboard_http_advertise_address"
-          expression: "this.isValidListenAddress()"
+          id:         "dashboard_http_advertise_address",
+          expression: "this.isValidListenAddress()",
         },
         {
-          id:         "dashboard_http_advertise_address_port"
-          message:    "advertise address must have a non-zero port"
-          expression: "!this.endsWith(':0') && !this.endsWith(':')"
+          id:         "dashboard_http_advertise_address_port",
+          message:    "advertise address must have a non-zero port",
+          expression: "!this.endsWith(':0') && !this.endsWith(':')",
         }
-      ]
+      ],
     }
   ];
   // The hostname at which the dashboard is expected to be reachable.
@@ -194,11 +194,11 @@ message DashboardServerSpec {
     (buf.validate.field).repeated = {
       items: {
         cel: {
-          id:         "ip_or_cidr"
-          message:    "must be a valid IP address or CIDR"
-          expression: "this.isIp() || this.isIpPrefix()"
-        }
-      }
+          id:         "ip_or_cidr",
+          message:    "must be a valid IP address or CIDR",
+          expression: "this.isIp() || this.isIpPrefix()",
+        },
+      },
     }
   ];
   // Optional certificate configuration. If not set, the dashboard will use
@@ -215,9 +215,9 @@ enum StorageBackend {
 
 message StorageSpec {
   option (buf.validate.message).cel = {
-    id:         "storage_backend_configured"
-    message:    "selected storage backend must have matching configuration set"
-    expression: "(this.backend == 0 && has(this.etcd)) || (this.backend == 1 && has(this.jetStream))"
+    id:         "storage_backend_configured",
+    message:    "selected storage backend must have matching configuration set",
+    expression: "(this.backend == 0 && has(this.etcd)) || (this.backend == 1 && has(this.jetStream))",
   };
 
   // Key-value storage backend.
@@ -225,14 +225,8 @@ message StorageSpec {
     (cli.flag).default                     = "Etcd",
     (buf.validate.field).enum.defined_only = true
   ];
-  EtcdSpec etcd = 2 [(buf.validate.field).ignore_if = {
-    id:         "etcd"
-    expression: "this.backend != 0"
-  }];
-  JetStreamSpec jetStream = 3 [(buf.validate.field).ignore_if = {
-    id:         "jetstream"
-    expression: "this.backend != 1"
-  }];
+  EtcdSpec      etcd      = 2;
+  JetStreamSpec jetStream = 3;
 }
 
 message EtcdSpec {
@@ -240,10 +234,10 @@ message EtcdSpec {
   repeated string endpoints = 1 [
     (buf.validate.field) = {
       repeated: {
-        min_items: 1
-        unique:    true
-        items:     {string: {uri_ref: true}}
-      }
+        min_items: 1,
+        unique:    true,
+        items:     {string: {uri_ref: true}},
+      },
     }
   ];
 
@@ -255,33 +249,33 @@ message MTLSSpec {
   option (buf.validate.message) = {
     cel: [
       {
-        id:         "fields_mutually_exclusive_serverca"
-        message:    "fields serverCA and serverCAData are mutually exclusive"
-        expression: "!(has(this.serverCA) && has(this.serverCAData))"
+        id:         "fields_mutually_exclusive_serverca",
+        message:    "fields serverCA and serverCAData are mutually exclusive",
+        expression: "!(has(this.serverCA) && has(this.serverCAData))",
       },
       {
-        id:         "fields_mutually_exclusive_clientca"
-        message:    "fields clientCA and clientCAData are mutually exclusive"
-        expression: "!(has(this.clientCA) && has(this.clientCAData))"
+        id:         "fields_mutually_exclusive_clientca",
+        message:    "fields clientCA and clientCAData are mutually exclusive",
+        expression: "!(has(this.clientCA) && has(this.clientCAData))",
       },
       {
-        id:         "fields_mutually_exclusive_clientcert"
-        message:    "fields clientCert and clientCertData are mutually exclusive"
-        expression: "!(has(this.clientCert) && has(this.clientCertData))"
+        id:         "fields_mutually_exclusive_clientcert",
+        message:    "fields clientCert and clientCertData are mutually exclusive",
+        expression: "!(has(this.clientCert) && has(this.clientCertData))",
       },
       {
-        id:         "fields_mutually_exclusive_clientkey"
-        message:    "fields clientKey and clientKeyData are mutually exclusive"
-        expression: "!(has(this.clientKey) && has(this.clientKeyData))"
+        id:         "fields_mutually_exclusive_clientkey",
+        message:    "fields clientKey and clientKeyData are mutually exclusive",
+        expression: "!(has(this.clientKey) && has(this.clientKeyData))",
       },
       {
-        id:         "x509_validate_client_cert"
+        id:         "x509_validate_client_cert",
         expression: 
           "(has(this.clientCertData) && has(this.serverCAData))"
           "? x509Parse(this.clientCertData).checkSignatureFrom(x509Parse(this.serverCAData))"
-          ": true"
+          ": true",
       }
-    ]
+    ],
   };
   // Path to the server CA certificate. Mutually exclusive with serverCAData.
   optional string serverCA = 1;
@@ -289,8 +283,8 @@ message MTLSSpec {
   optional string serverCAData = 2 [
     (cli.flag).secret        = true,
     (buf.validate.field).cel = {
-      id:         "x509_server_ca_data"
-      expression: "this.x509IsValid()"
+      id:         "x509_server_ca_data",
+      expression: "this.x509IsValid()",
     }
   ];
   // Path to the client CA certificate (not needed in all cases). Mutually exclusive with clientCAData.
@@ -300,9 +294,9 @@ message MTLSSpec {
     (cli.flag).secret    = true,
     (buf.validate.field) = {
       cel: {
-        id:         "x509_client_ca_data"
-        expression: "this.x509IsValid()"
-      }
+        id:         "x509_client_ca_data",
+        expression: "this.x509IsValid()",
+      },
     }
   ];
   // Path to the certificate used for client-cert auth. Mutually exclusive with clientCertData.
@@ -311,8 +305,8 @@ message MTLSSpec {
   optional string clientCertData = 6 [
     (cli.flag).secret        = true,
     (buf.validate.field).cel = {
-      id:         "x509_client_cert_data"
-      expression: "this.x509IsValid()"
+      id:         "x509_client_cert_data",
+      expression: "this.x509IsValid()",
     }
   ];
   // Path to the private key used for client-cert auth. Mutually exclusive with clientKeyData.
@@ -321,8 +315,8 @@ message MTLSSpec {
   optional string clientKeyData = 8 [
     (cli.flag).secret        = true,
     (buf.validate.field).cel = {
-      id:         "pem_client_key_data"
-      expression: "this.pemIsValid()"
+      id:         "pem_client_key_data",
+      expression: "this.pemIsValid()",
     }
   ];
 }
@@ -331,15 +325,15 @@ message JetStreamSpec {
   // Jetstream server endpoint.
   optional string endpoint = 1 [
     (buf.validate.field) = {
-      required: true
-      string:   {uri_ref: true}
+      required: true,
+      string:   {uri_ref: true},
     }
   ];
 
   // Path to the Jetstream nkey seed.
   optional string nkeySeedPath = 2 [
     (buf.validate.field) = {
-      required: true
+      required: true,
     }
   ];
 }
@@ -348,28 +342,28 @@ message CertsSpec {
   option (buf.validate.message) = {
     cel: [
       {
-        id:         "fields_mutually_exclusive_ca"
-        message:    "fields caCert and caCertData are mutually exclusive"
-        expression: "!(has(this.caCert) && has(this.caCertData))"
+        id:         "fields_mutually_exclusive_ca",
+        message:    "fields caCert and caCertData are mutually exclusive",
+        expression: "!(has(this.caCert) && has(this.caCertData))",
       },
       {
-        id:         "fields_mutually_exclusive_servingcert"
-        message:    "fields servingCert and servingCertData are mutually exclusive"
-        expression: "!(has(this.servingCert) && has(this.servingCertData))"
+        id:         "fields_mutually_exclusive_servingcert",
+        message:    "fields servingCert and servingCertData are mutually exclusive",
+        expression: "!(has(this.servingCert) && has(this.servingCertData))",
       },
       {
-        id:         "fields_mutually_exclusive_servingkey"
-        message:    "fields servingKey and servingKeyData are mutually exclusive"
-        expression: "!(has(this.servingKey) && has(this.servingKeyData))"
+        id:         "fields_mutually_exclusive_servingkey",
+        message:    "fields servingKey and servingKeyData are mutually exclusive",
+        expression: "!(has(this.servingKey) && has(this.servingKeyData))",
       },
       {
-        id:         "x509_validate_chain"
+        id:         "x509_validate_chain",
         expression: 
           "(has(this.servingCertData) && has(this.caCertData))"
           "? x509Parse(this.servingCertData).checkSignatureFrom(x509Parse(this.caCertData))"
-          ": true"
+          ": true",
       }
-    ]
+    ],
   };
 
   // Path to a PEM encoded CA certificate file. Mutually exclusive with caCertData.
@@ -377,8 +371,8 @@ message CertsSpec {
   // PEM encoded CA certificate data. Mutually exclusive with caCert.
   optional string caCertData = 2 [
     (buf.validate.field).cel = {
-      id:         "x509_ca_cert_data"
-      expression: "this.x509IsValid()"
+      id:         "x509_ca_cert_data",
+      expression: "this.x509IsValid()",
     },
     (cli.flag).secret = true
   ];
@@ -388,8 +382,8 @@ message CertsSpec {
   optional string servingCertData = 4 [
     (cli.flag).secret        = true,
     (buf.validate.field).cel = {
-      id:         "x509_serving_cert_data"
-      expression: "this.x509IsValid()"
+      id:         "x509_serving_cert_data",
+      expression: "this.x509IsValid()",
     }
   ];
   // Path to a PEM encoded server key file. Mutually exclusive with servingKeyData.
@@ -398,8 +392,8 @@ message CertsSpec {
   optional string servingKeyData = 6 [
     (cli.flag).secret        = true,
     (buf.validate.field).cel = {
-      id:         "pem_serving_key_data"
-      expression: "this.pemIsValid()"
+      id:         "pem_serving_key_data",
+      expression: "this.pemIsValid()",
     }
   ];
 }
@@ -408,11 +402,11 @@ message PluginsSpec {
   option (buf.validate.message) = {
     cel: [
       {
-        id:         "plugin_dirs_unique"
-        message:    "plugin search dir and filesystem cache dir cannot be the same"
-        expression: "this.cache.backend == 0 ? this.cache.filesystem.dir != this.dir : true"
+        id:         "plugin_dirs_unique",
+        message:    "plugin search dir and filesystem cache dir cannot be the same",
+        expression: "this.cache.backend == 0 ? this.cache.filesystem.dir != this.dir : true",
       }
-    ]
+    ],
   };
 
   // Directory to search for plugin binaries.
@@ -444,11 +438,11 @@ message PluginFilters {
     (buf.validate.field).repeated = {
       items: {
         cel: {
-          id:         "go_module_path"
-          message:    "must be a valid go module path"
-          expression: "this.isValidModulePath()"
-        }
-      }
+          id:         "go_module_path",
+          message:    "must be a valid go module path",
+          expression: "this.isValidModulePath()",
+        },
+      },
     }
   ];
 }
@@ -461,10 +455,7 @@ message CacheSpec {
   ];
 
   // Filesystem cache configuration. Required if backend is Filesystem.
-  FilesystemCacheSpec filesystem = 3 [(buf.validate.field).ignore_if = {
-    id:         "filesystem"
-    expression: "this.backend != 0"
-  }];
+  FilesystemCacheSpec filesystem = 3;
 }
 
 message FilesystemCacheSpec {
@@ -481,7 +472,7 @@ message KeyringSpec {
   // startup. Keys loaded in this way will not be persisted.
   repeated string runtimeKeyDirs = 1 [
     (buf.validate.field).repeated = {
-      unique: true
+      unique: true,
     }
   ];
 }
@@ -546,16 +537,10 @@ message AuthSpec {
   ];
 
   // Basic auth using a username and password.
-  BasicAuthSpec basic = 3 [(buf.validate.field).ignore_if = {
-    id:         "basic"
-    expression: "this.backend != 0"
-  }];
+  BasicAuthSpec basic = 3;
 
   // OpenID Connect auth.
-  OpenIDAuthSpec openid = 2 [(buf.validate.field).ignore_if = {
-    id:         "openid"
-    expression: "this.backend != 1"
-  }];
+  OpenIDAuthSpec openid = 2;
 }
 
 message OpenIDAuthSpec {
@@ -566,19 +551,19 @@ message OpenIDAuthSpec {
   // exact string `/.well-known/openid-configuration'.
   optional string issuer = 1 [
     (buf.validate.field) = {
-      required: true
+      required: true,
       string: {
-        uri_ref: true
-        prefix:  "https://"
-      }
+        uri_ref: true,
+        prefix:  "https://",
+      },
     }
   ];
 
   // Optional PEM-encoded CA certificate data for the issuer.
   optional string caCertData = 2 [
     (buf.validate.field).cel = {
-      id:         "openid_issuer_ca_cert_data"
-      expression: "this.x509IsValid()"
+      id:         "openid_issuer_ca_cert_data",
+      expression: "this.x509IsValid()",
     }
   ];
 
@@ -603,17 +588,17 @@ message OpenIDAuthSpec {
   // Scope specifies optional requested permissions.
   repeated string scopes = 6 [
     (buf.validate.field) = {
-      required: true
+      required: true,
       repeated: {
-        unique: true
-      }
+        unique: true,
+      },
       cel: [
         {
-          id:         "require_openid_scope"
-          message:    "'openid' scope is required"
-          expression: "this.contains('openid')"
+          id:         "require_openid_scope",
+          message:    "'openid' scope is required",
+          expression: "this.contains('openid')",
         }
-      ]
+      ],
     }
   ];
 }

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/bufbuild/protovalidate-go"
+	"buf.build/go/protovalidate"
 	corev1 "github.com/rancher/opni/pkg/apis/core/v1"
 	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/pkg/util"
@@ -37,7 +37,7 @@ type DefaultingConfigTracker[T ConfigType[T]] struct {
 	redact   func(SecretsRedactor[T])
 	unredact func(SecretsRedactor[T], T) error
 
-	validator *protovalidate.Validator
+	validator protovalidate.Validator
 }
 
 func NewDefaultingConfigTracker[T ConfigType[T]](
@@ -501,9 +501,11 @@ type contextKeyedValueStore[T ConfigType[T]] struct {
 
 type contextKeyedValueStore_keyType struct{}
 
-var contextKeyedValueStore_key contextKeyedValueStore_keyType
-var corev1ReferenceType = (&corev1.Reference{}).ProtoReflect().Descriptor()
-var corev1IdField = corev1ReferenceType.Fields().ByName("id")
+var (
+	contextKeyedValueStore_key contextKeyedValueStore_keyType
+	corev1ReferenceType        = (&corev1.Reference{}).ProtoReflect().Descriptor()
+	corev1IdField              = corev1ReferenceType.Fields().ByName("id")
+)
 
 func contextWithKey(ctx context.Context, ck ContextKeyable) context.Context {
 	field := ck.ContextKey()

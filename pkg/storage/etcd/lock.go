@@ -55,7 +55,7 @@ func (e *EtcdLock) newSession(ctx context.Context) (*concurrency.Session, error)
 
 var _ storage.Lock = (*EtcdLock)(nil)
 
-func (e *EtcdLock) acquire(ctx context.Context) (chan struct{}, error) {
+func (e *EtcdLock) acquire(ctx context.Context) (<-chan struct{}, error) {
 	session, err := e.newSession(ctx)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (e *EtcdLock) acquire(ctx context.Context) (chan struct{}, error) {
 	return nil, curErr
 }
 
-func (e *EtcdLock) tryAcquire(ctx context.Context) (chan struct{}, error) {
+func (e *EtcdLock) tryAcquire(ctx context.Context) (<-chan struct{}, error) {
 	session, err := e.newSession(ctx)
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (e *EtcdLock) tryAcquire(ctx context.Context) (chan struct{}, error) {
 		session,
 	)
 	done, err := mutex.tryLock(ctx)
-	var curErr = err
+	curErr := err
 	if err == nil {
 		e.mutex = &mutex
 		return done, nil
@@ -96,10 +96,10 @@ func (e *EtcdLock) tryAcquire(ctx context.Context) (chan struct{}, error) {
 	return nil, curErr
 }
 
-func (e *EtcdLock) Lock(ctx context.Context) (chan struct{}, error) {
+func (e *EtcdLock) Lock(ctx context.Context) (<-chan struct{}, error) {
 	e.lg.Debug("trying to acquire blocking lock")
 
-	var closureDone chan struct{}
+	var closureDone <-chan struct{}
 	if err := e.scheduler.Schedule(func() error {
 		done, err := e.acquire(ctx)
 		if err != nil {
@@ -114,9 +114,9 @@ func (e *EtcdLock) Lock(ctx context.Context) (chan struct{}, error) {
 	return closureDone, nil
 }
 
-func (e *EtcdLock) TryLock(ctx context.Context) (acquired bool, done chan struct{}, err error) {
+func (e *EtcdLock) TryLock(ctx context.Context) (acquired bool, done <-chan struct{}, err error) {
 	e.lg.Debug("trying to acquire non-blocking lock")
-	var closureDone chan struct{}
+	var closureDone <-chan struct{}
 	if err := e.scheduler.Schedule(func() error {
 		done, err := e.tryAcquire(ctx)
 		if err != nil {

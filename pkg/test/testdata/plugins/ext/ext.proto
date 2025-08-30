@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package ext;
 
-import "github.com/rancher/opni/internal/codegen/cli/cli.proto";
+import "buf/validate/validate.proto";
+import "github.com/kralicky/codegen/cli/cli.proto";
 import "github.com/rancher/opni/pkg/apis/core/v1/core.proto";
 import "github.com/rancher/opni/pkg/plugins/driverutil/types.proto";
-import "github.com/rancher/opni/pkg/validation/validate.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
@@ -13,63 +13,63 @@ import "google/protobuf/field_mask.proto";
 
 option go_package      = "github.com/rancher/opni/pkg/test/testdata/plugins/ext";
 option (cli.generator) = {
-  generate:                        true
-  generate_flags_for_all_messages: true
+  enabled:                         true,
+  generate_flags_for_all_messages: true,
 };
 
 service Ext {
   rpc Foo(FooRequest) returns (FooResponse) {
     option (google.api.http) = {
-      post: "/foo"
-      body: "request"
-      additional_bindings {
-        get: "/foo"
-      }
-      additional_bindings {
-        put:  "/foo"
-        body: "request"
-      }
-      additional_bindings {
-        delete: "/foo"
-      }
-      additional_bindings {
-        patch: "/foo"
-        body:  "request"
-      }
+      post: "/foo",
+      body: "request",
+      additional_bindings: {
+        get: "/foo",
+      },
+      additional_bindings: {
+        put:  "/foo",
+        body: "request",
+      },
+      additional_bindings: {
+        delete: "/foo",
+      },
+      additional_bindings: {
+        patch: "/foo",
+        body:  "request",
+      },
     };
   }
   rpc Bar(BarRequest) returns (BarResponse) {
     option (google.api.http) = {
-      post: "/bar/{param1}/{param2}"
-      body: "param3"
-      additional_bindings {
-        get: "/bar/{param1}/{param2}/{param3}"
-      }
+      post: "/bar/{param1}/{param2}",
+      body: "param3",
+      additional_bindings: {
+        get: "/bar/{param1}/{param2}/{param3}",
+      },
     };
   }
   rpc Baz(BazRequest) returns (BazRequest) {
     option (google.api.http) = {
-      post: "/baz"
-      body: "*"
-      additional_bindings {
-        post: "/baz/{paramMsg.paramBool}/{paramMsg.paramString}/{paramMsg.paramEnum}"
-        body: "*"
-      }
-      additional_bindings {
-        post: "/baz/{paramMsg.paramMsg.paramMsg.paramMsg.paramString}"
-        body: "*"
-      }
+      post: "/baz",
+      body: "*",
+      additional_bindings: {
+        post: "/baz/{paramMsg.paramBool}/{paramMsg.paramString}/{paramMsg.paramEnum}",
+        body: "*",
+      },
+      additional_bindings: {
+        post: "/baz/{paramMsg.paramMsg.paramMsg.paramMsg.paramString}",
+        body: "*",
+      },
     };
   }
   rpc Set(SetRequest) returns (SetRequest) {
     option (google.api.http) = {
-      put:  "/set/{node.id}"
-      body: "*"
+      put:  "/set/{node.id}",
+      body: "*",
 
-      additional_bindings {
-        put:  "/set/example/{node.id}"
-        body: "example"
-      }
+      additional_bindings: {
+        put:  "/set/example/{node.id}",
+        body: "example",
+      },
     };
   }
   rpc ServerStream(FooRequest) returns (stream FooResponse);
@@ -80,35 +80,35 @@ service Ext {
 service Config {
   rpc GetDefaultConfiguration(SampleGetRequest) returns (SampleConfiguration) {
     option (cli.command) = {
-      use: "get-default"
+      use: "get-default",
     };
   }
   rpc SetDefaultConfiguration(SampleSetRequest) returns (google.protobuf.Empty) {
     option (cli.command) = {
-      use:         "set-default"
-      granularity: EditMessage
+      use:         "set-default",
+      granularity: EditMessage,
     };
   }
   rpc GetConfiguration(SampleGetRequest) returns (SampleConfiguration) {
     option (cli.command) = {
-      use: "get"
+      use: "get",
     };
   }
   rpc SetConfiguration(SampleSetRequest) returns (google.protobuf.Empty) {
     option (cli.command) = {
-      use:         "set"
-      granularity: EditMessage
+      use:         "set",
+      granularity: EditMessage,
     };
   }
   rpc ResetDefaultConfiguration(google.protobuf.Empty) returns (google.protobuf.Empty) {
     option (cli.command) = {
-      use: "reset-default"
+      use: "reset-default",
     };
   }
   rpc ResetConfiguration(SampleResetRequest) returns (google.protobuf.Empty) {
     option (cli.command) = {
-      use:         "reset"
-      granularity: EditMessage
+      use:         "reset",
+      granularity: EditMessage,
     };
   }
   rpc DryRun(SampleDryRunRequest) returns (SampleDryRunResponse) {
@@ -116,7 +116,7 @@ service Config {
   }
   rpc ConfigurationHistory(SampleHistoryRequest) returns (SampleConfigurationHistoryResponse) {
     option (cli.command) = {
-      use: "history"
+      use: "history",
     };
   }
 }

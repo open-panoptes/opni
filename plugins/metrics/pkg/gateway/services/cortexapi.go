@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/tools/pkg/memoize"
+	"github.com/kralicky/tools-lite/pkg/memoize"
 
 	"github.com/rancher/opni/pkg/capabilities/wellknown"
 	"github.com/rancher/opni/pkg/logger"

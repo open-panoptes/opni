@@ -59,13 +59,13 @@ func (l *Lock) Key() string {
 }
 
 // Lock implements storage.Lock.
-func (l *Lock) Lock(_ context.Context) (chan struct{}, error) {
+func (l *Lock) Lock(_ context.Context) (<-chan struct{}, error) {
 	l.mu.Lock()
 	return make(chan struct{}), nil
 }
 
 // TryLock implements storage.Lock.
-func (l *Lock) TryLock(_ context.Context) (bool, chan struct{}, error) {
+func (l *Lock) TryLock(_ context.Context) (bool, <-chan struct{}, error) {
 	ok := l.mu.TryLock()
 	return ok, make(chan struct{}), nil
 }

@@ -1249,10 +1249,10 @@ func (m *MockLock) EXPECT() *MockLockMockRecorder {
 }
 
 // Lock mocks base method.
-func (m *MockLock) Lock(ctx context.Context) (chan struct{}, error) {
+func (m *MockLock) Lock(ctx context.Context) (<-chan struct{}, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Lock", ctx)
-	ret0, _ := ret[0].(chan struct{})
+	ret0, _ := ret[0].(<-chan struct{})
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1264,11 +1264,11 @@ func (mr *MockLockMockRecorder) Lock(ctx interface{}) *gomock.Call {
 }
 
 // TryLock mocks base method.
-func (m *MockLock) TryLock(ctx context.Context) (bool, chan struct{}, error) {
+func (m *MockLock) TryLock(ctx context.Context) (bool, <-chan struct{}, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TryLock", ctx)
 	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(chan struct{})
+	ret1, _ := ret[1].(<-chan struct{})
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }

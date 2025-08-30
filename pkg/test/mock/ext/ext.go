@@ -11,7 +11,6 @@ import (
 	ext "github.com/rancher/opni/pkg/test/testdata/plugins/ext"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
-	metadata "google.golang.org/grpc/metadata"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -79,14 +78,14 @@ func (mr *MockExtClientMockRecorder) Baz(ctx, in interface{}, opts ...interface{
 }
 
 // BidirectionalStream mocks base method.
-func (m *MockExtClient) BidirectionalStream(ctx context.Context, opts ...grpc.CallOption) (ext.Ext_BidirectionalStreamClient, error) {
+func (m *MockExtClient) BidirectionalStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ext.FooRequest, ext.FooResponse], error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "BidirectionalStream", varargs...)
-	ret0, _ := ret[0].(ext.Ext_BidirectionalStreamClient)
+	ret0, _ := ret[0].(grpc.BidiStreamingClient[ext.FooRequest, ext.FooResponse])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -99,14 +98,14 @@ func (mr *MockExtClientMockRecorder) BidirectionalStream(ctx interface{}, opts .
 }
 
 // ClientStream mocks base method.
-func (m *MockExtClient) ClientStream(ctx context.Context, opts ...grpc.CallOption) (ext.Ext_ClientStreamClient, error) {
+func (m *MockExtClient) ClientStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[ext.FooRequest, ext.FooResponse], error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ClientStream", varargs...)
-	ret0, _ := ret[0].(ext.Ext_ClientStreamClient)
+	ret0, _ := ret[0].(grpc.ClientStreamingClient[ext.FooRequest, ext.FooResponse])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -139,14 +138,14 @@ func (mr *MockExtClientMockRecorder) Foo(ctx, in interface{}, opts ...interface{
 }
 
 // ServerStream mocks base method.
-func (m *MockExtClient) ServerStream(ctx context.Context, in *ext.FooRequest, opts ...grpc.CallOption) (ext.Ext_ServerStreamClient, error) {
+func (m *MockExtClient) ServerStream(ctx context.Context, in *ext.FooRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ext.FooResponse], error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ServerStream", varargs...)
-	ret0, _ := ret[0].(ext.Ext_ServerStreamClient)
+	ret0, _ := ret[0].(grpc.ServerStreamingClient[ext.FooResponse])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -176,403 +175,6 @@ func (mr *MockExtClientMockRecorder) Set(ctx, in interface{}, opts ...interface{
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockExtClient)(nil).Set), varargs...)
-}
-
-// MockExt_ServerStreamClient is a mock of Ext_ServerStreamClient interface.
-type MockExt_ServerStreamClient struct {
-	ctrl     *gomock.Controller
-	recorder *MockExt_ServerStreamClientMockRecorder
-}
-
-// MockExt_ServerStreamClientMockRecorder is the mock recorder for MockExt_ServerStreamClient.
-type MockExt_ServerStreamClientMockRecorder struct {
-	mock *MockExt_ServerStreamClient
-}
-
-// NewMockExt_ServerStreamClient creates a new mock instance.
-func NewMockExt_ServerStreamClient(ctrl *gomock.Controller) *MockExt_ServerStreamClient {
-	mock := &MockExt_ServerStreamClient{ctrl: ctrl}
-	mock.recorder = &MockExt_ServerStreamClientMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockExt_ServerStreamClient) EXPECT() *MockExt_ServerStreamClientMockRecorder {
-	return m.recorder
-}
-
-// CloseSend mocks base method.
-func (m *MockExt_ServerStreamClient) CloseSend() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CloseSend")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CloseSend indicates an expected call of CloseSend.
-func (mr *MockExt_ServerStreamClientMockRecorder) CloseSend() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseSend", reflect.TypeOf((*MockExt_ServerStreamClient)(nil).CloseSend))
-}
-
-// Context mocks base method.
-func (m *MockExt_ServerStreamClient) Context() context.Context {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Context")
-	ret0, _ := ret[0].(context.Context)
-	return ret0
-}
-
-// Context indicates an expected call of Context.
-func (mr *MockExt_ServerStreamClientMockRecorder) Context() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Context", reflect.TypeOf((*MockExt_ServerStreamClient)(nil).Context))
-}
-
-// Header mocks base method.
-func (m *MockExt_ServerStreamClient) Header() (metadata.MD, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Header")
-	ret0, _ := ret[0].(metadata.MD)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Header indicates an expected call of Header.
-func (mr *MockExt_ServerStreamClientMockRecorder) Header() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Header", reflect.TypeOf((*MockExt_ServerStreamClient)(nil).Header))
-}
-
-// Recv mocks base method.
-func (m *MockExt_ServerStreamClient) Recv() (*ext.FooResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Recv")
-	ret0, _ := ret[0].(*ext.FooResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Recv indicates an expected call of Recv.
-func (mr *MockExt_ServerStreamClientMockRecorder) Recv() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Recv", reflect.TypeOf((*MockExt_ServerStreamClient)(nil).Recv))
-}
-
-// RecvMsg mocks base method.
-func (m_2 *MockExt_ServerStreamClient) RecvMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "RecvMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RecvMsg indicates an expected call of RecvMsg.
-func (mr *MockExt_ServerStreamClientMockRecorder) RecvMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvMsg", reflect.TypeOf((*MockExt_ServerStreamClient)(nil).RecvMsg), m)
-}
-
-// SendMsg mocks base method.
-func (m_2 *MockExt_ServerStreamClient) SendMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "SendMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendMsg indicates an expected call of SendMsg.
-func (mr *MockExt_ServerStreamClientMockRecorder) SendMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMsg", reflect.TypeOf((*MockExt_ServerStreamClient)(nil).SendMsg), m)
-}
-
-// Trailer mocks base method.
-func (m *MockExt_ServerStreamClient) Trailer() metadata.MD {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Trailer")
-	ret0, _ := ret[0].(metadata.MD)
-	return ret0
-}
-
-// Trailer indicates an expected call of Trailer.
-func (mr *MockExt_ServerStreamClientMockRecorder) Trailer() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Trailer", reflect.TypeOf((*MockExt_ServerStreamClient)(nil).Trailer))
-}
-
-// MockExt_ClientStreamClient is a mock of Ext_ClientStreamClient interface.
-type MockExt_ClientStreamClient struct {
-	ctrl     *gomock.Controller
-	recorder *MockExt_ClientStreamClientMockRecorder
-}
-
-// MockExt_ClientStreamClientMockRecorder is the mock recorder for MockExt_ClientStreamClient.
-type MockExt_ClientStreamClientMockRecorder struct {
-	mock *MockExt_ClientStreamClient
-}
-
-// NewMockExt_ClientStreamClient creates a new mock instance.
-func NewMockExt_ClientStreamClient(ctrl *gomock.Controller) *MockExt_ClientStreamClient {
-	mock := &MockExt_ClientStreamClient{ctrl: ctrl}
-	mock.recorder = &MockExt_ClientStreamClientMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockExt_ClientStreamClient) EXPECT() *MockExt_ClientStreamClientMockRecorder {
-	return m.recorder
-}
-
-// CloseAndRecv mocks base method.
-func (m *MockExt_ClientStreamClient) CloseAndRecv() (*ext.FooResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CloseAndRecv")
-	ret0, _ := ret[0].(*ext.FooResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CloseAndRecv indicates an expected call of CloseAndRecv.
-func (mr *MockExt_ClientStreamClientMockRecorder) CloseAndRecv() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseAndRecv", reflect.TypeOf((*MockExt_ClientStreamClient)(nil).CloseAndRecv))
-}
-
-// CloseSend mocks base method.
-func (m *MockExt_ClientStreamClient) CloseSend() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CloseSend")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CloseSend indicates an expected call of CloseSend.
-func (mr *MockExt_ClientStreamClientMockRecorder) CloseSend() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseSend", reflect.TypeOf((*MockExt_ClientStreamClient)(nil).CloseSend))
-}
-
-// Context mocks base method.
-func (m *MockExt_ClientStreamClient) Context() context.Context {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Context")
-	ret0, _ := ret[0].(context.Context)
-	return ret0
-}
-
-// Context indicates an expected call of Context.
-func (mr *MockExt_ClientStreamClientMockRecorder) Context() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Context", reflect.TypeOf((*MockExt_ClientStreamClient)(nil).Context))
-}
-
-// Header mocks base method.
-func (m *MockExt_ClientStreamClient) Header() (metadata.MD, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Header")
-	ret0, _ := ret[0].(metadata.MD)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Header indicates an expected call of Header.
-func (mr *MockExt_ClientStreamClientMockRecorder) Header() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Header", reflect.TypeOf((*MockExt_ClientStreamClient)(nil).Header))
-}
-
-// RecvMsg mocks base method.
-func (m_2 *MockExt_ClientStreamClient) RecvMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "RecvMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RecvMsg indicates an expected call of RecvMsg.
-func (mr *MockExt_ClientStreamClientMockRecorder) RecvMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvMsg", reflect.TypeOf((*MockExt_ClientStreamClient)(nil).RecvMsg), m)
-}
-
-// Send mocks base method.
-func (m *MockExt_ClientStreamClient) Send(arg0 *ext.FooRequest) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Send indicates an expected call of Send.
-func (mr *MockExt_ClientStreamClientMockRecorder) Send(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockExt_ClientStreamClient)(nil).Send), arg0)
-}
-
-// SendMsg mocks base method.
-func (m_2 *MockExt_ClientStreamClient) SendMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "SendMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendMsg indicates an expected call of SendMsg.
-func (mr *MockExt_ClientStreamClientMockRecorder) SendMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMsg", reflect.TypeOf((*MockExt_ClientStreamClient)(nil).SendMsg), m)
-}
-
-// Trailer mocks base method.
-func (m *MockExt_ClientStreamClient) Trailer() metadata.MD {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Trailer")
-	ret0, _ := ret[0].(metadata.MD)
-	return ret0
-}
-
-// Trailer indicates an expected call of Trailer.
-func (mr *MockExt_ClientStreamClientMockRecorder) Trailer() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Trailer", reflect.TypeOf((*MockExt_ClientStreamClient)(nil).Trailer))
-}
-
-// MockExt_BidirectionalStreamClient is a mock of Ext_BidirectionalStreamClient interface.
-type MockExt_BidirectionalStreamClient struct {
-	ctrl     *gomock.Controller
-	recorder *MockExt_BidirectionalStreamClientMockRecorder
-}
-
-// MockExt_BidirectionalStreamClientMockRecorder is the mock recorder for MockExt_BidirectionalStreamClient.
-type MockExt_BidirectionalStreamClientMockRecorder struct {
-	mock *MockExt_BidirectionalStreamClient
-}
-
-// NewMockExt_BidirectionalStreamClient creates a new mock instance.
-func NewMockExt_BidirectionalStreamClient(ctrl *gomock.Controller) *MockExt_BidirectionalStreamClient {
-	mock := &MockExt_BidirectionalStreamClient{ctrl: ctrl}
-	mock.recorder = &MockExt_BidirectionalStreamClientMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockExt_BidirectionalStreamClient) EXPECT() *MockExt_BidirectionalStreamClientMockRecorder {
-	return m.recorder
-}
-
-// CloseSend mocks base method.
-func (m *MockExt_BidirectionalStreamClient) CloseSend() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CloseSend")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CloseSend indicates an expected call of CloseSend.
-func (mr *MockExt_BidirectionalStreamClientMockRecorder) CloseSend() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseSend", reflect.TypeOf((*MockExt_BidirectionalStreamClient)(nil).CloseSend))
-}
-
-// Context mocks base method.
-func (m *MockExt_BidirectionalStreamClient) Context() context.Context {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Context")
-	ret0, _ := ret[0].(context.Context)
-	return ret0
-}
-
-// Context indicates an expected call of Context.
-func (mr *MockExt_BidirectionalStreamClientMockRecorder) Context() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Context", reflect.TypeOf((*MockExt_BidirectionalStreamClient)(nil).Context))
-}
-
-// Header mocks base method.
-func (m *MockExt_BidirectionalStreamClient) Header() (metadata.MD, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Header")
-	ret0, _ := ret[0].(metadata.MD)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Header indicates an expected call of Header.
-func (mr *MockExt_BidirectionalStreamClientMockRecorder) Header() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Header", reflect.TypeOf((*MockExt_BidirectionalStreamClient)(nil).Header))
-}
-
-// Recv mocks base method.
-func (m *MockExt_BidirectionalStreamClient) Recv() (*ext.FooResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Recv")
-	ret0, _ := ret[0].(*ext.FooResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Recv indicates an expected call of Recv.
-func (mr *MockExt_BidirectionalStreamClientMockRecorder) Recv() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Recv", reflect.TypeOf((*MockExt_BidirectionalStreamClient)(nil).Recv))
-}
-
-// RecvMsg mocks base method.
-func (m_2 *MockExt_BidirectionalStreamClient) RecvMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "RecvMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RecvMsg indicates an expected call of RecvMsg.
-func (mr *MockExt_BidirectionalStreamClientMockRecorder) RecvMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvMsg", reflect.TypeOf((*MockExt_BidirectionalStreamClient)(nil).RecvMsg), m)
-}
-
-// Send mocks base method.
-func (m *MockExt_BidirectionalStreamClient) Send(arg0 *ext.FooRequest) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Send indicates an expected call of Send.
-func (mr *MockExt_BidirectionalStreamClientMockRecorder) Send(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockExt_BidirectionalStreamClient)(nil).Send), arg0)
-}
-
-// SendMsg mocks base method.
-func (m_2 *MockExt_BidirectionalStreamClient) SendMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "SendMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendMsg indicates an expected call of SendMsg.
-func (mr *MockExt_BidirectionalStreamClientMockRecorder) SendMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMsg", reflect.TypeOf((*MockExt_BidirectionalStreamClient)(nil).SendMsg), m)
-}
-
-// Trailer mocks base method.
-func (m *MockExt_BidirectionalStreamClient) Trailer() metadata.MD {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Trailer")
-	ret0, _ := ret[0].(metadata.MD)
-	return ret0
-}
-
-// Trailer indicates an expected call of Trailer.
-func (mr *MockExt_BidirectionalStreamClientMockRecorder) Trailer() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Trailer", reflect.TypeOf((*MockExt_BidirectionalStreamClient)(nil).Trailer))
 }
 
 // MockExtServer is a mock of ExtServer interface.
@@ -629,7 +231,7 @@ func (mr *MockExtServerMockRecorder) Baz(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // BidirectionalStream mocks base method.
-func (m *MockExtServer) BidirectionalStream(arg0 ext.Ext_BidirectionalStreamServer) error {
+func (m *MockExtServer) BidirectionalStream(arg0 grpc.BidiStreamingServer[ext.FooRequest, ext.FooResponse]) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BidirectionalStream", arg0)
 	ret0, _ := ret[0].(error)
@@ -643,7 +245,7 @@ func (mr *MockExtServerMockRecorder) BidirectionalStream(arg0 interface{}) *gomo
 }
 
 // ClientStream mocks base method.
-func (m *MockExtServer) ClientStream(arg0 ext.Ext_ClientStreamServer) error {
+func (m *MockExtServer) ClientStream(arg0 grpc.ClientStreamingServer[ext.FooRequest, ext.FooResponse]) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ClientStream", arg0)
 	ret0, _ := ret[0].(error)
@@ -672,7 +274,7 @@ func (mr *MockExtServerMockRecorder) Foo(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // ServerStream mocks base method.
-func (m *MockExtServer) ServerStream(arg0 *ext.FooRequest, arg1 ext.Ext_ServerStreamServer) error {
+func (m *MockExtServer) ServerStream(arg0 *ext.FooRequest, arg1 grpc.ServerStreamingServer[ext.FooResponse]) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ServerStream", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -733,393 +335,6 @@ func (m *MockUnsafeExtServer) mustEmbedUnimplementedExtServer() {
 func (mr *MockUnsafeExtServerMockRecorder) mustEmbedUnimplementedExtServer() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "mustEmbedUnimplementedExtServer", reflect.TypeOf((*MockUnsafeExtServer)(nil).mustEmbedUnimplementedExtServer))
-}
-
-// MockExt_ServerStreamServer is a mock of Ext_ServerStreamServer interface.
-type MockExt_ServerStreamServer struct {
-	ctrl     *gomock.Controller
-	recorder *MockExt_ServerStreamServerMockRecorder
-}
-
-// MockExt_ServerStreamServerMockRecorder is the mock recorder for MockExt_ServerStreamServer.
-type MockExt_ServerStreamServerMockRecorder struct {
-	mock *MockExt_ServerStreamServer
-}
-
-// NewMockExt_ServerStreamServer creates a new mock instance.
-func NewMockExt_ServerStreamServer(ctrl *gomock.Controller) *MockExt_ServerStreamServer {
-	mock := &MockExt_ServerStreamServer{ctrl: ctrl}
-	mock.recorder = &MockExt_ServerStreamServerMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockExt_ServerStreamServer) EXPECT() *MockExt_ServerStreamServerMockRecorder {
-	return m.recorder
-}
-
-// Context mocks base method.
-func (m *MockExt_ServerStreamServer) Context() context.Context {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Context")
-	ret0, _ := ret[0].(context.Context)
-	return ret0
-}
-
-// Context indicates an expected call of Context.
-func (mr *MockExt_ServerStreamServerMockRecorder) Context() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Context", reflect.TypeOf((*MockExt_ServerStreamServer)(nil).Context))
-}
-
-// RecvMsg mocks base method.
-func (m_2 *MockExt_ServerStreamServer) RecvMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "RecvMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RecvMsg indicates an expected call of RecvMsg.
-func (mr *MockExt_ServerStreamServerMockRecorder) RecvMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvMsg", reflect.TypeOf((*MockExt_ServerStreamServer)(nil).RecvMsg), m)
-}
-
-// Send mocks base method.
-func (m *MockExt_ServerStreamServer) Send(arg0 *ext.FooResponse) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Send indicates an expected call of Send.
-func (mr *MockExt_ServerStreamServerMockRecorder) Send(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockExt_ServerStreamServer)(nil).Send), arg0)
-}
-
-// SendHeader mocks base method.
-func (m *MockExt_ServerStreamServer) SendHeader(arg0 metadata.MD) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendHeader", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendHeader indicates an expected call of SendHeader.
-func (mr *MockExt_ServerStreamServerMockRecorder) SendHeader(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendHeader", reflect.TypeOf((*MockExt_ServerStreamServer)(nil).SendHeader), arg0)
-}
-
-// SendMsg mocks base method.
-func (m_2 *MockExt_ServerStreamServer) SendMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "SendMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendMsg indicates an expected call of SendMsg.
-func (mr *MockExt_ServerStreamServerMockRecorder) SendMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMsg", reflect.TypeOf((*MockExt_ServerStreamServer)(nil).SendMsg), m)
-}
-
-// SetHeader mocks base method.
-func (m *MockExt_ServerStreamServer) SetHeader(arg0 metadata.MD) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetHeader", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetHeader indicates an expected call of SetHeader.
-func (mr *MockExt_ServerStreamServerMockRecorder) SetHeader(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetHeader", reflect.TypeOf((*MockExt_ServerStreamServer)(nil).SetHeader), arg0)
-}
-
-// SetTrailer mocks base method.
-func (m *MockExt_ServerStreamServer) SetTrailer(arg0 metadata.MD) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetTrailer", arg0)
-}
-
-// SetTrailer indicates an expected call of SetTrailer.
-func (mr *MockExt_ServerStreamServerMockRecorder) SetTrailer(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTrailer", reflect.TypeOf((*MockExt_ServerStreamServer)(nil).SetTrailer), arg0)
-}
-
-// MockExt_ClientStreamServer is a mock of Ext_ClientStreamServer interface.
-type MockExt_ClientStreamServer struct {
-	ctrl     *gomock.Controller
-	recorder *MockExt_ClientStreamServerMockRecorder
-}
-
-// MockExt_ClientStreamServerMockRecorder is the mock recorder for MockExt_ClientStreamServer.
-type MockExt_ClientStreamServerMockRecorder struct {
-	mock *MockExt_ClientStreamServer
-}
-
-// NewMockExt_ClientStreamServer creates a new mock instance.
-func NewMockExt_ClientStreamServer(ctrl *gomock.Controller) *MockExt_ClientStreamServer {
-	mock := &MockExt_ClientStreamServer{ctrl: ctrl}
-	mock.recorder = &MockExt_ClientStreamServerMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockExt_ClientStreamServer) EXPECT() *MockExt_ClientStreamServerMockRecorder {
-	return m.recorder
-}
-
-// Context mocks base method.
-func (m *MockExt_ClientStreamServer) Context() context.Context {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Context")
-	ret0, _ := ret[0].(context.Context)
-	return ret0
-}
-
-// Context indicates an expected call of Context.
-func (mr *MockExt_ClientStreamServerMockRecorder) Context() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Context", reflect.TypeOf((*MockExt_ClientStreamServer)(nil).Context))
-}
-
-// Recv mocks base method.
-func (m *MockExt_ClientStreamServer) Recv() (*ext.FooRequest, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Recv")
-	ret0, _ := ret[0].(*ext.FooRequest)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Recv indicates an expected call of Recv.
-func (mr *MockExt_ClientStreamServerMockRecorder) Recv() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Recv", reflect.TypeOf((*MockExt_ClientStreamServer)(nil).Recv))
-}
-
-// RecvMsg mocks base method.
-func (m_2 *MockExt_ClientStreamServer) RecvMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "RecvMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RecvMsg indicates an expected call of RecvMsg.
-func (mr *MockExt_ClientStreamServerMockRecorder) RecvMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvMsg", reflect.TypeOf((*MockExt_ClientStreamServer)(nil).RecvMsg), m)
-}
-
-// SendAndClose mocks base method.
-func (m *MockExt_ClientStreamServer) SendAndClose(arg0 *ext.FooResponse) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendAndClose", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendAndClose indicates an expected call of SendAndClose.
-func (mr *MockExt_ClientStreamServerMockRecorder) SendAndClose(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendAndClose", reflect.TypeOf((*MockExt_ClientStreamServer)(nil).SendAndClose), arg0)
-}
-
-// SendHeader mocks base method.
-func (m *MockExt_ClientStreamServer) SendHeader(arg0 metadata.MD) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendHeader", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendHeader indicates an expected call of SendHeader.
-func (mr *MockExt_ClientStreamServerMockRecorder) SendHeader(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendHeader", reflect.TypeOf((*MockExt_ClientStreamServer)(nil).SendHeader), arg0)
-}
-
-// SendMsg mocks base method.
-func (m_2 *MockExt_ClientStreamServer) SendMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "SendMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendMsg indicates an expected call of SendMsg.
-func (mr *MockExt_ClientStreamServerMockRecorder) SendMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMsg", reflect.TypeOf((*MockExt_ClientStreamServer)(nil).SendMsg), m)
-}
-
-// SetHeader mocks base method.
-func (m *MockExt_ClientStreamServer) SetHeader(arg0 metadata.MD) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetHeader", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetHeader indicates an expected call of SetHeader.
-func (mr *MockExt_ClientStreamServerMockRecorder) SetHeader(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetHeader", reflect.TypeOf((*MockExt_ClientStreamServer)(nil).SetHeader), arg0)
-}
-
-// SetTrailer mocks base method.
-func (m *MockExt_ClientStreamServer) SetTrailer(arg0 metadata.MD) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetTrailer", arg0)
-}
-
-// SetTrailer indicates an expected call of SetTrailer.
-func (mr *MockExt_ClientStreamServerMockRecorder) SetTrailer(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTrailer", reflect.TypeOf((*MockExt_ClientStreamServer)(nil).SetTrailer), arg0)
-}
-
-// MockExt_BidirectionalStreamServer is a mock of Ext_BidirectionalStreamServer interface.
-type MockExt_BidirectionalStreamServer struct {
-	ctrl     *gomock.Controller
-	recorder *MockExt_BidirectionalStreamServerMockRecorder
-}
-
-// MockExt_BidirectionalStreamServerMockRecorder is the mock recorder for MockExt_BidirectionalStreamServer.
-type MockExt_BidirectionalStreamServerMockRecorder struct {
-	mock *MockExt_BidirectionalStreamServer
-}
-
-// NewMockExt_BidirectionalStreamServer creates a new mock instance.
-func NewMockExt_BidirectionalStreamServer(ctrl *gomock.Controller) *MockExt_BidirectionalStreamServer {
-	mock := &MockExt_BidirectionalStreamServer{ctrl: ctrl}
-	mock.recorder = &MockExt_BidirectionalStreamServerMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockExt_BidirectionalStreamServer) EXPECT() *MockExt_BidirectionalStreamServerMockRecorder {
-	return m.recorder
-}
-
-// Context mocks base method.
-func (m *MockExt_BidirectionalStreamServer) Context() context.Context {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Context")
-	ret0, _ := ret[0].(context.Context)
-	return ret0
-}
-
-// Context indicates an expected call of Context.
-func (mr *MockExt_BidirectionalStreamServerMockRecorder) Context() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Context", reflect.TypeOf((*MockExt_BidirectionalStreamServer)(nil).Context))
-}
-
-// Recv mocks base method.
-func (m *MockExt_BidirectionalStreamServer) Recv() (*ext.FooRequest, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Recv")
-	ret0, _ := ret[0].(*ext.FooRequest)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Recv indicates an expected call of Recv.
-func (mr *MockExt_BidirectionalStreamServerMockRecorder) Recv() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Recv", reflect.TypeOf((*MockExt_BidirectionalStreamServer)(nil).Recv))
-}
-
-// RecvMsg mocks base method.
-func (m_2 *MockExt_BidirectionalStreamServer) RecvMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "RecvMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RecvMsg indicates an expected call of RecvMsg.
-func (mr *MockExt_BidirectionalStreamServerMockRecorder) RecvMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvMsg", reflect.TypeOf((*MockExt_BidirectionalStreamServer)(nil).RecvMsg), m)
-}
-
-// Send mocks base method.
-func (m *MockExt_BidirectionalStreamServer) Send(arg0 *ext.FooResponse) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Send indicates an expected call of Send.
-func (mr *MockExt_BidirectionalStreamServerMockRecorder) Send(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockExt_BidirectionalStreamServer)(nil).Send), arg0)
-}
-
-// SendHeader mocks base method.
-func (m *MockExt_BidirectionalStreamServer) SendHeader(arg0 metadata.MD) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendHeader", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendHeader indicates an expected call of SendHeader.
-func (mr *MockExt_BidirectionalStreamServerMockRecorder) SendHeader(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendHeader", reflect.TypeOf((*MockExt_BidirectionalStreamServer)(nil).SendHeader), arg0)
-}
-
-// SendMsg mocks base method.
-func (m_2 *MockExt_BidirectionalStreamServer) SendMsg(m any) error {
-	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "SendMsg", m)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendMsg indicates an expected call of SendMsg.
-func (mr *MockExt_BidirectionalStreamServerMockRecorder) SendMsg(m interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMsg", reflect.TypeOf((*MockExt_BidirectionalStreamServer)(nil).SendMsg), m)
-}
-
-// SetHeader mocks base method.
-func (m *MockExt_BidirectionalStreamServer) SetHeader(arg0 metadata.MD) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetHeader", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetHeader indicates an expected call of SetHeader.
-func (mr *MockExt_BidirectionalStreamServerMockRecorder) SetHeader(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetHeader", reflect.TypeOf((*MockExt_BidirectionalStreamServer)(nil).SetHeader), arg0)
-}
-
-// SetTrailer mocks base method.
-func (m *MockExt_BidirectionalStreamServer) SetTrailer(arg0 metadata.MD) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetTrailer", arg0)
-}
-
-// SetTrailer indicates an expected call of SetTrailer.
-func (mr *MockExt_BidirectionalStreamServerMockRecorder) SetTrailer(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTrailer", reflect.TypeOf((*MockExt_BidirectionalStreamServer)(nil).SetTrailer), arg0)
 }
 
 // MockConfigClient is a mock of ConfigClient interface.

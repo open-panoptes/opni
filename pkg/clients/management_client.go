@@ -42,8 +42,7 @@ func NewManagementClient(ctx context.Context, opts ...ManagementClientOption) (m
 		address: managementv1.DefaultManagementSocket(),
 		dialOptions: []grpc.DialOption{
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithChainStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-			grpc.WithChainUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		},
 	}
 	options.Apply(opts...)

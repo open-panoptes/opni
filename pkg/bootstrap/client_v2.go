@@ -54,8 +54,7 @@ func (c *ClientConfigV2) Bootstrap(
 		append(c.DialOpts,
 			grpc.WithBlock(),
 			grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-			grpc.WithChainStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-			grpc.WithChainUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		)...,
 	)
 	if err != nil {
@@ -109,8 +108,7 @@ func (c *ClientConfigV2) bootstrapJoin(ctx context.Context) (*bootstrapv2.Bootst
 			grpc.WithBlock(),
 			grpc.FailOnNonTempDialError(true),
 			grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-			grpc.WithChainStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-			grpc.WithChainUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		)...,
 	)
 	if err != nil {

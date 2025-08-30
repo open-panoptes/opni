@@ -54,10 +54,7 @@ func ClientConfig(md meta.PluginMeta, scheme meta.Scheme, opts ...ClientOption) 
 			Level: hclog.Error,
 		}),
 		GRPCDialOptions: []grpc.DialOption{
-			grpc.WithChainUnaryInterceptor(
-				otelgrpc.UnaryClientInterceptor(),
-			),
-			grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 			grpc.WithPerRPCCredentials(cluster.ClusterIDKey),
 			grpc.WithPerRPCCredentials(session.AttributesKey),
 			grpc.WithDisableHealthCheck(),
@@ -96,8 +93,8 @@ func ServeConfig(scheme meta.Scheme) *plugin.ServeConfig {
 		Plugins:         scheme.PluginMap(),
 		GRPCServer: func(opts []grpc.ServerOption) *grpc.Server {
 			opts = append(opts,
+				grpc.StatsHandler(otelgrpc.NewServerHandler()),
 				grpc.ChainStreamInterceptor(
-					otelgrpc.StreamServerInterceptor(),
 					func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 						stream := streams.NewServerStreamWithContext(ss)
 						stream.Ctx = cluster.ClusterIDKey.FromIncomingCredentials(stream.Ctx)
@@ -106,7 +103,6 @@ func ServeConfig(scheme meta.Scheme) *plugin.ServeConfig {
 					},
 				),
 				grpc.ChainUnaryInterceptor(
-					otelgrpc.UnaryServerInterceptor(),
 					// Marks plugins as valid for caching, if any of their rpcs meet the criteria
 					caching.NewClientGrpcTtlCacher().UnaryServerInterceptor(),
 				),

@@ -4,7 +4,6 @@ import (
 	"github.com/rancher/opni/pkg/util"
 	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
-	"go.opentelemetry.io/otel/sdk/metric/aggregation"
 )
 
 type Metrics struct {
@@ -26,15 +25,15 @@ func NewMetrics(meterProvider *sdkmetric.MeterProvider) *Metrics {
 	}
 }
 
-func AggregationSelector(ik sdkmetric.InstrumentKind) aggregation.Aggregation {
+func AggregationSelector(ik sdkmetric.InstrumentKind) sdkmetric.Aggregation {
 	switch ik {
 	case sdkmetric.InstrumentKindCounter, sdkmetric.InstrumentKindUpDownCounter,
 		sdkmetric.InstrumentKindObservableCounter, sdkmetric.InstrumentKindObservableUpDownCounter:
-		return aggregation.Sum{}
+		return sdkmetric.AggregationSum{}
 	case sdkmetric.InstrumentKindObservableGauge:
-		return aggregation.LastValue{}
+		return sdkmetric.AggregationLastValue{}
 	case sdkmetric.InstrumentKindHistogram:
-		return aggregation.ExplicitBucketHistogram{
+		return sdkmetric.AggregationExplicitBucketHistogram{
 			Boundaries: []float64{30, 35, 37.5, 40, 42.5, 45, 50, 55, 60, 75, 100},
 			NoMinMax:   false,
 		}

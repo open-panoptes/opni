@@ -119,7 +119,6 @@ func (a *AlertingClusterManager) InstallCluster(ctx context.Context, _ *emptypb.
 		cmp, err := patch.DefaultPatchMaker.Calculate(existing, clone,
 			patch.IgnoreStatusFields(),
 			patch.IgnoreVolumeClaimTemplateTypeMetaAndStatus(),
-			patch.IgnorePDBSelector(),
 		)
 		if err == nil {
 			if cmp.IsEmpty() {
@@ -226,7 +225,6 @@ func (a *AlertingClusterManager) ConfigureCluster(ctx context.Context, conf *ale
 		cmp, err := patch.DefaultPatchMaker.Calculate(existing, clone,
 			patch.IgnoreStatusFields(),
 			patch.IgnoreVolumeClaimTemplateTypeMetaAndStatus(),
-			patch.IgnorePDBSelector(),
 		)
 		if err == nil {
 			if cmp.IsEmpty() {

@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"sync"
 
+	"github.com/kralicky/tools-lite/pkg/memoize"
 	managementv1 "github.com/rancher/opni/pkg/apis/management/v1"
 	configv1 "github.com/rancher/opni/pkg/config/v1"
 	managementext "github.com/rancher/opni/pkg/plugins/apis/apiextensions/management"
@@ -13,7 +14,6 @@ import (
 	"github.com/rancher/opni/pkg/storage"
 	"github.com/rancher/opni/plugins/metrics/pkg/gateway/drivers"
 	"github.com/rancher/opni/plugins/metrics/pkg/types"
-	"golang.org/x/tools/pkg/memoize"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health/grpc_health_v1"
 )

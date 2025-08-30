@@ -11,9 +11,9 @@ import (
 	"net/http"
 	"syscall"
 
+	"github.com/kralicky/tools-lite/pkg/memoize"
 	"github.com/rancher/opni/plugins/metrics/apis/cortexadmin"
 	"github.com/rancher/opni/plugins/metrics/pkg/gateway/drivers"
-	"golang.org/x/tools/pkg/memoize"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -216,7 +216,7 @@ func (c *memberlistStatusClient) MemberlistStatus(ctx context.Context) (*cortexa
 		}
 		var e *net.DNSError // net.DNSError is not compatible with errors.Is
 		if errors.As(err, &e) {
-			return nil, status.Error(codes.Internal, err.Error()) //means configuration is unhealthy
+			return nil, status.Error(codes.Internal, err.Error()) // means configuration is unhealthy
 		}
 		return nil, fmt.Errorf("failed to get memberlist status: %w", err)
 	}
@@ -627,8 +627,7 @@ func NewClientSet(driver drivers.ClusterDriver) (any, memoize.Function) {
 func newClientSet(ctx context.Context, cortexSpec drivers.CortexServiceConfig, tlsConfig *tls.Config) (ClientSet, error) {
 	distributorCC, err := grpc.DialContext(ctx, cortexSpec.Distributor.GRPCAddress,
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-		grpc.WithChainStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-		grpc.WithChainUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	)
 	if err != nil {
 		return nil, err
@@ -636,8 +635,7 @@ func newClientSet(ctx context.Context, cortexSpec drivers.CortexServiceConfig, t
 
 	rulerCC, err := grpc.DialContext(ctx, cortexSpec.Ruler.GRPCAddress,
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-		grpc.WithChainStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-		grpc.WithChainUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	)
 	if err != nil {
 		return nil, err

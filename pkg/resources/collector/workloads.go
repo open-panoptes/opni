@@ -95,10 +95,10 @@ func (r *Reconciler) getDaemonOTELConfig() otel.NodeOTELConfig {
 		},
 		Exporters: &otel.NodeOTELExporters{
 			OTLP: otlpexporter.Config{
-				QueueSettings: exporterhelper.QueueSettings{
+				QueueConfig: exporterhelper.QueueBatchConfig{
 					Enabled:      nodeOTELCfg.Exporters.OTLP.SendingQueue.Enabled,
 					NumConsumers: nodeOTELCfg.Exporters.OTLP.SendingQueue.NumConsumers,
-					QueueSize:    nodeOTELCfg.Exporters.OTLP.SendingQueue.QueueSize,
+					QueueSize:    int64(nodeOTELCfg.Exporters.OTLP.SendingQueue.QueueSize),
 				},
 			},
 		},
@@ -142,15 +142,14 @@ func (r *Reconciler) getAggregatorOTELConfig() otel.AggregatorOTELConfig {
 		},
 		Exporters: &otel.AggregatorOTELExporters{
 			OTLPHTTP: otlphttpexporter.Config{
-				QueueSettings: exporterhelper.QueueSettings{
+				QueueConfig: exporterhelper.QueueBatchConfig{
 					Enabled:      aggregatorOTELCfg.Exporters.OTLPHTTP.SendingQueue.Enabled,
 					NumConsumers: aggregatorOTELCfg.Exporters.OTLPHTTP.SendingQueue.NumConsumers,
-					QueueSize:    aggregatorOTELCfg.Exporters.OTLPHTTP.SendingQueue.QueueSize,
+					QueueSize:    int64(aggregatorOTELCfg.Exporters.OTLPHTTP.SendingQueue.QueueSize),
 				},
 			},
 		},
 	}
-
 }
 
 func (r *Reconciler) receiverConfig() (retData []byte, retReceivers []string, retErr error) {

@@ -1,3 +1,5 @@
+//go:build disable
+
 package validation
 
 import (
@@ -9,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/bufbuild/protovalidate-go"
+	"buf.build/go/protovalidate"
 	"github.com/distribution/reference"
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
